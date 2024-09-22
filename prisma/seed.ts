@@ -12,17 +12,29 @@ async function main() {
   await prisma.users.create({
     data: {
       email: 'admin@gmail.com',
-      userName: 'admin123',
       password: hashedPasswordAdmin,
       role: 'ADMIN',
+      phone: '0896423104',
+      verification: {
+        create: {
+          is_active: true,
+          verified_code: 123456,
+        },
+      },
     },
   });
   await prisma.users.create({
     data: {
       email: 'customer@gmail.com',
-      userName: 'customer123',
       password: hashedPasswordCustomer,
       role: 'CUSTOMER',
+      phone: '0763769185',
+      verification: {
+        create: {
+          is_active: true,
+          verified_code: 123456,
+        },
+      },
     },
   });
 }
