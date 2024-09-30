@@ -18,7 +18,11 @@ export const END_POINTS = {
       EMAIL: '/email',
       PHONE: '/phone',
     },
-    SIGN_UP: '/sign-up',
+    SIGN_UP: {
+      BASE_SIGN_UP: '/sign-up',
+      EMAIL: '/email',
+      PHONE: '/phone',
+    },
     SIGN_OUT: '/sign-out',
     REFRESH: '/refresh-token',
     GET_ME: '/get-me',
@@ -35,5 +39,9 @@ export const END_POINTS = {
 
 export enum ROLE {
   ADMIN = 'ADMIN',
-  USER = 'USER',
+  CUSTOMER = 'CUSTOMER',
 }
+
+export const JWT_ACCESS_STRATEGY = 'jwt-access-strategy'
+export const JWT_REFRESH_STRATEGY = 'jwt-refresh-strategy'
+

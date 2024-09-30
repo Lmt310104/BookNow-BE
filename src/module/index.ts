@@ -1,4 +1,5 @@
 import { AuthModule } from './auth/auth.module';
-const Modules = [AuthModule];
+import { EmailModule } from './email/email.module';
+const Modules = [AuthModule, EmailModule];
 
 export default Modules;
