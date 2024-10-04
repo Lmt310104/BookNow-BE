@@ -9,6 +9,8 @@ import { NodemailerProvider } from 'src/common/providers/nodemailer.provider';
 import SignOutService from './services/signout';
 import RefreshTokenService from './services/refreshToken';
 import ForgotPwdService from './services/forgotPwd';
+import { AtStrategyProvider } from 'src/common/providers/authenticate.provider';
+import { RefreshTokenStrategyProvider } from 'src/common/providers/refreshtoken.provider';
 
 @Module({
   imports: [JwtModule.register({ global: true }), PrismaModule],
@@ -22,6 +24,8 @@ import ForgotPwdService from './services/forgotPwd';
     SignOutService,
     RefreshTokenService,
     ForgotPwdService,
+    AtStrategyProvider,
+    RefreshTokenStrategyProvider,
   ],
   exports: [JwtModule],
 })

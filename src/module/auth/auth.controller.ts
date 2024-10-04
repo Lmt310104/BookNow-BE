@@ -1,4 +1,13 @@
-import { Body, Controller, Delete, Get, Post, Req, Res } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Delete,
+  Get,
+  Post,
+  Req,
+  Res,
+  UseGuards,
+} from '@nestjs/common';
 import { ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { DOCUMENTATION, END_POINTS } from 'src/utils/constants';
 import { SignInService, VerificationEmailService } from './services';
@@ -11,6 +20,8 @@ import RefreshTokenService from './services/refreshToken';
 import SendCodeDto from './dto/send-code.dto';
 import ForgotPwdService from './services/forgotPwd';
 import ResetPasswordDto from './dto/reset-password.dto';
+import { RefreshTokenGuard } from 'src/common/guards/refreshtoken.guard';
+import { Public } from 'src/common/decorators/public.decorator';
 
 const {
   AUTH: {
@@ -49,6 +60,7 @@ export class AuthController {
   })
   @ApiResponse({ status: 400, description: 'Bad Request' })
   @Post(`${BASE_SIGN_IN}${EMAIL}`)
+  @Public()
   async signInByEmail(
     @Body() body: SignInByEmailDto,
     @Res({ passthrough: true }) res: Response,
@@ -57,6 +69,7 @@ export class AuthController {
   }
   @ApiOperation({ summary: 'Sign in by phone number' })
   @Post(`${BASE_SIGN_IN}${PHONE}`)
+  @Public()
   async signInByPhone(
     @Body() body: SignInByPhoneDto,
     @Res({ passthrough: true }) res: Response,
@@ -74,6 +87,7 @@ export class AuthController {
       },
     },
   })
+  @Public()
   @Post(`${SIGN_UP.BASE_SIGN_UP}${SIGN_UP.EMAIL}`)
   @ApiResponse({ status: 400, description: 'Bad Request' })
   @ApiResponse({ status: 403, description: 'Forbidden.' })
@@ -113,6 +127,7 @@ export class AuthController {
     description: 'When refresh token expired or incorrect',
   })
   @Get(REFRESH)
+  @UseGuards(RefreshTokenGuard)
   async getRefreshToken(
     @Req() req: Request,
     @Res({ passthrough: true }) res: Response,
@@ -130,6 +145,7 @@ export class AuthController {
       },
     },
   })
+  @Public()
   @Post(FORGOT_PASSWORD)
   async getForgotPassword(@Body() body: SendCodeDto) {
     return await this.forgotPwdService.sendCode(body);
@@ -144,6 +160,7 @@ export class AuthController {
       },
     },
   })
+  @Public()
   @Post(RESET_PASSWORD)
   async postForgotPassword(@Body() body: ResetPasswordDto) {
     return await this.forgotPwdService.postCodeToResetPassword(body);
@@ -158,6 +175,7 @@ export class AuthController {
       },
     },
   })
+  @Public()
   @Post(VERIFY_EMAIL)
   verificationEmail(@Body() body: VerificationEmailDto) {
     return this.verificationService.verificationEmail(body);

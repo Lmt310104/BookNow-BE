@@ -20,7 +20,7 @@ class SignUpService {
     const isExistedUser = await checkIsExistEmail(email, this.prisma);
     if (isExistedUser) {
       throw new BadRequestException('User already exists', {
-        cause: new Error('User alreadu exists'),
+        cause: new Error('User already exists'),
       });
     }
     const hashedPassword = await hashPassword(password);

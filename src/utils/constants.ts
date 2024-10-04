@@ -34,6 +34,7 @@ export const END_POINTS = {
     BASE: '/users',
     GET_ALL: '',
     CREATE: '',
+    DISABLE: '',
   },
 };
 

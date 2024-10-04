@@ -41,7 +41,3 @@ export const createUserWithEmail = async (
     ...new_user,
   };
 };
-export const createUserWithPhone = async (
-  data: TCreateUserWithPhone,
-  prismaService: PrismaService,
-) => {};

@@ -9,8 +9,9 @@ generator client {
 }
 
 datasource db {
-  provider = "postgresql"
-  url      = env("DATABASE_URL")
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
 }
 
 model Users {
@@ -23,9 +24,9 @@ model Users {
   verification        Vertifications?
   code_reset_password String?         @db.VarChar(6)
   refresh_token       String?         @db.VarChar(255)
+  is_disable          Boolean         @default(false)
   created_at          DateTime        @default(now())
   updatedAt           DateTime        @updatedAt
-  PasswordResets      PasswordResets?
 }
 
 model Vertifications {
@@ -34,14 +35,6 @@ model Vertifications {
   user          Users   @relation(fields: [user_id], references: [id])
   verified_code String
   is_active     Boolean @default(false)
-}
-
-model PasswordResets {
-  id         Int     @id @default(autoincrement())
-  user_id    String  @unique
-  user       Users   @relation(fields: [user_id], references: [id])
-  reset_code Decimal
-  expire_at  Boolean @default(false)
 }
 
 enum Role {
