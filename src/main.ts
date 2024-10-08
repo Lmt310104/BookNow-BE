@@ -5,15 +5,16 @@ import { SwaggerModule } from '@nestjs/swagger';
 import documentation from './config/documentation';
 import { END_POINTS } from './utils/constants';
 import * as cookieParser from 'cookie-parser';
-import { ValidationPipe } from '@nestjs/common';
-import { AuthenticationGuard } from './common/guards/authentication.guard';
-import { RefreshTokenGuard } from './common/guards/refreshtoken.guard';
+import { HttpExceptionFilter } from './common/exception-filter/http-exception.filter';
+import { ValidationPipe } from './common/pipes/validation.pipe';
+// import { AuthenticationGuard } from './common/guards/authentication.guard';
+// import { RefreshTokenGuard } from './common/guards/refreshtoken.guard';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
   const configService = app.get(ConfigService);
   const port = configService.get<string>('port');
-  const reflector = app.get('Reflector');
+  // const reflector = app.get('Reflector');
   const document = SwaggerModule.createDocument(app, documentation, {
     ignoreGlobalPrefix: true,
   });
@@ -21,12 +22,12 @@ async function bootstrap() {
     origin: true,
     credentials: true,
   });
-  app.useGlobalGuards(new AuthenticationGuard(reflector));
-  app.useGlobalGuards(new RefreshTokenGuard(reflector));
+  // app.useGlobalGuards(new AuthenticationGuard(reflector));
+  // app.useGlobalGuards(new RefreshTokenGuard(reflector));
   app.setGlobalPrefix(END_POINTS.BASE);
   app.useGlobalPipes(new ValidationPipe());
   app.use(cookieParser());
-
+  app.useGlobalFilters(new HttpExceptionFilter());
   SwaggerModule.setup('docs', app, document);
   await app.listen(port || 8080);
   console.log(`Server running on http://localhost:${port || 8080}/docs`);

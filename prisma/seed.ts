@@ -40,13 +40,13 @@ async function main() {
     },
   });
 }
-main()
-  .catch(async (e) => {
-    console.error(e);
-    await prisma.$disconnect();
-    process.exit(1);
-  })
-  .finally(async () => {
-    console.log('Seeding done!');
-    await prisma.$disconnect();
-  });
+// main()
+//   .catch(async (e) => {
+//     console.error(e);
+//     await prisma.$disconnect();
+//     process.exit(1);
+//   })
+//   .finally(async () => {
+//     console.log('Seeding done!');
+//     await prisma.$disconnect();
+//   });

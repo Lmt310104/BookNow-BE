@@ -9,9 +9,9 @@ generator client {
 }
 
 datasource db {
-  provider  = "postgresql"
-  url       = env("DATABASE_URL")
-  directUrl = env("DIRECT_URL")
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+  // directUrl = env("DIRECT_URL")
 }
 
 model Users {
@@ -26,7 +26,10 @@ model Users {
   refresh_token       String?         @db.VarChar(255)
   is_disable          Boolean         @default(false)
   created_at          DateTime        @default(now())
-  updatedAt           DateTime        @updatedAt
+  updated_at          DateTime        @updatedAt
+  Orders              Orders[]
+  Carts               Carts[]
+  Reviews             Reviews[]
 }
 
 model Vertifications {
@@ -37,7 +40,109 @@ model Vertifications {
   is_active     Boolean @default(false)
 }
 
+model Books {
+  id             String         @id @default(uuid())
+  title          String         @db.VarChar(255)
+  author_id      String
+  author         Authors        @relation(fields: [author_id], references: [id])
+  category_id    String
+  price          Decimal
+  stock_quantity Int
+  rating         Decimal
+  description    String         @db.Text
+  entry_price    Decimal
+  image_url      String[]       @default([])
+  status         BookStatus     @default(INSTOCK)
+  created_at     DateTime       @default(now())
+  updated_at     DateTime       @updatedAt
+  Category       Category       @relation(fields: [category_id], references: [id])
+  OrderDetails   OrderDetails[]
+  CartItems      CartItems[]
+  Reviews        Reviews[]
+}
+
+model Category {
+  id    String  @id @default(uuid())
+  name  String  @unique
+  books Books[]
+}
+
+model Authors {
+  id          String   @id @default(uuid())
+  name        String   @db.VarChar(255)
+  birthday    DateTime
+  description String
+  Books       Books[]
+
+  @@unique([name, birthday, description])
+}
+
+model Orders {
+  id           Int            @id @default(autoincrement())
+  user_id      String
+  user         Users          @relation(fields: [user_id], references: [id])
+  status       OrderStatus    @default(PENDING)
+  total_price  Decimal
+  fullName     String
+  phoneNumber  String
+  created_at   DateTime       @default(now())
+  updated_at   DateTime       @updatedAt
+  OrderDetails OrderDetails[]
+}
+
+model OrderDetails {
+  id       Int     @id @default(autoincrement())
+  order_id Int
+  order    Orders  @relation(fields: [order_id], references: [id])
+  book_id  String
+  book     Books   @relation(fields: [book_id], references: [id])
+  quantity Int
+  price    Decimal
+}
+
+model Carts {
+  id          Int         @id @default(autoincrement())
+  user_id     String
+  user        Users       @relation(fields: [user_id], references: [id])
+  created_at  DateTime    @default(now())
+  CartDetails CartItems[]
+}
+
+model CartItems {
+  id         Int      @id @default(autoincrement())
+  cart_id    Int
+  cart       Carts    @relation(fields: [cart_id], references: [id])
+  book_id    String
+  book       Books    @relation(fields: [book_id], references: [id])
+  quantity   Int
+  created_at DateTime @default(now())
+}
+
+model Reviews {
+  id          Int      @id @default(autoincrement())
+  user_id     String
+  user        Users    @relation(fields: [user_id], references: [id])
+  book_id     String
+  book        Books    @relation(fields: [book_id], references: [id])
+  rating      Decimal
+  description String
+  created_at  DateTime @default(now())
+}
+
 enum Role {
   CUSTOMER
   ADMIN
+}
+
+enum OrderStatus {
+  PENDING
+  PROCESSING
+  DELIVERED
+  CANCELLED
+}
+
+enum BookStatus {
+  INSTOCK
+  OUTOFSTOCK
+  LOWSTOCK
 }

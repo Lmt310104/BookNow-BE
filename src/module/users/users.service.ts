@@ -1,4 +1,4 @@
-import { BadRequestException, Injectable, Param } from '@nestjs/common';
+import { BadRequestException, Injectable } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateUserDto } from './dto/create-user.dto';
 import { isEmailExist } from './helpers';
@@ -24,6 +24,10 @@ export class UsersService {
       },
     });
     return newUser;
+  }
+  async getAllUsers() {
+    const users = await this.prisma.users.findMany();
+    return users;
   }
   async findUserById(id: string) {
     const user = await this.prisma.users.findUnique({
