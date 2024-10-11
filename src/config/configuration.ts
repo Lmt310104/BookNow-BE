@@ -7,4 +7,5 @@ export default () => ({
   email_username: process.env.EMAIL_USERNAME,
   email_password: process.env.EMAIL_PASSWORD,
   smtp_user: process.env.SMTP_USER,
+  firebase_project_id: process.env.FIREBASE_PROJECT_ID,
 });

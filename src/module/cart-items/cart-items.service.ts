@@ -6,7 +6,6 @@ import {
 import { PrismaService } from '../prisma/prisma.service';
 import { TUserSession } from 'src/common/decorators/user-session.decorator';
 import { AddToCartDto } from './dto/create-cart-item.dto';
-import { setServers } from 'dns';
 
 @Injectable()
 export class CartItemsService {

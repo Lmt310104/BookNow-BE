@@ -1,6 +1,5 @@
-export class CheckOutDto { 
-    fullName: string;
-    shippingAddress: string; 
-    phone: string;
-
+export class CheckOutDto {
+  fullName: string;
+  shippingAddress: string;
+  phone: string;
 }

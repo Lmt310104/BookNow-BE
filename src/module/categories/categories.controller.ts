@@ -55,7 +55,7 @@ export class CategoryController {
     return new PageResponseDto(categories, meta);
   }
   @Get(GET_ONE)
-  async getOne() {}
+  async getBooksByCategory() {}
   @Post(UPDATE)
   async update() {}
 }

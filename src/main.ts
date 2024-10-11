@@ -6,9 +6,10 @@ import documentation from './config/documentation';
 import { END_POINTS } from './utils/constants';
 import * as cookieParser from 'cookie-parser';
 import { HttpExceptionFilter } from './common/exception-filter/http-exception.filter';
-import { ValidationPipe } from './common/pipes/validation.pipe';
 import { AuthenticationGuard } from './common/guards/authentication.guard';
 // import { RefreshTokenGuard } from './common/guards/refreshtoken.guard';
+import InitFirebase from './services/firebase';
+import { ValidationPipe } from '@nestjs/common';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
@@ -25,9 +26,10 @@ async function bootstrap() {
   app.useGlobalGuards(new AuthenticationGuard(reflector));
   // app.useGlobalGuards(new RefreshTokenGuard(reflector));
   app.setGlobalPrefix(END_POINTS.BASE);
-  app.useGlobalPipes(new ValidationPipe());
+  app.useGlobalPipes(new ValidationPipe({ transform: true, whitelist: true }));
   app.use(cookieParser());
   app.useGlobalFilters(new HttpExceptionFilter());
+  InitFirebase();
   SwaggerModule.setup('docs', app, document);
   await app.listen(port || 8080);
   console.log(`Server running on http://localhost:${port || 8080}/docs`);

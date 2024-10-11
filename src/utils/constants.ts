@@ -97,6 +97,14 @@ export enum ORDER {
   ASC = 'asc',
   DESC = 'desc',
 }
+export const FILE_TYPES_REGEX = /(jpg|jpeg|png)$/i;
+export enum EUploadFolder {
+  book = 'book',
+  author = 'author',
+  user = 'user',
+  storage = 'storage',
+}
+
 
 export const JWT_ACCESS_STRATEGY = 'jwt-access-strategy';
 export const JWT_REFRESH_STRATEGY = 'jwt-refresh-strategy';
