@@ -3,6 +3,7 @@ import { PrismaService } from '../prisma/prisma.service';
 import { CreateBookDto } from './dto/create-book.dto';
 import { Books } from '@prisma/client';
 import { BookQuery } from './query/book.query';
+import { UpdateBookDto } from './dto/update-book.dto';
 
 @Injectable()
 export class BooksService {
@@ -25,6 +26,10 @@ export class BooksService {
           },
         },
         status: bookQuery.status,
+      },
+      include: {
+        Category: true,
+        author: true,
       },
       orderBy: {
         [bookQuery.sortBy || 'created_at']: bookQuery.order || 'desc',
@@ -74,5 +79,26 @@ export class BooksService {
     });
     return newBook;
   }
-  async updateBook() {}
+  async updateBook(id, body: UpdateBookDto) {
+    const existingBook = await this.prismaService.books.findFirst({
+      where: { id: id },
+    });
+    if (!existingBook) {
+      throw new BadRequestException('Book not found');
+    }
+    const updatedBook = await this.prismaService.books.update({
+      where: { id: id },
+      data: body,
+    });
+    return updatedBook;
+  }
+  async getBookDetailsById(id: string) {
+    const book = await this.prismaService.books.findFirst({
+      where: { id },
+    });
+    if (!book) {
+      throw new BadRequestException('Book not found');
+    }
+    return book;
+  }
 }

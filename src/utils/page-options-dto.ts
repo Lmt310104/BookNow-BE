@@ -38,11 +38,6 @@ export class PageOptionsDto {
     default: 'created_at',
   })
   readonly sortBy?: string = 'created_at';
-  @ApiPropertyOptional({
-    default: ORDER.DESC,
-  })
-  readonly sort?: ORDER = ORDER.DESC;
-
   constructor(pageOptionsDto: Partial<PageOptionsDto> = {}) {
     Object.assign(this, pageOptionsDto);
   }

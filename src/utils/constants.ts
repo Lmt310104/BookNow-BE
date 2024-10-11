@@ -9,6 +9,8 @@ export const DOCUMENTATION = {
     BOOKS: 'BOOKS',
     AUTHORS: 'AUTHORS',
     CATEGORIES: 'CATEGORIES',
+    CARTS: 'CART',
+    CART_ITEMS: 'CART_ITEMS',
   },
 };
 
@@ -44,7 +46,7 @@ export const END_POINTS = {
     BASE: '/books',
     GET_ALL: '/get-all',
     CREATE: '/create',
-    UPDATE: '/update',
+    UPDATE: '/update/:id',
     GET_ONE: '/:id',
     SEARCH: '/search',
     FILTER: '/filter',
@@ -70,10 +72,12 @@ export const END_POINTS = {
     CREATE: '/create',
     UPDATE: '/update',
     GET_ONE: '/:id',
+    ADD_TO_CART: '/add-to-cart',
   },
   CART_ITEM: {
-    BASE: '/cart-item',
+    BASE: '/cart-items',
     GET_ALL: '/get-all',
+    GET_DETAILS: '/get-details',
     CREATE: '/create',
     UPDATE: '/update',
     GET_ONE: '/:id',

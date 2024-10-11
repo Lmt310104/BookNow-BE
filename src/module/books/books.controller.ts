@@ -2,13 +2,16 @@ import {
   Body,
   Controller,
   Get,
+  Param,
+  ParseUUIDPipe,
+  Patch,
   Post,
   Query,
   UsePipes,
   ValidationPipe,
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiQuery } from '@nestjs/swagger';
-import { DOCUMENTATION, END_POINTS, ORDER } from 'src/utils/constants';
+import { DOCUMENTATION, END_POINTS } from 'src/utils/constants';
 import { CreateBookDto } from './dto/create-book.dto';
 import { BooksService } from './books.service';
 import { StandardResponse } from 'src/utils/response.dto';
@@ -18,6 +21,7 @@ import { PageResponseDto } from 'src/utils/page-response.dto';
 import { PageResponseMetaDto } from 'src/utils/page-response-meta.dto';
 import { PageOptionsDto } from 'src/utils/page-options-dto';
 import { BookQuery } from './query/book.query';
+import { UpdateBookDto } from './dto/update-book.dto';
 
 const {
   BOOKS: { BASE, GET_ALL, CREATE, UPDATE, GET_ONE, FILTER, SORT },
@@ -88,7 +92,7 @@ export class BooksController {
   async createBook(
     @Body() body: CreateBookDto,
   ): Promise<StandardResponse<Books>> {
-    const newBook = await this.bookService.createBook(body);
+    const newBook: Books = await this.bookService.createBook(body);
     const message = 'Create book successfully';
     return new StandardResponse(newBook, message, HttpStatusCode.CREATED);
   }
@@ -96,12 +100,25 @@ export class BooksController {
     summary: 'Update a book',
     description: 'Allow admin',
   })
-  @Post(UPDATE)
-  async updateBook() {}
+  @Patch(UPDATE)
+  async updateBook(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() body: UpdateBookDto,
+  ): Promise<StandardResponse<Books>> {
+    const updatedBook: Books = await this.bookService.updateBook(id, body);
+    const message = 'Update book successfully';
+    return new StandardResponse(updatedBook, message, HttpStatusCode.OK);
+  }
   @ApiOperation({
     summary: 'Get a book by id',
     description: 'Allow admin/ customer',
   })
   @Get(GET_ONE)
-  async getBookDetailsById() {}
+  async getBookDetailsById(
+    @Param('id', ParseUUIDPipe) id: string,
+  ): Promise<StandardResponse<Books>> {
+    const book: Books = await this.bookService.getBookDetailsById(id);
+    const message = 'Get book successfully';
+    return new StandardResponse(book, message, HttpStatusCode.OK);
+  }
 }

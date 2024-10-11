@@ -28,7 +28,7 @@ model Users {
   created_at          DateTime        @default(now())
   updated_at          DateTime        @updatedAt
   Orders              Orders[]
-  Carts               Carts[]
+  Carts               Carts?
   Reviews             Reviews[]
 }
 
@@ -101,11 +101,11 @@ model OrderDetails {
 }
 
 model Carts {
-  id          Int         @id @default(autoincrement())
-  user_id     String
-  user        Users       @relation(fields: [user_id], references: [id])
-  created_at  DateTime    @default(now())
-  CartDetails CartItems[]
+  id         Int         @id @default(autoincrement())
+  user_id    String      @unique()
+  user       Users       @relation(fields: [user_id], references: [id])
+  created_at DateTime    @default(now())
+  CartItems  CartItems[]
 }
 
 model CartItems {
