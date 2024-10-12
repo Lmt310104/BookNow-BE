@@ -82,6 +82,22 @@ export const END_POINTS = {
     UPDATE: '/update',
     GET_ONE: '/:id',
   },
+  ORDER: {
+    BASE: '/orders',
+    GET_FULL_LIST: '/list',
+    GET_ALL: '/get-all',
+    CREATE: '/create',
+    UPDATE: '/update',
+    GET_ONE: '/:id',
+    GET_DETAILS: '/get-details',
+  },
+  ORDER_ITEM: {
+    BASE: '/order-items',
+    GET_ALL: '/get-all',
+    CREATE: '/create',
+    UPDATE: '/update',
+    GET_ONE: '/:id',
+  },
 };
 
 export enum ROLE {
@@ -104,7 +120,12 @@ export enum EUploadFolder {
   user = 'user',
   storage = 'storage',
 }
-
+export enum DateFormat {
+  DATE = 'DD-MM-YYYY',
+  DATE_TIME = 'DD-MM-YYYY HH:mm:ss',
+  TIME_DATE = 'HH:mm:ss DD-MM-YYYY',
+}
+export const CURRENCY = 'VND';
 
 export const JWT_ACCESS_STRATEGY = 'jwt-access-strategy';
 export const JWT_REFRESH_STRATEGY = 'jwt-refresh-strategy';

@@ -18,7 +18,7 @@ export class PageResponseMetaDto {
     this.page = pageOptionsDto.page;
     this.take = pageOptionsDto.take;
     this.itemCount = itemCount;
-    this.pageCount = Math.ceil(this.itemCount / this.take);
+    this.pageCount = Math.ceil(this.itemCount / this.take) ?? 0;
     this.hasPreviousPage = this.page > 1;
     this.hasNextPage = this.page < this.pageCount;
   }

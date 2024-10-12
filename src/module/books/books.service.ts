@@ -4,6 +4,9 @@ import { CreateBookDto } from './dto/create-book.dto';
 import { Books } from '@prisma/client';
 import { BookQuery } from './query/book.query';
 import { UpdateBookDto } from './dto/update-book.dto';
+import { uploadFilesFromFirebase } from 'src/services/files/upload';
+import { EUploadFolder } from 'src/utils/constants';
+import { deleteFilesFromFirebase } from 'src/services/files/delete';
 
 @Injectable()
 export class BooksService {
@@ -39,7 +42,7 @@ export class BooksService {
     });
     return books;
   }
-  async createBook(body: CreateBookDto) {
+  async createBook(body: CreateBookDto, image?: Express.Multer.File) {
     const {
       title,
       authorId,
@@ -48,8 +51,6 @@ export class BooksService {
       price,
       stockQuantity,
       description,
-      images,
-      status,
     } = body;
     const author = await this.prismaService.authors.findFirst({
       where: { id: authorId },
@@ -63,21 +64,39 @@ export class BooksService {
     if (!category) {
       throw new BadRequestException('Category not found');
     }
-    const newBook = await this.prismaService.books.create({
-      data: {
-        title: title,
-        author: { connect: { id: authorId } },
-        Category: { connect: { id: categoryId } },
-        entry_price: entryPrice,
-        price,
-        rating: 5,
-        stock_quantity: stockQuantity,
-        description,
-        image_url: images,
-        status: status,
-      },
-    });
-    return newBook;
+    let imageUrls = [];
+    try {
+      if (image && image.buffer.byteLength > 0) {
+        const uploadImagesData = await uploadFilesFromFirebase(
+          [image],
+          EUploadFolder.book,
+        );
+        if (!uploadImagesData.success) {
+          throw new Error('Failed to upload images!');
+        }
+        imageUrls = uploadImagesData.urls;
+      }
+      const newBook = await this.prismaService.books.create({
+        data: {
+          title: title,
+          author: { connect: { id: authorId } },
+          Category: { connect: { id: categoryId } },
+          entry_price: entryPrice,
+          price,
+          rating: 5,
+          stock_quantity: parseInt(stockQuantity, 10),
+          description,
+          image_url: imageUrls,
+        },
+      });
+      return newBook;
+    } catch (error) {
+      console.log('Error:', error.message);
+      if (image && !imageUrls.length) await deleteFilesFromFirebase(imageUrls);
+      throw new BadRequestException({
+        messaging: error.message,
+      });
+    }
   }
   async updateBook(id, body: UpdateBookDto) {
     const existingBook = await this.prismaService.books.findFirst({

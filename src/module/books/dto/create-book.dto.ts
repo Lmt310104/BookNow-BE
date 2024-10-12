@@ -1,15 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
-import {
-  IsEnum,
-  IsNotEmpty,
-  IsString,
-  IsNumber,
-  IsArray,
-  IsUUID,
-} from 'class-validator';
-import { Type } from 'class-transformer';
-import { CreateAuthorDto } from 'src/module/authors/dto/create-author.dto';
-import { BOOKSTATUS } from 'src/utils/constants';
+import { IsNotEmpty, IsString, IsUUID } from 'class-validator';
 
 export class CreateBookDto {
   @ApiProperty({
@@ -18,8 +8,8 @@ export class CreateBookDto {
     required: true,
     example: 'The Great Gatsby',
   })
-  @IsString()
-  @IsNotEmpty()
+  @IsString({ message: 'Title is string' })
+  @IsNotEmpty({ message: 'Title is required' })
   title: string;
 
   @ApiProperty({
@@ -27,54 +17,43 @@ export class CreateBookDto {
     required: true,
     example: '123e4567-e89b-12d3-a456-426614174000',
   })
-  @IsUUID()
-  @IsNotEmpty()
+  @IsNotEmpty({ message: 'authorId is required' })
   authorId: string;
-
-  @ApiProperty({
-    description: 'The author of a book',
-    type: CreateAuthorDto,
-  })
-  author?: CreateAuthorDto;
 
   @ApiProperty({
     description: 'The category id of a book',
     required: true,
     example: '123e4567-e89b-12d3-a456-426614174001',
   })
-  @IsUUID()
-  @IsNotEmpty()
+  @IsNotEmpty({ message: 'categoryId is required' })
   categoryId: string;
 
   @ApiProperty({
     description: 'The entry price of a book',
     required: true,
-    example: 100000,
+    example: '100000',
   })
-  @IsNumber()
-  @IsNotEmpty()
-  @Type(() => Number)
-  entryPrice: number;
+  @IsString()
+  @IsNotEmpty({ message: 'entryPrice is required' })
+  entryPrice: string;
 
   @ApiProperty({
     description: 'The sale price of a book',
     required: true,
-    example: 200000,
+    example: '200000',
   })
-  @IsNumber()
-  @IsNotEmpty()
-  @Type(() => Number)
-  price: number;
+  @IsString()
+  @IsNotEmpty({ message: 'price is required' })
+  price: string;
 
   @ApiProperty({
     description: 'The number of books in stock',
     required: true,
     example: 10,
   })
-  @IsNumber()
-  @IsNotEmpty()
-  @Type(() => Number)
-  stockQuantity: number;
+  @IsString()
+  @IsNotEmpty({ message: 'stockQuantity is required' })
+  stockQuantity: string;
 
   @ApiProperty({
     description: 'The description of a book',
@@ -82,26 +61,6 @@ export class CreateBookDto {
     example: 'This is a great book',
   })
   @IsString()
-  @IsNotEmpty()
+  @IsNotEmpty({ message: 'description is required' })
   description: string;
-
-  @ApiProperty({
-    description: 'The images of a book',
-    required: true,
-    example: ['https://image.com/book1.jpg'],
-  })
-  @IsArray()
-  @IsString({ each: true })
-  @IsNotEmpty()
-  images: string[];
-
-  @ApiProperty({
-    description: 'The status of a book',
-    required: true,
-    enum: BOOKSTATUS,
-    example: BOOKSTATUS.INSTOCK,
-  })
-  @IsEnum(BOOKSTATUS)
-  @IsNotEmpty()
-  status: BOOKSTATUS;
 }

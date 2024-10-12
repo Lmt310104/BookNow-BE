@@ -3,15 +3,22 @@ import {
   Controller,
   Get,
   Param,
+  ParseFilePipeBuilder,
   ParseUUIDPipe,
   Patch,
   Post,
   Query,
+  UploadedFile,
+  UseInterceptors,
   UsePipes,
   ValidationPipe,
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiQuery } from '@nestjs/swagger';
-import { DOCUMENTATION, END_POINTS } from 'src/utils/constants';
+import {
+  DOCUMENTATION,
+  END_POINTS,
+  FILE_TYPES_REGEX,
+} from 'src/utils/constants';
 import { CreateBookDto } from './dto/create-book.dto';
 import { BooksService } from './books.service';
 import { StandardResponse } from 'src/utils/response.dto';
@@ -22,9 +29,10 @@ import { PageResponseMetaDto } from 'src/utils/page-response-meta.dto';
 import { PageOptionsDto } from 'src/utils/page-options-dto';
 import { BookQuery } from './query/book.query';
 import { UpdateBookDto } from './dto/update-book.dto';
+import { FileInterceptor } from '@nestjs/platform-express';
 
 const {
-  BOOKS: { BASE, GET_ALL, CREATE, UPDATE, GET_ONE, FILTER, SORT },
+  BOOKS: { BASE, GET_ALL, CREATE, UPDATE, GET_ONE },
 } = END_POINTS;
 
 @ApiTags(DOCUMENTATION.TAGS.BOOKS)
@@ -89,10 +97,21 @@ export class BooksController {
     description: 'Allow admin',
   })
   @Post(CREATE)
+  @UseInterceptors(FileInterceptor('image'))
   async createBook(
     @Body() body: CreateBookDto,
+    @UploadedFile(
+      new ParseFilePipeBuilder()
+        .addFileTypeValidator({
+          fileType: FILE_TYPES_REGEX,
+        })
+        .build({
+          fileIsRequired: false,
+        }),
+    )
+    image?: Express.Multer.File,
   ): Promise<StandardResponse<Books>> {
-    const newBook: Books = await this.bookService.createBook(body);
+    const newBook: Books = await this.bookService.createBook(body, image);
     const message = 'Create book successfully';
     return new StandardResponse(newBook, message, HttpStatusCode.CREATED);
   }

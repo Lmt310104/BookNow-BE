@@ -1,6 +1,6 @@
 import { ApiPropertyOptional } from '@nestjs/swagger';
 import { Type } from 'class-transformer';
-import { IsEnum, IsInt, IsOptional, Max, Min } from 'class-validator';
+import { IsEnum, IsInt, IsOptional, IsString, Max, Min } from 'class-validator';
 import { ORDER } from './constants';
 
 export class PageOptionsDto {
@@ -37,7 +37,8 @@ export class PageOptionsDto {
   @ApiPropertyOptional({
     default: 'created_at',
   })
-  readonly sortBy?: string = 'created_at';
+  @IsString()
+  readonly sortBy?: string = 'id';
   constructor(pageOptionsDto: Partial<PageOptionsDto> = {}) {
     Object.assign(this, pageOptionsDto);
   }

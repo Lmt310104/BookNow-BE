@@ -85,6 +85,7 @@ model Orders {
   total_price  Decimal
   fullName     String
   phoneNumber  String
+  address      String
   created_at   DateTime       @default(now())
   updated_at   DateTime       @updatedAt
   OrderDetails OrderDetails[]
