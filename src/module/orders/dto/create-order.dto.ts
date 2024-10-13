@@ -42,6 +42,6 @@ export class CreateOrderDto {
   @IsString()
   address: string;
 
-  @IsNumber()
-  totalPrice: number;
+  @IsString()
+  totalPrice: string;
 }

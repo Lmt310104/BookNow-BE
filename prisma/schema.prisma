@@ -41,24 +41,30 @@ model Vertifications {
 }
 
 model Books {
-  id             String         @id @default(uuid())
-  title          String         @db.VarChar(255)
-  author_id      String
-  author         Authors        @relation(fields: [author_id], references: [id])
-  category_id    String
-  price          Decimal
-  stock_quantity Int
-  rating         Decimal
-  description    String         @db.Text
-  entry_price    Decimal
-  image_url      String[]       @default([])
-  status         BookStatus     @default(INSTOCK)
-  created_at     DateTime       @default(now())
-  updated_at     DateTime       @updatedAt
-  Category       Category       @relation(fields: [category_id], references: [id])
-  OrderDetails   OrderDetails[]
-  CartItems      CartItems[]
-  Reviews        Reviews[]
+  id                 String         @id @default(uuid())
+  title              String         @db.VarChar(255)
+  author_id          String
+  author             Authors        @relation(fields: [author_id], references: [id])
+  category_id        String
+  price              Decimal
+  stock_quantity     Int
+  rating             Decimal
+  description        String         @db.Text
+  entry_price        Decimal
+  final_price        Decimal?
+  discountPercentage Int?
+  discountDate       DateTime?
+  avg_stars          Decimal        @default(0)
+  total_reviews      Int            @default(0)
+  sold_quantity      Int            @default(0)
+  image_url          String[]       @default([])
+  status             BookStatus     @default(INSTOCK)
+  created_at         DateTime       @default(now())
+  updated_at         DateTime       @updatedAt
+  Category           Category       @relation(fields: [category_id], references: [id])
+  OrderDetails       OrderDetails[]
+  CartItems          CartItems[]
+  Reviews            Reviews[]
 }
 
 model Category {
@@ -82,9 +88,9 @@ model Orders {
   user_id      String
   user         Users          @relation(fields: [user_id], references: [id])
   status       OrderStatus    @default(PENDING)
-  total_price  Decimal
-  fullName     String
-  phoneNumber  String
+  total_price  Decimal        @default(0)
+  full_name    String
+  phone_number String
   address      String
   created_at   DateTime       @default(now())
   updated_at   DateTime       @updatedAt
@@ -92,13 +98,14 @@ model Orders {
 }
 
 model OrderDetails {
-  id       Int     @id @default(autoincrement())
-  order_id Int
-  order    Orders  @relation(fields: [order_id], references: [id])
-  book_id  String
-  book     Books   @relation(fields: [book_id], references: [id])
-  quantity Int
-  price    Decimal
+  id          Int     @id @default(autoincrement())
+  order_id    Int
+  order       Orders  @relation(fields: [order_id], references: [id])
+  book_id     String
+  book        Books   @relation(fields: [book_id], references: [id])
+  quantity    Int
+  price       Decimal
+  total_price Decimal
 }
 
 model Carts {

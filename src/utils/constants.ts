@@ -87,7 +87,7 @@ export const END_POINTS = {
     GET_FULL_LIST: '/list',
     GET_ALL: '/get-all',
     CREATE: '/create',
-    UPDATE: '/update',
+    UPDATE_STATUS: '/status/update',
     GET_ONE: '/:id',
     GET_DETAILS: '/get-details',
   },
