@@ -1,4 +1,4 @@
-import { Controller, Get, Post } from '@nestjs/common';
+import { Body, Controller, Get, Post } from '@nestjs/common';
 import { Carts } from '@prisma/client';
 import {
   TUserSession,
@@ -12,9 +12,10 @@ import { ApiTags } from '@nestjs/swagger';
 import { GetCartDto } from './dto/get-cart.dto';
 import { PageResponseDto } from 'src/utils/page-response.dto';
 import { PageResponseMetaDto } from 'src/utils/page-response-meta.dto';
+import { AddToCartDto } from './dto/add-to-cart.dto';
 
 const {
-  CARTS: { BASE, CREATE, GET_ALL },
+  CARTS: { BASE, CREATE, GET_ALL, ADD_TO_CART },
 } = END_POINTS;
 
 @Controller(BASE)
@@ -43,5 +44,14 @@ export class CartController {
       itemCount: cartItems.length,
     });
     return new PageResponseDto(cartItems, meta);
+  }
+  @Post(ADD_TO_CART)
+  async addToCart(
+    @UserSession() session: TUserSession,
+    @Body() addToCartDto: AddToCartDto,
+  ) {
+    const cart = await this.cartService.addToCart(session, addToCartDto);
+    const message = 'Add to cart successfully';
+    return new StandardResponse(cart, message, HttpStatusCode.CREATED);
   }
 }
