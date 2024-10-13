@@ -51,6 +51,7 @@ export const END_POINTS = {
     SEARCH: '/search',
     FILTER: '/filter',
     SORT: '/sort',
+    COMMENT: '/:id/comment',
   },
   AUTHORS: {
     BASE: '/authors',
@@ -91,8 +92,8 @@ export const END_POINTS = {
     GET_ONE: '/:id',
     GET_DETAILS: '/get-details',
   },
-  ORDER_ITEM: {
-    BASE: '/order-items',
+  ORDER_DETAILS: {
+    BASE: '/order-details',
     GET_ALL: '/get-all',
     CREATE: '/create',
     UPDATE: '/update',

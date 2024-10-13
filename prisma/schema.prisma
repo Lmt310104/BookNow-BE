@@ -132,6 +132,7 @@ model Reviews {
   user        Users    @relation(fields: [user_id], references: [id])
   book_id     String
   book        Books    @relation(fields: [book_id], references: [id])
+  title       String
   rating      Decimal
   description String
   created_at  DateTime @default(now())

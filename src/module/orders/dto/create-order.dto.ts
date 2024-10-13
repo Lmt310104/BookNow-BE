@@ -4,6 +4,7 @@ import {
   IsArray,
   IsNotEmpty,
   IsNumber,
+  IsPhoneNumber,
   IsPositive,
   IsString,
   Min,
@@ -24,24 +25,22 @@ export class OrderItemDto {
 
 export class CreateOrderDto {
   @IsArray()
-  @IsNotEmpty()
+  @IsNotEmpty({ message: 'items must not be empty' })
   @ValidateNested({ each: true })
   @ArrayMinSize(1)
   @Type(() => OrderItemDto)
   items: OrderItemDto[];
 
-  @IsString()
+  @IsString({ message: 'full name is not valid' })
   @IsNotEmpty()
   fullName: string;
 
   @IsString()
+  @IsPhoneNumber('VN', { message: 'Phone number is not valid' })
   @IsNotEmpty()
   phoneNumber: string;
 
-  @IsNotEmpty()
+  @IsNotEmpty({ message: 'Address must not be empty ' })
   @IsString()
   address: string;
-
-  @IsString()
-  totalPrice: string;
 }

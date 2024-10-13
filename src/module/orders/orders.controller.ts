@@ -4,6 +4,7 @@ import {
   Get,
   Param,
   ParseIntPipe,
+  ParseUUIDPipe,
   Post,
   Query,
 } from '@nestjs/common';
@@ -17,21 +18,14 @@ import { Roles } from 'src/common/decorators/roles.decorator';
 import { OrderPageOptionsDto } from './dto/find-all-orders.dto';
 import { PageResponseMetaDto } from 'src/utils/page-response-meta.dto';
 import { PageResponseDto } from 'src/utils/page-response.dto';
-import { Orders } from '@prisma/client';
+import { Orders, Reviews } from '@prisma/client';
 import { StandardResponse } from 'src/utils/response.dto';
 import HttpStatusCode from 'src/utils/HttpStatusCode';
 import { CreateOrderDto } from './dto/create-order.dto';
+import { CreateReviewDto } from './dto/create-review.dto';
 
 const {
-  ORDER: {
-    BASE,
-    GET_FULL_LIST,
-    GET_ALL,
-    CREATE,
-    UPDATE_STATUS,
-    GET_DETAILS,
-    GET_ONE,
-  },
+  ORDER: { BASE, GET_FULL_LIST, GET_ALL, CREATE, UPDATE_STATUS, GET_ONE },
 } = END_POINTS;
 
 @Controller(BASE)
@@ -61,7 +55,7 @@ export class OrdersController {
     });
     return new PageResponseDto(orders, meta);
   }
-  @Get(CREATE)
+  @Post(CREATE)
   async createOrder(
     @UserSession() session: TUserSession,
     @Body() dto: CreateOrderDto,
@@ -80,5 +74,24 @@ export class OrdersController {
     const order = await this.orderService.getOrderDetailsByUser(id, session);
     const message = 'Order details retrieved successfully';
     return new StandardResponse<Orders>(order, message, HttpStatusCode.OK);
+  }
+  @Post(`${GET_ONE}/order-details/:orderDetailsId/:bookId`)
+  async createReview(
+    @UserSession() session: TUserSession,
+    @Body() dto: CreateReviewDto,
+    @Param('id', ParseIntPipe) id: number,
+    @Param('orderDetailsId', ParseIntPipe) orderDetailsId: number,
+    @Param('bookId', ParseUUIDPipe) bookId: string,
+  ): Promise<StandardResponse<Reviews>> {
+    console.log(dto);
+    const review = await this.orderService.createReview(
+      session,
+      dto,
+      id,
+      orderDetailsId,
+      bookId,
+    );
+    const message = 'Comment created successfully';
+    return new StandardResponse(review, message, HttpStatusCode.CREATED);
   }
 }

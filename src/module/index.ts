@@ -5,6 +5,7 @@ import { CartItemsModule } from './cart-items/cart-items.module';
 import { CartsModule } from './carts/carts.module';
 import { CategoriesModule } from './categories/categories.module';
 import { EmailModule } from './email/email.module';
+import { OrdersModule } from './orders/orders.module';
 import { UsersModule } from './users/users.module';
 const Modules = [
   AuthorsModule,
@@ -15,6 +16,7 @@ const Modules = [
   CategoriesModule,
   CartsModule,
   CartItemsModule,
+  OrdersModule,
 ];
 
 export default Modules;

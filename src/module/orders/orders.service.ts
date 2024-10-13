@@ -1,8 +1,13 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { OrderPageOptionsDto } from './dto/find-all-orders.dto';
 import { TUserSession } from 'src/common/decorators/user-session.decorator';
 import { CreateOrderDto } from './dto/create-order.dto';
+import { CreateReviewDto } from './dto/create-review.dto';
 
 @Injectable()
 export class OrderService {
@@ -79,6 +84,13 @@ export class OrderService {
   async getOrderDetailsByUser(id: number, session: TUserSession) {
     const order = this.prisma.orders.findUnique({
       where: { user_id: session.id, id: id },
+      include: {
+        OrderDetails: {
+          include: {
+            book: true,
+          },
+        },
+      },
     });
     return order;
   }
@@ -93,4 +105,64 @@ export class OrderService {
     return orders;
   }
   async updateOrder() {}
+  async createReview(
+    session: TUserSession,
+    dto: CreateReviewDto,
+    id: number,
+    orderDetailId: number,
+    bookId: string,
+  ) {
+    const order = await this.prisma.orders.findUnique({
+      where: { user_id: session.id, id },
+    });
+    if (!order) {
+      throw new NotFoundException('Order not found');
+    }
+    const orderDetail = await this.prisma.orderDetails.findUnique({
+      where: { id: orderDetailId },
+    });
+    if (!orderDetail) {
+      throw new NotFoundException('Order detail not found');
+    }
+    const book = await this.prisma.books.findUnique({
+      where: { id: bookId },
+    });
+    if (!book) {
+      throw new NotFoundException('Book not found');
+    }
+
+    try {
+      return await this.prisma.$transaction(async (tx) => {
+        const newTotalReviews = book.total_reviews + 1;
+        const newAvgStars =
+          (Number(book.avg_stars) * book.total_reviews + dto.star) /
+          newTotalReviews;
+        await tx.books.update({
+          where: { id: book.id },
+          data: {
+            total_reviews: newTotalReviews,
+            avg_stars: newAvgStars,
+          },
+        });
+        const review = await tx.reviews.create({
+          data: {
+            user_id: session.id,
+            book_id: book.id,
+            rating: dto.star,
+            description: dto.description,
+            title: dto.title,
+          },
+          include: {
+            book: true,
+          },
+        });
+        return review;
+      });
+    } catch (error) {
+      console.log('Error:', error);
+      throw new BadRequestException({
+        message: 'Failed to add rating review',
+      });
+    }
+  }
 }
