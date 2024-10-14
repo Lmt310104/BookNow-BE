@@ -1,4 +1,4 @@
-import { BadRequestException, Injectable } from '@nestjs/common';
+import { BadRequestException, Body, Injectable } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateBookDto } from './dto/create-book.dto';
 import { Books } from '@prisma/client';
@@ -7,6 +7,7 @@ import { UpdateBookDto } from './dto/update-book.dto';
 import { uploadFilesFromFirebase } from 'src/services/files/upload';
 import { EUploadFolder } from 'src/utils/constants';
 import { deleteFilesFromFirebase } from 'src/services/files/delete';
+import { title } from 'process';
 
 @Injectable()
 export class BooksService {
@@ -98,18 +99,44 @@ export class BooksService {
       });
     }
   }
-  async updateBook(id, body: UpdateBookDto) {
+  async updateBook(id: string, dto: UpdateBookDto, image: Express.Multer.File) {
     const existingBook = await this.prismaService.books.findFirst({
       where: { id: id },
     });
     if (!existingBook) {
       throw new BadRequestException('Book not found');
     }
-    const updatedBook = await this.prismaService.books.update({
-      where: { id: id },
-      data: body,
-    });
-    return updatedBook;
+    let imageUrls = [];
+    try {
+      if (image && image.buffer.byteLength > 0) {
+        const uploadImagesData = await uploadFilesFromFirebase(
+          [image],
+          EUploadFolder.book,
+        );
+        if (!uploadImagesData.success) {
+          throw new Error('Failed to upload images!');
+        }
+        imageUrls = uploadImagesData.urls;
+      }
+      return await this.prismaService.$transaction(async (tx) => {
+        const updatedBook = await tx.books.update({
+          where: { id },
+          data: {
+            title: dto.title,
+            description: dto.description,
+            image_url: imageUrls.length ? imageUrls[0] : existingBook.image_url,
+            price: dto?.price ?? existingBook.price,
+          },
+        });
+        return updatedBook;
+      });
+    } catch (error) {
+      console.log('Error:', error.message);
+      if (image && !imageUrls.length) await deleteFilesFromFirebase(imageUrls);
+      throw new BadRequestException({
+        messaging: error.message,
+      });
+    }
   }
   async getBookDetailsById(id: string) {
     const book = await this.prismaService.books.findFirst({

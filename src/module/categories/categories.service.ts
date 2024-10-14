@@ -1,6 +1,7 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
 import { CreateCategoryDto } from './dtos/create-category.dto';
 import { PrismaService } from '../prisma/prisma.service';
+import { UpdateCategoryDto } from './dtos/update-category.dto';
 
 @Injectable()
 export class CategoryService {
@@ -20,9 +21,49 @@ export class CategoryService {
     });
     return newCategory;
   }
-  async update() {}
+  async update(id: string, dto: UpdateCategoryDto) {
+    const category = await this.prisma.category.findUnique({
+      where: { id: id },
+    });
+    if (!category) {
+      throw new BadRequestException('Category not found');
+    }
+    await this.prisma.category.update({
+      where: { id: id },
+      data: dto?.name ? dto.name : category.name,
+    });
+    return category;
+  }
   async getAll() {
-    const categories = await this.prisma.category.findMany();
+    const categories = await this.prisma.category.findMany({
+      where: { is_disable: false },
+    });
     return categories;
+  }
+  async disableCategory(id: string) {
+    const category = await this.prisma.category.findUnique({
+      where: { id: id },
+    });
+    if (!category) {
+      throw new BadRequestException('Category not found');
+    }
+    await this.prisma.category.update({
+      where: { id: id },
+      data: { is_disable: true },
+    });
+    return category;
+  }
+  async enable(id: string) {
+    const category = await this.prisma.category.findUnique({
+      where: { id: id },
+    });
+    if (!category) {
+      throw new BadRequestException('Category not found');
+    }
+    await this.prisma.category.update({
+      where: { id: id },
+      data: { is_disable: false },
+    });
+    return category;
   }
 }
