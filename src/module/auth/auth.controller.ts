@@ -104,6 +104,7 @@ export class AuthController {
       },
     },
   })
+  @Public()
   @Delete(SIGN_OUT)
   async signOut(
     @Req() req: Request,
