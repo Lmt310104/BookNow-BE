@@ -30,9 +30,19 @@ import { PageOptionsDto } from 'src/utils/page-options-dto';
 import { BookQuery } from './query/book.query';
 import { UpdateBookDto } from './dto/update-book.dto';
 import { FileInterceptor } from '@nestjs/platform-express';
+import { PriceFilterDto } from './dto/filter-by-price.dto';
+import { RatingFilterDto } from './dto/filter-by-rating.dto';
 
 const {
-  BOOKS: { BASE, GET_ALL, CREATE, UPDATE, GET_ONE },
+  BOOKS: {
+    BASE,
+    GET_ALL,
+    CREATE,
+    UPDATE,
+    GET_ONE,
+    SEARCH_BY_PRICE,
+    SEARCH_BY_RATING,
+  },
 } = END_POINTS;
 
 @ApiTags(DOCUMENTATION.TAGS.BOOKS)
@@ -154,5 +164,23 @@ export class BooksController {
     const book: Books = await this.bookService.getBookDetailsById(id);
     const message = 'Get book successfully';
     return new StandardResponse(book, message, HttpStatusCode.OK);
+  }
+  @Post(SEARCH_BY_PRICE)
+  async searchByPrice(@Body() dto: PriceFilterDto) {
+    const books = await this.bookService.searchByPrice(dto);
+    return new StandardResponse(
+      books,
+      'Search by price successfully',
+      HttpStatusCode.OK,
+    );
+  }
+  @Post(SEARCH_BY_RATING)
+  async searchByRating(@Body() dto: RatingFilterDto) {
+    const books = await this.bookService.searchByRating(dto);
+    return new StandardResponse(
+      books,
+      'Search by rating successfully',
+      HttpStatusCode.OK,
+    );
   }
 }

@@ -52,6 +52,8 @@ export const END_POINTS = {
     FILTER: '/filter',
     SORT: '/sort',
     COMMENT: '/:id/comment',
+    SEARCH_BY_PRICE: '/search/price',
+    SEARCH_BY_RATING: '/search/rating',
   },
   AUTHORS: {
     BASE: '/authors',
