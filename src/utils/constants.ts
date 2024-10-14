@@ -64,8 +64,10 @@ export const END_POINTS = {
     BASE: '/categories',
     GET_ALL: '/get-all',
     CREATE: '/create',
-    UPDATE: '/update',
+    UPDATE: '/:id',
+    DISABLE: '/:id/disable',
     GET_ONE: '/:id',
+    ENABLE: ':id/enable',
   },
   CARTS: {
     BASE: '/carts',
