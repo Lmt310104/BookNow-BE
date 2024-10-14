@@ -1,4 +1,4 @@
-import { PrismaClient } from '@prisma/client';
+import { PrismaClient, Role } from '@prisma/client';
 import * as bcrypt from 'bcrypt';
 const prisma = new PrismaClient();
 
@@ -6,9 +6,29 @@ export const hashPassword = async (password: string) => {
   const salt = await bcrypt.genSalt(10);
   return await bcrypt.hash(password, salt);
 };
+import { faker } from '@faker-js/faker';
+import authors_data from './seeds/authors';
+import category_data from './seeds/categories';
 async function main() {
+  /**
+   * Neccessary to hash the password before seeding
+   * Neccessary seeds: authors, categories, books, carts, orders, comments
+   */
+  const transform_author = authors_data.map((author) => ({
+    name: author.name,
+    birthday: author.birthday.toISOString(),
+    description: author.description,
+  }));
+  await prisma.authors.createMany({
+    data: transform_author,
+    skipDuplicates: true,
+  });
+  await prisma.category.createMany({
+    data: category_data,
+  });
   const hashedPasswordAdmin = await hashPassword('admin123');
   const hashedPasswordCustomer = await hashPassword('customer123');
+  const hashedPasswordTestUser = await hashPassword('testuser123');
   await prisma.users.create({
     data: {
       email: 'admin@gmail.com',
@@ -39,6 +59,23 @@ async function main() {
       },
     },
   });
+  for (let i = 0; i < 100; i++) {
+    await prisma.users.create({
+      data: {
+        email: faker.internet.email(),
+        password: hashedPasswordTestUser,
+        role: Role.CUSTOMER,
+        phone: faker.phone.number({ style: 'national' }),
+        full_name: faker.internet.userName(),
+        verification: {
+          create: {
+            is_active: true,
+            verified_code: hashedPasswordTestUser,
+          },
+        },
+      },
+    });
+  }
 }
 // main()
 //   .catch(async (e) => {
