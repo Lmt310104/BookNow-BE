@@ -120,11 +120,26 @@ export class BooksController {
     description: 'Allow admin',
   })
   @Patch(UPDATE)
+  @UseInterceptors(FileInterceptor('image'))
   async updateBook(
     @Param('id', ParseUUIDPipe) id: string,
-    @Body() body: UpdateBookDto,
+    @Body() dto: UpdateBookDto,
+    @UploadedFile(
+      new ParseFilePipeBuilder()
+        .addFileTypeValidator({
+          fileType: FILE_TYPES_REGEX,
+        })
+        .build({
+          fileIsRequired: false,
+        }),
+    )
+    image?: Express.Multer.File,
   ): Promise<StandardResponse<Books>> {
-    const updatedBook: Books = await this.bookService.updateBook(id, body);
+    const updatedBook: Books = await this.bookService.updateBook(
+      id,
+      dto,
+      image,
+    );
     const message = 'Update book successfully';
     return new StandardResponse(updatedBook, message, HttpStatusCode.OK);
   }
