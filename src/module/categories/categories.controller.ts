@@ -1,4 +1,12 @@
-import { Body, Controller, Get, Post, Query } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Get,
+  Param,
+  ParseUUIDPipe,
+  Post,
+  Query,
+} from '@nestjs/common';
 import { ApiQuery, ApiTags } from '@nestjs/swagger';
 import { DOCUMENTATION, END_POINTS, ORDER } from 'src/utils/constants';
 import { CreateCategoryDto } from './dtos/create-category.dto';
@@ -9,9 +17,10 @@ import HttpStatusCode from 'src/utils/HttpStatusCode';
 import { PageResponseDto } from 'src/utils/page-response.dto';
 import { PageOptionsDto } from 'src/utils/page-options-dto';
 import { PageResponseMetaDto } from 'src/utils/page-response-meta.dto';
+import { UpdateCategoryDto } from './dtos/update-category.dto';
 
 const {
-  CATEGORIES: { BASE, CREATE, GET_ALL, GET_ONE, UPDATE },
+  CATEGORIES: { BASE, CREATE, GET_ALL, GET_ONE, UPDATE, DISABLE, ENABLE },
 } = END_POINTS;
 @ApiTags(DOCUMENTATION.TAGS.CATEGORIES)
 @Controller(BASE)
@@ -56,6 +65,27 @@ export class CategoryController {
   }
   @Get(GET_ONE)
   async getBooksByCategory() {}
+  @Post(DISABLE)
+  async disableCategory(@Param('id', ParseUUIDPipe) id: string) {
+    await this.categoryService.disableCategory(id);
+    const message = 'Disable category successfully';
+    return new StandardResponse(null, message, HttpStatusCode.OK);
+  }
   @Post(UPDATE)
-  async update() {}
+  async update(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() dto: UpdateCategoryDto,
+  ) {
+    const category = await this.categoryService.update(id, dto);
+    const message = 'Update category successfully';
+    return new StandardResponse(category, message, HttpStatusCode.OK);
+  }
+  @Post(ENABLE)
+  async enable(
+    @Param('id', ParseUUIDPipe) id: string,
+  ): Promise<StandardResponse<Category>> {
+    const category = await this.categoryService.enable(id);
+    const message = 'Enable category successfully';
+    return new StandardResponse(category, message, HttpStatusCode.OK);
+  }
 }
