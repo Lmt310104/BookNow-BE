@@ -68,9 +68,10 @@ model Books {
 }
 
 model Category {
-  id    String  @id @default(uuid())
-  name  String  @unique
-  books Books[]
+  id         String  @id @default(uuid())
+  name       String  @unique
+  is_disable Boolean @default(false)
+  books      Books[]
 }
 
 model Authors {
