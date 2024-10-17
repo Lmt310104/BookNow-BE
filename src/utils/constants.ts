@@ -39,8 +39,11 @@ export const END_POINTS = {
     BASE: '/users',
     GET_ALL: '/get-all',
     CREATE: '/create',
+    UPDATE: '/update',
     DISABLE: '/disable',
+    ENABLE: '/enable',
     GET_ONE: '/:id',
+    UPDATE_STATUS: '/status/update',
   },
   BOOKS: {
     BASE: '/books',
@@ -96,6 +99,9 @@ export const END_POINTS = {
     UPDATE_STATUS: '/status/update',
     GET_ONE: '/:id',
     GET_DETAILS: '/get-details',
+    CANCEL_ORDER: '/:id/cancel-order',
+    ORDER_HISTORY: '/history',
+    ORDER_STATE: '/:id/state',
   },
   ORDER_DETAILS: {
     BASE: '/order-details',

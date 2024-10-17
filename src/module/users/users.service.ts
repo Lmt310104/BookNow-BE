@@ -3,6 +3,8 @@ import { PrismaService } from '../prisma/prisma.service';
 import { CreateUserDto } from './dto/create-user.dto';
 import { isEmailExist } from './helpers';
 import { hashedPassword } from '../auth/services/signup/hash-password';
+import { TUserSession } from 'src/common/decorators/user-session.decorator';
+import { UpdateUserProfileDto } from './dto/update-user-profile.dto.ts';
 
 @Injectable()
 export class UsersService {
@@ -43,5 +45,39 @@ export class UsersService {
       },
     });
     return user;
+  }
+  async updateUserProfile(session: TUserSession, dto: UpdateUserProfileDto) {
+    const user = await this.prisma.users.findUnique({
+      where: { id: session.id },
+    });
+    if (!user) {
+      throw new BadRequestException('User not found', {
+        cause: new Error('User not found'),
+      });
+    }
+    const updatedUser = await this.prisma.users.update({
+      where: { id: session.id },
+      data: {
+        full_name: dto.fullName,
+      },
+    });
+    return updatedUser;
+  }
+  async enableUserById(id: string) {
+    const user = await this.prisma.users.findUnique({
+      where: { id: id },
+    });
+    if (!user) {
+      throw new BadRequestException('User not found', {
+        cause: new Error('User not found'),
+      });
+    }
+    const updatedUser = await this.prisma.users.update({
+      where: { id: id },
+      data: {
+        is_disable: false,
+      },
+    });
+    return updatedUser;
   }
 }
