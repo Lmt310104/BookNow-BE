@@ -48,7 +48,7 @@ model Books {
   category_id        String
   price              Decimal
   stock_quantity     Int
-  rating             Decimal
+  rating             Decimal        @default(0)
   description        String         @db.Text
   entry_price        Decimal
   final_price        Decimal?
@@ -149,9 +149,11 @@ enum OrderStatus {
   PROCESSING
   DELIVERED
   CANCELLED
+  SUCCESS
 }
 
 enum BookStatus {
+  INACTIVE
   INSTOCK
   OUTOFSTOCK
   LOWSTOCK

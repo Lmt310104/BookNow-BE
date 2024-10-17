@@ -1,4 +1,12 @@
-import { Body, Controller, Get, Post } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Delete,
+  Get,
+  Param,
+  ParseUUIDPipe,
+  Post,
+} from '@nestjs/common';
 import { Carts } from '@prisma/client';
 import {
   TUserSession,
@@ -13,9 +21,10 @@ import { GetCartDto } from './dto/get-cart.dto';
 import { PageResponseDto } from 'src/utils/page-response.dto';
 import { PageResponseMetaDto } from 'src/utils/page-response-meta.dto';
 import { AddToCartDto } from './dto/add-to-cart.dto';
+import { UpdateCartDto } from './dto/update-cart.dto';
 
 const {
-  CARTS: { BASE, CREATE, GET_ALL, ADD_TO_CART },
+  CARTS: { BASE, CREATE, GET_ALL, ADD_TO_CART, REMOVE_FROM_CART, UPDATE_CART },
 } = END_POINTS;
 
 @Controller(BASE)
@@ -53,5 +62,21 @@ export class CartController {
     const cart = await this.cartService.addToCart(session, addToCartDto);
     const message = 'Add to cart successfully';
     return new StandardResponse(cart, message, HttpStatusCode.CREATED);
+  }
+  @Post(UPDATE_CART)
+  async updateCart(
+    @UserSession() session: TUserSession,
+    @Body() dto: UpdateCartDto,
+  ) {
+    const cart = await this.cartService.updateCartItem(session, dto);
+    const message = 'Update cart successfully';
+    return new StandardResponse(cart, message, HttpStatusCode.OK);
+  }
+  @Delete(REMOVE_FROM_CART)
+  async removeFromCart(
+    @UserSession() session: TUserSession,
+    @Param('bookId', ParseUUIDPipe) id: string,
+  ) {
+    await this.cartService.deleteCartItem(session, id);
   }
 }

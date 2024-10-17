@@ -1,4 +1,4 @@
-import { BadRequestException, Body, Injectable } from '@nestjs/common';
+import { BadRequestException, Injectable } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateBookDto } from './dto/create-book.dto';
 import { Books } from '@prisma/client';
@@ -7,7 +7,8 @@ import { UpdateBookDto } from './dto/update-book.dto';
 import { uploadFilesFromFirebase } from 'src/services/files/upload';
 import { EUploadFolder } from 'src/utils/constants';
 import { deleteFilesFromFirebase } from 'src/services/files/delete';
-import { title } from 'process';
+import { PriceFilterDto } from './dto/filter-by-price.dto';
+import { RatingFilterDto } from './dto/filter-by-rating.dto';
 
 @Injectable()
 export class BooksService {
@@ -146,5 +147,24 @@ export class BooksService {
       throw new BadRequestException('Book not found');
     }
     return book;
+  }
+  async searchByPrice(dto: PriceFilterDto) {
+    const books = await this.prismaService.books.findMany({
+      where: {
+        price: {
+          gte: dto.minPrice,
+          lte: dto.maxPrice,
+        },
+      },
+    });
+    return books;
+  }
+  async searchByRating(dto: RatingFilterDto) {
+    const books = await this.prismaService.books.findMany({
+      where: {
+        rating: dto.rating,
+      },
+    });
+    return books;
   }
 }
