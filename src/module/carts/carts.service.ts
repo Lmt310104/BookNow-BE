@@ -3,6 +3,7 @@ import { PrismaService } from '../prisma/prisma.service';
 import { TUserSession } from 'src/common/decorators/user-session.decorator';
 import { GetCartDto } from './dto/get-cart.dto';
 import { AddToCartDto } from './dto/add-to-cart.dto';
+import { UpdateCartDto } from './dto/update-cart.dto';
 
 @Injectable()
 export class CartsService {
@@ -111,5 +112,54 @@ export class CartsService {
       console.log('Error:', error);
       throw new Error('Failed to delete cart item');
     }
+  }
+  async updateCartItem(session: TUserSession, dto: UpdateCartDto) {
+    const { bookId, quantity } = dto;
+    const book = await this.prisma.books.findUnique({
+      where: {
+        id: bookId,
+      },
+    });
+    if (!book) {
+      throw new BadRequestException('Book not found');
+    }
+    if (book.stock_quantity < quantity) {
+      throw new BadRequestException('Stock quantity is not enough');
+    }
+    const cart = await this.prisma.carts.findFirst({
+      where: { user_id: session.id },
+    });
+    const cartItem = await this.prisma.cartItems.findFirst({
+      where: {
+        book_id: bookId,
+        cart_id: cart.id,
+      },
+    });
+    if (!cartItem) {
+      throw new BadRequestException('Cart item not found');
+    }
+    return await this.prisma.$transaction(async (tx) => {
+      await tx.books.update({
+        where: {
+          id: bookId,
+        },
+        data: {
+          stock_quantity: book.stock_quantity - quantity + cartItem.quantity,
+        },
+      });
+      await tx.cartItems.update({
+        where: {
+          id: cartItem.id,
+        },
+        data: {
+          quantity,
+        },
+      });
+      const updateCart = await tx.carts.findUnique({
+        where: { user_id: session.id },
+        include: { CartItems: { include: { book: true } } },
+      });
+      return updateCart;
+    });
   }
 }

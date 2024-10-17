@@ -75,9 +75,10 @@ export const END_POINTS = {
     BASE: '/carts',
     GET_ALL: '/get-all',
     CREATE: '/create',
-    UPDATE: '/update',
+    UPDATE_CART: '/update',
     GET_ONE: '/:id',
     ADD_TO_CART: '/add-to-cart',
+    REMOVE_FROM_CART: '/remove-from-cart',
   },
   CART_ITEM: {
     BASE: '/cart-items',
@@ -145,7 +146,7 @@ export const ORDER_STATUS = {
   DELIVERED: 'DELIVERED',
   CANCELLED: 'CANCELLED',
   SUCCESS: 'SUCCESS',
-}
+};
 
 export const CURRENCY = 'VND';
 
