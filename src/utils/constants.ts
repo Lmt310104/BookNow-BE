@@ -103,6 +103,12 @@ export const END_POINTS = {
     UPDATE: '/update',
     GET_ONE: '/:id',
   },
+  DASHBOARD: {
+    BASE: '/dashboard',
+    GET_BOOK_REPORT: '/get-book-report',
+    GET_ORDER_REPORT: '/get-order-report',
+    GET_ORDER_SHPPING_RATE: '/get-order-rate',
+  },
 };
 
 export enum ROLE {
@@ -112,6 +118,8 @@ export enum ROLE {
 export enum BOOKSTATUS {
   INSTOCK = 'INSTOCK',
   OUTOFSTOCK = 'OUTOFSTOCK',
+  INACTIVE = 'INACTIVE',
+  LOWSTOCK = 'LOWSTOCK',
 }
 
 export enum ORDER {
@@ -130,6 +138,15 @@ export enum DateFormat {
   DATE_TIME = 'DD-MM-YYYY HH:mm:ss',
   TIME_DATE = 'HH:mm:ss DD-MM-YYYY',
 }
+
+export const ORDER_STATUS = {
+  PENDING: 'PENDING',
+  PROCESSING: 'PROCESSING',
+  DELIVERED: 'DELIVERED',
+  CANCELLED: 'CANCELLED',
+  SUCCESS: 'SUCCESS',
+}
+
 export const CURRENCY = 'VND';
 
 export const JWT_ACCESS_STRATEGY = 'jwt-access-strategy';

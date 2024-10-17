@@ -149,9 +149,11 @@ enum OrderStatus {
   PROCESSING
   DELIVERED
   CANCELLED
+  SUCCESS
 }
 
 enum BookStatus {
+  INACTIVE
   INSTOCK
   OUTOFSTOCK
   LOWSTOCK
