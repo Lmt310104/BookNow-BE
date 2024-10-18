@@ -5,6 +5,7 @@ import {
   Param,
   ParseUUIDPipe,
   Post,
+  Query,
 } from '@nestjs/common';
 import { ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { DOCUMENTATION, END_POINTS } from 'src/utils/constants';
@@ -16,6 +17,9 @@ import {
   UserSession,
 } from 'src/common/decorators/user-session.decorator';
 import { UpdateUserProfileDto } from './dto/update-user-profile.dto';
+import { GetAllUserDto } from './dto/get-all-user.dto';
+import { PageResponseMetaDto } from 'src/utils/page-response-meta.dto';
+import { PageResponseDto } from 'src/utils/page-response.dto';
 
 const {
   USERS: { BASE, GET_ALL, CREATE, GET_ONE, UPDATE, ENABLE, DISABLE },
@@ -26,9 +30,13 @@ const {
 export class UsersController {
   constructor(private readonly userService: UsersService) {}
   @Get(GET_ALL)
-  @Public()
-  async getAllUsers() {
-    return await this.userService.getAllUsers();
+  async getAllUsers(@Query() query: GetAllUserDto) {
+    const users = await this.userService.getAllUsers(query);
+    const meta = new PageResponseMetaDto({
+      pageOptionsDto: query,
+      itemCount: users.length,
+    });
+    return new PageResponseDto(users, meta);
   }
   @Post(CREATE)
   async createNewUser(@Body() body: CreateUserDto) {
