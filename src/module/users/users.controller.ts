@@ -11,7 +11,6 @@ import { ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { DOCUMENTATION, END_POINTS } from 'src/utils/constants';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UsersService } from './users.service';
-import { Public } from 'src/common/decorators/public.decorator';
 import {
   TUserSession,
   UserSession,
