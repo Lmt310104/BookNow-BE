@@ -11,6 +11,7 @@ export const DOCUMENTATION = {
     CATEGORIES: 'CATEGORIES',
     CARTS: 'CART',
     CART_ITEMS: 'CART_ITEMS',
+    COMMENT: 'COMMENT',
   },
 };
 
@@ -115,6 +116,11 @@ export const END_POINTS = {
     GET_BOOK_REPORT: '/get-book-report',
     GET_ORDER_REPORT: '/get-order-report',
     GET_ORDER_SHPPING_RATE: '/get-order-rate',
+  },
+  COMMENT: {
+    BASE: '/comments',
+    GET_ALL: '/get-all',
+    GET_ONE: '/:id',
   },
 };
 
