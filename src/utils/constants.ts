@@ -41,10 +41,9 @@ export const END_POINTS = {
     GET_ALL: '/get-all',
     CREATE: '/create',
     UPDATE: '/update',
-    DISABLE: '/disable',
-    ENABLE: '/enable',
+    DISABLE: '/:id/disable',
+    ENABLE: '/:id/enable',
     GET_ONE: '/:id',
-    UPDATE_STATUS: '/status/update',
   },
   BOOKS: {
     BASE: '/books',
@@ -83,6 +82,7 @@ export const END_POINTS = {
     GET_ONE: '/:id',
     ADD_TO_CART: '/add-to-cart',
     REMOVE_FROM_CART: '/remove-from-cart',
+    CHECKOUT_CART: '/checkout',
   },
   CART_ITEM: {
     BASE: '/cart-items',
