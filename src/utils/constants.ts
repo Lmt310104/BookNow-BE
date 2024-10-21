@@ -117,10 +117,11 @@ export const END_POINTS = {
     GET_ORDER_REPORT: '/get-order-report',
     GET_ORDER_SHPPING_RATE: '/get-order-rate',
   },
-  COMMENT: {
-    BASE: '/comments',
+  REVIEW: {
+    BASE: '/reviews',
     GET_ALL: '/get-all',
     GET_ONE: '/:id',
+    REPLY: '/:id/reply',
   },
 };
 
