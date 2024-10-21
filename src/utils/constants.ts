@@ -11,6 +11,7 @@ export const DOCUMENTATION = {
     CATEGORIES: 'CATEGORIES',
     CARTS: 'CART',
     CART_ITEMS: 'CART_ITEMS',
+    COMMENT: 'COMMENT',
   },
 };
 
@@ -39,8 +40,11 @@ export const END_POINTS = {
     BASE: '/users',
     GET_ALL: '/get-all',
     CREATE: '/create',
+    UPDATE: '/update',
     DISABLE: '/disable',
+    ENABLE: '/enable',
     GET_ONE: '/:id',
+    UPDATE_STATUS: '/status/update',
   },
   BOOKS: {
     BASE: '/books',
@@ -52,6 +56,8 @@ export const END_POINTS = {
     FILTER: '/filter',
     SORT: '/sort',
     COMMENT: '/:id/comment',
+    SEARCH_BY_PRICE: '/search/price',
+    SEARCH_BY_RATING: '/search/rating',
   },
   AUTHORS: {
     BASE: '/authors',
@@ -73,9 +79,10 @@ export const END_POINTS = {
     BASE: '/carts',
     GET_ALL: '/get-all',
     CREATE: '/create',
-    UPDATE: '/update',
+    UPDATE_CART: '/update',
     GET_ONE: '/:id',
     ADD_TO_CART: '/add-to-cart',
+    REMOVE_FROM_CART: '/remove-from-cart',
   },
   CART_ITEM: {
     BASE: '/cart-items',
@@ -93,6 +100,9 @@ export const END_POINTS = {
     UPDATE_STATUS: '/status/update',
     GET_ONE: '/:id',
     GET_DETAILS: '/get-details',
+    CANCEL_ORDER: '/:id/cancel-order',
+    ORDER_HISTORY: '/history',
+    ORDER_STATE: '/:id/state',
   },
   ORDER_DETAILS: {
     BASE: '/order-details',
@@ -100,6 +110,18 @@ export const END_POINTS = {
     CREATE: '/create',
     UPDATE: '/update',
     GET_ONE: '/:id',
+  },
+  DASHBOARD: {
+    BASE: '/dashboard',
+    GET_BOOK_REPORT: '/get-book-report',
+    GET_ORDER_REPORT: '/get-order-report',
+    GET_ORDER_SHPPING_RATE: '/get-order-rate',
+  },
+  REVIEW: {
+    BASE: '/reviews',
+    GET_ALL: '/get-all',
+    GET_ONE: '/:id',
+    REPLY: '/:id/reply',
   },
 };
 
@@ -110,6 +132,8 @@ export enum ROLE {
 export enum BOOKSTATUS {
   INSTOCK = 'INSTOCK',
   OUTOFSTOCK = 'OUTOFSTOCK',
+  INACTIVE = 'INACTIVE',
+  LOWSTOCK = 'LOWSTOCK',
 }
 
 export enum ORDER {
@@ -128,6 +152,15 @@ export enum DateFormat {
   DATE_TIME = 'DD-MM-YYYY HH:mm:ss',
   TIME_DATE = 'HH:mm:ss DD-MM-YYYY',
 }
+
+export const ORDER_STATUS = {
+  PENDING: 'PENDING',
+  PROCESSING: 'PROCESSING',
+  DELIVERED: 'DELIVERED',
+  CANCELLED: 'CANCELLED',
+  SUCCESS: 'SUCCESS',
+};
+
 export const CURRENCY = 'VND';
 
 export const JWT_ACCESS_STRATEGY = 'jwt-access-strategy';

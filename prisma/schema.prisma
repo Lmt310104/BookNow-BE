@@ -20,6 +20,8 @@ model Users {
   password            String
   full_name           String
   phone               String?         @unique @db.VarChar(20)
+  birthday            DateTime
+  gender              Gender
   role                Role
   verification        Vertifications?
   code_reset_password String?         @db.VarChar(6)
@@ -27,6 +29,7 @@ model Users {
   is_disable          Boolean         @default(false)
   created_at          DateTime        @default(now())
   updated_at          DateTime        @updatedAt
+  Addresses           Address[]
   Orders              Orders[]
   Carts               Carts?
   Reviews             Reviews[]
@@ -48,7 +51,7 @@ model Books {
   category_id        String
   price              Decimal
   stock_quantity     Int
-  rating             Decimal
+  rating             Decimal        @default(0)
   description        String         @db.Text
   entry_price        Decimal
   final_price        Decimal?
@@ -128,15 +131,33 @@ model CartItems {
 }
 
 model Reviews {
-  id          Int      @id @default(autoincrement())
-  user_id     String
-  user        Users    @relation(fields: [user_id], references: [id])
-  book_id     String
-  book        Books    @relation(fields: [book_id], references: [id])
-  title       String
-  rating      Decimal
-  description String
-  created_at  DateTime @default(now())
+  id              Int           @id @default(autoincrement())
+  user_id         String
+  user            Users         @relation(fields: [user_id], references: [id])
+  book_id         String
+  book            Books         @relation(fields: [book_id], references: [id])
+  title           String
+  rating          Decimal
+  description     String
+  reply_review_id Int?
+  created_at      DateTime      @default(now())
+  ReplyReviews    ReplyReviews?
+}
+
+model ReplyReviews {
+  id         Int      @id @default(autoincrement())
+  review_id  Int      @unique
+  review     Reviews  @relation(fields: [review_id], references: [id])
+  reply      String
+  created_at DateTime @default(now())
+}
+
+model Address {
+  id      Int    @id @default(autoincrement())
+  user_id String
+  lon     Float
+  lat     Float
+  Users   Users? @relation(fields: [user_id], references: [id])
 }
 
 enum Role {
@@ -144,14 +165,21 @@ enum Role {
   ADMIN
 }
 
+enum Gender {
+  MALE
+  FEMALE
+}
+
 enum OrderStatus {
   PENDING
   PROCESSING
   DELIVERED
   CANCELLED
+  SUCCESS
 }
 
 enum BookStatus {
+  INACTIVE
   INSTOCK
   OUTOFSTOCK
   LOWSTOCK

@@ -1,4 +1,4 @@
-import { PrismaClient, Role } from '@prisma/client';
+import { Gender, PrismaClient, Role } from '@prisma/client';
 import * as bcrypt from 'bcrypt';
 const prisma = new PrismaClient();
 
@@ -23,6 +23,14 @@ async function main() {
     data: transform_author,
     skipDuplicates: true,
   });
+  const author_ids = (await prisma.authors.findMany({})).map(
+    (author) => author.id,
+  );
+  console.log(author_ids);
+  const category_ids = (await prisma.category.findMany({})).map(
+    (category) => category.id,
+  );
+  console.log(category_ids);
   await prisma.category.createMany({
     data: category_data,
   });
@@ -36,6 +44,8 @@ async function main() {
       role: 'ADMIN',
       phone: '0896423104',
       full_name: 'Admin',
+      birthday: new Date('31-01-2004'),
+      gender: Gender.MALE,
       verification: {
         create: {
           is_active: true,
@@ -51,6 +61,8 @@ async function main() {
       role: 'CUSTOMER',
       phone: '0763769185',
       full_name: 'Customer',
+      birthday: new Date('31-01-2004'),
+      gender: Gender.MALE,
       verification: {
         create: {
           is_active: true,
@@ -67,12 +79,43 @@ async function main() {
         role: Role.CUSTOMER,
         phone: faker.phone.number({ style: 'national' }),
         full_name: faker.internet.userName(),
+        birthday: new Date('31-01-2004'),
+        gender: Gender.MALE,
         verification: {
           create: {
             is_active: true,
             verified_code: hashedPasswordTestUser,
           },
         },
+      },
+    });
+  }
+  for (let i = 0; i < 1000; i++) {
+    await prisma.books.create({
+      data: {
+        title: faker.lorem.words(3),
+        description: faker.lorem.sentence(),
+        entry_price: faker.number.int({ min: 800000, max: 850000 }),
+        price: faker.number.int({ min: 900000, max: 1000000 }),
+        stock_quantity: faker.number.int({ min: 10000, max: 1000000 }),
+        author: {
+          connect: {
+            id: author_ids[
+              faker.number.int({ min: 0, max: author_ids.length - 1 })
+            ],
+          },
+        },
+        Category: {
+          connect: {
+            id: category_ids[
+              faker.number.int({ min: 0, max: category_ids.length - 1 })
+            ],
+          },
+        },
+        image_url: [
+          'https://img.freepik.com/free-vector/hand-drawn-flat-design-stack-books-illustration_23-2149341898.jpg?size=338&ext=jpg',
+          'https://c8.alamy.com/comp/2NFNTAR/stack-of-old-vintage-books-hand-drawn-color-watercolor-illustration-learning-2NFNTAR.jpg',
+        ],
       },
     });
   }

@@ -54,11 +54,11 @@ export class CategoryController {
     description: 'Sorting order',
   })
   async getAll(
-    @Query() pageOptionsDto: PageOptionsDto,
+    @Query() query: PageOptionsDto,
   ): Promise<PageResponseDto<Category>> {
-    const categories: Category[] = await this.categoryService.getAll();
+    const categories: Category[] = await this.categoryService.getAll(query);
     const meta = new PageResponseMetaDto({
-      pageOptionsDto,
+      pageOptionsDto: query,
       itemCount: categories.length,
     });
     return new PageResponseDto(categories, meta);

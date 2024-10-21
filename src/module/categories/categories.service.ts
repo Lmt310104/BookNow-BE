@@ -2,6 +2,7 @@ import { BadRequestException, Injectable } from '@nestjs/common';
 import { CreateCategoryDto } from './dtos/create-category.dto';
 import { PrismaService } from '../prisma/prisma.service';
 import { UpdateCategoryDto } from './dtos/update-category.dto';
+import { PageOptionsDto } from 'src/utils/page-options-dto';
 
 @Injectable()
 export class CategoryService {
@@ -34,9 +35,12 @@ export class CategoryService {
     });
     return category;
   }
-  async getAll() {
+  async getAll(query: PageOptionsDto) {
     const categories = await this.prisma.category.findMany({
       where: { is_disable: false },
+      skip: query.skip,
+      take: query.take,
+      orderBy: { [query.sortBy]: query.order}
     });
     return categories;
   }

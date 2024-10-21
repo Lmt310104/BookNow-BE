@@ -1,12 +1,13 @@
 import { BadRequestException } from '@nestjs/common';
-import { Role } from '@prisma/client';
+import { Gender, Role } from '@prisma/client';
 import { PrismaService } from 'src/module/prisma/prisma.service';
-import { ROLE } from 'src/utils/constants';
 
 type TCreateUserWithEmail = {
   email: string;
   hashedPassword: string;
   fullName: string;
+  birthday: Date;
+  gender: Gender;
 };
 type TCreateUserWithPhone = {
   phone: string;
@@ -18,13 +19,15 @@ export const createUserWithEmail = async (
   data: TCreateUserWithEmail,
   prismaService: PrismaService,
 ) => {
-  const { email, fullName, hashedPassword } = data;
+  const { email, fullName, hashedPassword, birthday, gender } = data;
   const new_user = await prismaService.users.create({
     data: {
       email: email,
       full_name: fullName,
       password: hashedPassword,
       role: Role.CUSTOMER,
+      birthday: birthday,
+      gender: gender,
     },
   });
   const user_verification = await prismaService.vertifications.findFirst({

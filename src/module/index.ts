@@ -4,6 +4,7 @@ import { BooksModule } from './books/books.module';
 import { CartItemsModule } from './cart-items/cart-items.module';
 import { CartsModule } from './carts/carts.module';
 import { CategoriesModule } from './categories/categories.module';
+import { DashboardModule } from './dashboard/dashboard.module';
 import { EmailModule } from './email/email.module';
 import { OrdersModule } from './orders/orders.module';
 import { UsersModule } from './users/users.module';
@@ -17,6 +18,7 @@ const Modules = [
   CartsModule,
   CartItemsModule,
   OrdersModule,
+  DashboardModule,
 ];
 
 export default Modules;

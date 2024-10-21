@@ -3,10 +3,16 @@ import { PrismaService } from '../prisma/prisma.service';
 import { TUserSession } from 'src/common/decorators/user-session.decorator';
 import { GetCartDto } from './dto/get-cart.dto';
 import { AddToCartDto } from './dto/add-to-cart.dto';
+import { UpdateCartDto } from './dto/update-cart.dto';
+import { CheckOutDto } from './dto/check-out.dto';
+import { OrderService } from '../orders/orders.service';
 
 @Injectable()
 export class CartsService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly orderService: OrderService,
+  ) {}
   async createCart(session: TUserSession) {
     const existingCart = await this.prisma.carts.findUnique({
       where: { user_id: session.id },
@@ -110,6 +116,103 @@ export class CartsService {
     } catch (error) {
       console.log('Error:', error);
       throw new Error('Failed to delete cart item');
+    }
+  }
+  async updateCartItem(session: TUserSession, dto: UpdateCartDto) {
+    const { bookId, quantity } = dto;
+    const book = await this.prisma.books.findUnique({
+      where: {
+        id: bookId,
+      },
+    });
+    if (!book) {
+      throw new BadRequestException('Book not found');
+    }
+    if (book.stock_quantity < quantity) {
+      throw new BadRequestException('Stock quantity is not enough');
+    }
+    const cart = await this.prisma.carts.findFirst({
+      where: { user_id: session.id },
+    });
+    const cartItem = await this.prisma.cartItems.findFirst({
+      where: {
+        book_id: bookId,
+        cart_id: cart.id,
+      },
+    });
+    if (!cartItem) {
+      throw new BadRequestException('Cart item not found');
+    }
+    return await this.prisma.$transaction(async (tx) => {
+      await tx.books.update({
+        where: {
+          id: bookId,
+        },
+        data: {
+          stock_quantity: book.stock_quantity - quantity + cartItem.quantity,
+        },
+      });
+      await tx.cartItems.update({
+        where: {
+          id: cartItem.id,
+        },
+        data: {
+          quantity,
+        },
+      });
+      const updateCart = await tx.carts.findUnique({
+        where: { user_id: session.id },
+        include: { CartItems: { include: { book: true } } },
+      });
+      return updateCart;
+    });
+  }
+  async clearCart(session: TUserSession) {
+    const cart = await this.prisma.carts.findFirst({
+      where: { user_id: session.id },
+    });
+    if (!cart) {
+      throw new BadRequestException('Cart not found');
+    }
+    await this.prisma.cartItems.deleteMany({
+      where: {
+        cart_id: cart.id,
+      },
+    });
+    return this.prisma.carts.findFirst({
+      where: { user_id: session.id },
+      include: { CartItems: { include: { book: true } } },
+    });
+  }
+  async checkoutCart(session: TUserSession, dto: CheckOutDto) {
+    const cart = await this.prisma.carts.findFirst({
+      where: { user_id: session.id },
+    });
+    if (!cart) {
+      throw new BadRequestException('Cart not found');
+    }
+    const cartItems = await this.prisma.cartItems.findMany({
+      where: { cart_id: cart.id },
+      include: { book: true },
+    });
+    if (cartItems.length === 0) {
+      throw new BadRequestException('Cart is empty');
+    }
+    try {
+      const order = await this.orderService.createOrder(session, {
+        items: cartItems.map((item) => ({
+          bookId: item.book.id,
+          quantity: item.quantity,
+        })),
+        fullName: dto.fullName,
+        phoneNumber: dto.phone,
+        address: dto.shippingAddress,
+      });
+      await this.clearCart(session);
+      return order;
+    } catch (error) {
+      console.log('Error:', error);
+      throw new Error('Failed to checkout cart');
     }
   }
 }

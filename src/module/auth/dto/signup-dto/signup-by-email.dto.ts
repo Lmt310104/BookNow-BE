@@ -1,5 +1,6 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsEmail, IsNotEmpty } from 'class-validator';
+import { Gender } from '@prisma/client';
+import { IsEmail, IsEnum, IsNotEmpty } from 'class-validator';
 
 export class SignUpByEmailDto {
   @ApiProperty({
@@ -30,4 +31,7 @@ export class SignUpByEmailDto {
   })
   @IsNotEmpty()
   fullName: string;
+  @IsEnum(Gender)
+  gender: Gender;
+  birthday: Date;
 }
