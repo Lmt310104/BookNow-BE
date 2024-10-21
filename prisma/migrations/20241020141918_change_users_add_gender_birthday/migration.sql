@@ -1,0 +1,3 @@
+-- AlterTable
+ALTER TABLE "Users" ALTER COLUMN "birthday" DROP DEFAULT,
+ALTER COLUMN "gender" DROP DEFAULT;

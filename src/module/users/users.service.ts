@@ -24,6 +24,8 @@ export class UsersService {
         password: hashPassword,
         full_name: body.fullName,
         role: body.role,
+        birthday: body.birthday,
+        gender: body.gender,
       },
     });
     return newUser;

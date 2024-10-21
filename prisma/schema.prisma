@@ -20,6 +20,8 @@ model Users {
   password            String
   full_name           String
   phone               String?         @unique @db.VarChar(20)
+  birthday            DateTime
+  gender              Gender
   role                Role
   verification        Vertifications?
   code_reset_password String?         @db.VarChar(6)
@@ -142,6 +144,11 @@ model Reviews {
 enum Role {
   CUSTOMER
   ADMIN
+}
+
+enum Gender {
+  MALE
+  FEMALE
 }
 
 enum OrderStatus {

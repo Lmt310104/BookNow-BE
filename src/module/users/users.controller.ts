@@ -41,10 +41,6 @@ export class UsersController {
   async createNewUser(@Body() body: CreateUserDto) {
     return await this.userService.createNewUser(body);
   }
-  @Get(GET_ALL)
-  async findAllUser() {
-    return await this.userService.findAll();
-  }
   @ApiOperation({
     summary: 'Get a user',
     description: 'Allowed roles: ADMIN/CUSTOMER',
