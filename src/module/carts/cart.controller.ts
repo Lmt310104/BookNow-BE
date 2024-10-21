@@ -22,6 +22,7 @@ import { PageResponseDto } from 'src/utils/page-response.dto';
 import { PageResponseMetaDto } from 'src/utils/page-response-meta.dto';
 import { AddToCartDto } from './dto/add-to-cart.dto';
 import { UpdateCartDto } from './dto/update-cart.dto';
+import { CheckOutDto } from './dto/check-out.dto';
 
 const {
   CARTS: { BASE, CREATE, GET_ALL, ADD_TO_CART, REMOVE_FROM_CART, UPDATE_CART },
@@ -77,6 +78,14 @@ export class CartController {
     @UserSession() session: TUserSession,
     @Param('bookId', ParseUUIDPipe) id: string,
   ) {
-    await this.cartService.deleteCartItem(session, id);
+    const result = await this.cartService.deleteCartItem(session, id);
+    return result;
+  }
+  async checkoutCart(
+    @UserSession() session: TUserSession,
+    @Body() dto: CheckOutDto,
+  ) {
+    const result = await this.cartService.checkoutCart(session, dto);
+    return result;
   }
 }

@@ -1,5 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { Role } from '@prisma/client';
+import { Gender, Role } from '@prisma/client';
 import {
   IsEmail,
   IsEnum,
@@ -25,4 +25,7 @@ export class CreateUserDto {
   fullName: string;
   @IsEnum(Role)
   role: Role;
+  @IsEnum(Gender)
+  gender: Gender;
+  birthday: Date;
 }

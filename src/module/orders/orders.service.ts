@@ -8,6 +8,7 @@ import { OrderPageOptionsDto } from './dto/find-all-orders.dto';
 import { TUserSession } from 'src/common/decorators/user-session.decorator';
 import { CreateOrderDto } from './dto/create-order.dto';
 import { CreateReviewDto } from './dto/create-review.dto';
+import { ORDER_STATUS } from 'src/utils/constants';
 
 @Injectable()
 export class OrderService {
@@ -165,4 +166,29 @@ export class OrderService {
       });
     }
   }
+  async cancelOrder(id: number) {
+    const order = await this.prisma.orders.findUnique({
+      where: { id },
+    });
+    if (!order) {
+      throw new NotFoundException('Order not found');
+    }
+    if (order.status === ORDER_STATUS.CANCELLED) {
+      throw new BadRequestException('Order already cancelled');
+    }
+  }
+  async getOrderHistory(session: TUserSession) {
+    const orders = await this.prisma.orders.findMany({
+      where: { user_id: session.id },
+      include: {
+        OrderDetails: {
+          include: {
+            book: true,
+          },
+        },
+      },
+    });
+    return orders;
+  }
+  async getOrderState(id: number) {}
 }

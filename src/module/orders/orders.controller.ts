@@ -5,6 +5,7 @@ import {
   Param,
   ParseIntPipe,
   ParseUUIDPipe,
+  Patch,
   Post,
   Query,
 } from '@nestjs/common';
@@ -25,7 +26,17 @@ import { CreateOrderDto } from './dto/create-order.dto';
 import { CreateReviewDto } from './dto/create-review.dto';
 
 const {
-  ORDER: { BASE, GET_FULL_LIST, GET_ALL, CREATE, UPDATE_STATUS, GET_ONE },
+  ORDER: {
+    BASE,
+    GET_FULL_LIST,
+    GET_ALL,
+    CREATE,
+    UPDATE_STATUS,
+    GET_ONE,
+    CANCEL_ORDER,
+    ORDER_HISTORY,
+    ORDER_STATE,
+  },
 } = END_POINTS;
 
 @Controller(BASE)
@@ -93,5 +104,23 @@ export class OrdersController {
     );
     const message = 'Comment created successfully';
     return new StandardResponse(review, message, HttpStatusCode.CREATED);
+  }
+  @Patch(CANCEL_ORDER)
+  async cancelOrder(@Param('id', ParseIntPipe) id: number) {
+    const order = await this.orderService.cancelOrder(id);
+    const message = 'Order cancelled successfully';
+    return new StandardResponse(order, message, HttpStatusCode.OK);
+  }
+  @Get(ORDER_HISTORY)
+  async getOrderHistory(@UserSession() session: TUserSession) {
+    const orders = await this.orderService.getOrderHistory(session);
+    const message = 'Order history retrieved successfully';
+    return new StandardResponse(orders, message, HttpStatusCode.OK);
+  }
+  @Get(ORDER_STATE)
+  async getOrderState(@Param('id', ParseIntPipe) id: number) {
+    const order = await this.orderService.getOrderState(id);
+    const message = 'Order state retrieved successfully';
+    return new StandardResponse(order, message, HttpStatusCode.OK);
   }
 }
