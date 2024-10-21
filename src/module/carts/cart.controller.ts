@@ -25,7 +25,15 @@ import { UpdateCartDto } from './dto/update-cart.dto';
 import { CheckOutDto } from './dto/check-out.dto';
 
 const {
-  CARTS: { BASE, CREATE, GET_ALL, ADD_TO_CART, REMOVE_FROM_CART, UPDATE_CART },
+  CARTS: {
+    BASE,
+    CREATE,
+    GET_ALL,
+    ADD_TO_CART,
+    REMOVE_FROM_CART,
+    UPDATE_CART,
+    CHECKOUT_CART,
+  },
 } = END_POINTS;
 
 @Controller(BASE)
@@ -81,6 +89,7 @@ export class CartController {
     const result = await this.cartService.deleteCartItem(session, id);
     return result;
   }
+  @Post(CHECKOUT_CART)
   async checkoutCart(
     @UserSession() session: TUserSession,
     @Body() dto: CheckOutDto,

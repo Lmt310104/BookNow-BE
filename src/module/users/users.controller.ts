@@ -2,8 +2,10 @@ import {
   Body,
   Controller,
   Get,
+  HttpStatus,
   Param,
   ParseUUIDPipe,
+  Patch,
   Post,
   Query,
 } from '@nestjs/common';
@@ -19,6 +21,7 @@ import { UpdateUserProfileDto } from './dto/update-user-profile.dto';
 import { GetAllUserDto } from './dto/get-all-user.dto';
 import { PageResponseMetaDto } from 'src/utils/page-response-meta.dto';
 import { PageResponseDto } from 'src/utils/page-response.dto';
+import { StandardResponse } from 'src/utils/response.dto';
 
 const {
   USERS: { BASE, GET_ALL, CREATE, GET_ONE, UPDATE, ENABLE, DISABLE },
@@ -39,7 +42,12 @@ export class UsersController {
   }
   @Post(CREATE)
   async createNewUser(@Body() body: CreateUserDto) {
-    return await this.userService.createNewUser(body);
+    const user = await this.userService.createNewUser(body);
+    return new StandardResponse(
+      user,
+      'Create user successfully',
+      HttpStatus.CREATED,
+    );
   }
   @ApiOperation({
     summary: 'Get a user',
@@ -55,21 +63,37 @@ export class UsersController {
   })
   @Get(GET_ONE)
   async findUserById(@Param('id', ParseUUIDPipe) id: string) {
-    return await this.userService.findUserById(id);
+    const user = await this.userService.findUserById(id);
+    return new StandardResponse(user, 'Get user successfully', HttpStatus.OK);
   }
-  @Post(UPDATE)
+  @Patch(UPDATE)
   async updateUserProfile(
     @UserSession() session: TUserSession,
     @Body() dto: UpdateUserProfileDto,
   ) {
-    return await this.userService.updateUserProfile(session, dto);
+    const user = await this.userService.updateUserProfile(session, dto);
+    return new StandardResponse(
+      user,
+      'Update user profile successfully',
+      HttpStatus.CREATED,
+    );
   }
   @Post(ENABLE)
   async enableUserById(@Param('id', ParseUUIDPipe) id: string) {
-    return await this.userService.enableUserById(id);
+    const user = await this.userService.enableUserById(id);
+    return new StandardResponse(
+      user,
+      'Enable user successfully',
+      HttpStatus.CREATED,
+    );
   }
   @Post(DISABLE)
   async disableUserById(@Param('id', ParseUUIDPipe) id: string) {
-    return await this.userService.disableUserById(id);
+    const user = await this.userService.disableUserById(id);
+    return new StandardResponse(
+      user,
+      'Disable user successfully',
+      HttpStatus.CREATED,
+    );
   }
 }

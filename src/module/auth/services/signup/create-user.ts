@@ -20,13 +20,14 @@ export const createUserWithEmail = async (
   prismaService: PrismaService,
 ) => {
   const { email, fullName, hashedPassword, birthday, gender } = data;
+  console.log(birthday);
   const new_user = await prismaService.users.create({
     data: {
       email: email,
       full_name: fullName,
       password: hashedPassword,
       role: Role.CUSTOMER,
-      birthday: birthday,
+      birthday: new Date(birthday),
       gender: gender,
     },
   });

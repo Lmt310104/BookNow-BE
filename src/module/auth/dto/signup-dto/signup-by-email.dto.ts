@@ -33,5 +33,6 @@ export class SignUpByEmailDto {
   fullName: string;
   @IsEnum(Gender)
   gender: Gender;
+  @IsNotEmpty()
   birthday: Date;
 }
