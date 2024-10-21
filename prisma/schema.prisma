@@ -139,7 +139,7 @@ model Reviews {
   title           String
   rating          Decimal
   description     String
-  reply_review_id Int
+  reply_review_id Int?
   created_at      DateTime      @default(now())
   ReplyReviews    ReplyReviews?
 }
