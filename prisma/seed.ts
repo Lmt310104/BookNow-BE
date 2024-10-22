@@ -98,13 +98,6 @@ async function main() {
         entry_price: faker.number.int({ min: 800000, max: 850000 }),
         price: faker.number.int({ min: 900000, max: 1000000 }),
         stock_quantity: faker.number.int({ min: 10000, max: 1000000 }),
-        author: {
-          connect: {
-            id: author_ids[
-              faker.number.int({ min: 0, max: author_ids.length - 1 })
-            ],
-          },
-        },
         Category: {
           connect: {
             id: category_ids[
@@ -112,6 +105,7 @@ async function main() {
             ],
           },
         },
+        author: 'mock author',
         image_url: [
           'https://img.freepik.com/free-vector/hand-drawn-flat-design-stack-books-illustration_23-2149341898.jpg?size=338&ext=jpg',
           'https://c8.alamy.com/comp/2NFNTAR/stack-of-old-vintage-books-hand-drawn-color-watercolor-illustration-learning-2NFNTAR.jpg',

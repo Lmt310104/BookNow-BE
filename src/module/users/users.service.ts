@@ -33,6 +33,13 @@ export class UsersService {
         },
       },
     });
+    if (newUser.role === 'CUSTOMER') {
+      await this.prisma.carts.create({
+        data: {
+          user_id: newUser.id,
+        },
+      });
+    }
     return newUser;
   }
   async getAllUsers(query: PageOptionsDto) {

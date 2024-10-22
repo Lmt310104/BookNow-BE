@@ -29,7 +29,7 @@ async function bootstrap() {
   app.setGlobalPrefix(END_POINTS.BASE);
   app.useGlobalPipes(new ValidationPipe({ transform: true, whitelist: true }));
   app.use(cookieParser());
-  app.useGlobalFilters(new HttpExceptionFilter());
+  // app.useGlobalFilters(new HttpExceptionFilter());
   InitFirebase();
   SwaggerModule.setup('docs', app, document);
   await app.listen(port || 8080);

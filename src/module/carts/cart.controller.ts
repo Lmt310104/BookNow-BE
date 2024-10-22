@@ -6,6 +6,8 @@ import {
   Param,
   ParseUUIDPipe,
   Post,
+  Put,
+  Query,
 } from '@nestjs/common';
 import { Carts } from '@prisma/client';
 import {
@@ -51,7 +53,7 @@ export class CartController {
   @Get(GET_ALL)
   async getAllCartItem(
     @UserSession() session: TUserSession,
-    getCartDto: GetCartDto,
+    @Query() getCartDto: GetCartDto,
   ) {
     const cartItems = await this.cartService.getAllCartItems(
       session,
@@ -72,7 +74,7 @@ export class CartController {
     const message = 'Add to cart successfully';
     return new StandardResponse(cart, message, HttpStatusCode.CREATED);
   }
-  @Post(UPDATE_CART)
+  @Put(UPDATE_CART)
   async updateCart(
     @UserSession() session: TUserSession,
     @Body() dto: UpdateCartDto,

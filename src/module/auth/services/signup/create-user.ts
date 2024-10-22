@@ -36,6 +36,11 @@ export const createUserWithEmail = async (
       user_id: new_user.id,
     },
   });
+  await prismaService.carts.create({
+    data: {
+      user_id: new_user.id,
+    },
+  });
   if (user_verification && !user_verification.is_active) {
     throw new BadRequestException(
       'We had sent a verification email to your email, please check your email to verify your account',
