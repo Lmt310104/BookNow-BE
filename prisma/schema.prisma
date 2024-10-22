@@ -46,12 +46,10 @@ model Vertifications {
 model Books {
   id                 String         @id @default(uuid())
   title              String         @db.VarChar(255)
-  author_id          String
-  author             Authors        @relation(fields: [author_id], references: [id])
+  author             String
   category_id        String
   price              Decimal
   stock_quantity     Int
-  rating             Decimal        @default(0)
   description        String         @db.Text
   entry_price        Decimal
   final_price        Decimal?
@@ -82,7 +80,6 @@ model Authors {
   name        String   @db.VarChar(255)
   birthday    DateTime
   description String
-  Books       Books[]
 
   @@unique([name, birthday, description])
 }

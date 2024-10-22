@@ -165,22 +165,25 @@ export class BooksController {
     const message = 'Get book successfully';
     return new StandardResponse(book, message, HttpStatusCode.OK);
   }
-  @Post(SEARCH_BY_PRICE)
-  async searchByPrice(@Body() dto: PriceFilterDto) {
-    const books = await this.bookService.searchByPrice(dto);
-    return new StandardResponse(
-      books,
-      'Search by price successfully',
-      HttpStatusCode.OK,
-    );
+  @Get(SEARCH_BY_PRICE)
+  async searchByPrice(@Body() dto: PriceFilterDto, @Query() query: BookQuery) {
+    const books = await this.bookService.searchByPrice(dto, query);
+    const meta = new PageResponseMetaDto({
+      pageOptionsDto: query,
+      itemCount: books.length,
+    });
+    return new PageResponseDto(books, meta);
   }
-  @Post(SEARCH_BY_RATING)
-  async searchByRating(@Body() dto: RatingFilterDto) {
-    const books = await this.bookService.searchByRating(dto);
-    return new StandardResponse(
-      books,
-      'Search by rating successfully',
-      HttpStatusCode.OK,
-    );
+  @Get(SEARCH_BY_RATING)
+  async searchByRating(
+    @Body() dto: RatingFilterDto,
+    @Query() query: BookQuery,
+  ) {
+    const books = await this.bookService.searchByRating(dto, query);
+    const meta = new PageResponseMetaDto({
+      pageOptionsDto: query,
+      itemCount: books.length,
+    });
+    return new PageResponseDto(books, meta);
   }
 }
