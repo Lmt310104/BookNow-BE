@@ -25,16 +25,10 @@ export class BooksService {
             contains: bookQuery.category,
           },
         },
-        author: {
-          name: {
-            contains: bookQuery.author,
-          },
-        },
         status: bookQuery.status,
       },
       include: {
         Category: true,
-        author: true,
       },
       orderBy: {
         [bookQuery.sortBy || 'created_at']: bookQuery.order || 'desc',
@@ -47,19 +41,13 @@ export class BooksService {
   async createBook(body: CreateBookDto, image?: Express.Multer.File) {
     const {
       title,
-      authorId,
+      author,
       categoryId,
       entryPrice,
       price,
       stockQuantity,
       description,
     } = body;
-    const author = await this.prismaService.authors.findFirst({
-      where: { id: authorId },
-    });
-    if (!author) {
-      throw new BadRequestException('Author not found');
-    }
     const category = await this.prismaService.category.findFirst({
       where: { id: categoryId },
     });
@@ -81,11 +69,10 @@ export class BooksService {
       const newBook = await this.prismaService.books.create({
         data: {
           title: title,
-          author: { connect: { id: authorId } },
+          author: author,
           Category: { connect: { id: categoryId } },
           entry_price: entryPrice,
           price,
-          rating: 5,
           stock_quantity: parseInt(stockQuantity, 10),
           description,
           image_url: imageUrls,
@@ -148,7 +135,7 @@ export class BooksService {
     }
     return book;
   }
-  async searchByPrice(dto: PriceFilterDto) {
+  async searchByPrice(dto: PriceFilterDto, query: BookQuery) {
     const books = await this.prismaService.books.findMany({
       where: {
         price: {
@@ -156,14 +143,23 @@ export class BooksService {
           lte: dto.maxPrice,
         },
       },
+      take: query.take,
+      skip: query.skip,
+      orderBy: { [query.sortBy]: query.order },
     });
     return books;
   }
-  async searchByRating(dto: RatingFilterDto) {
+  async searchByRating(dto: RatingFilterDto, query: BookQuery) {
     const books = await this.prismaService.books.findMany({
       where: {
-        rating: dto.rating,
+        avg_stars: {
+          gte: dto.minRating,
+          lte: dto.maxRating,
+        },
       },
+      take: query.take,
+      skip: query.skip,
+      orderBy: { [query.sortBy]: query.order },
     });
     return books;
   }

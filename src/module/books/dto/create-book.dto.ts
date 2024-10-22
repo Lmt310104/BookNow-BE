@@ -15,10 +15,10 @@ export class CreateBookDto {
   @ApiProperty({
     description: 'The author id of a book',
     required: true,
-    example: '123e4567-e89b-12d3-a456-426614174000',
+    example: 'Haruki Murakami',
   })
-  @IsNotEmpty({ message: 'authorId is required' })
-  authorId: string;
+  @IsNotEmpty({ message: 'author is required' })
+  author: string;
 
   @ApiProperty({
     description: 'The category id of a book',

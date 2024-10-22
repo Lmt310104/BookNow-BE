@@ -27,5 +27,6 @@ export class CreateUserDto {
   role: Role;
   @IsEnum(Gender)
   gender: Gender;
+  @IsNotEmpty()
   birthday: Date;
 }

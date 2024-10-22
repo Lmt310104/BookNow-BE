@@ -6,6 +6,8 @@ import {
   Param,
   ParseUUIDPipe,
   Post,
+  Put,
+  Query,
 } from '@nestjs/common';
 import { Carts } from '@prisma/client';
 import {
@@ -25,7 +27,15 @@ import { UpdateCartDto } from './dto/update-cart.dto';
 import { CheckOutDto } from './dto/check-out.dto';
 
 const {
-  CARTS: { BASE, CREATE, GET_ALL, ADD_TO_CART, REMOVE_FROM_CART, UPDATE_CART },
+  CARTS: {
+    BASE,
+    CREATE,
+    GET_ALL,
+    ADD_TO_CART,
+    REMOVE_FROM_CART,
+    UPDATE_CART,
+    CHECKOUT_CART,
+  },
 } = END_POINTS;
 
 @Controller(BASE)
@@ -43,7 +53,7 @@ export class CartController {
   @Get(GET_ALL)
   async getAllCartItem(
     @UserSession() session: TUserSession,
-    getCartDto: GetCartDto,
+    @Query() getCartDto: GetCartDto,
   ) {
     const cartItems = await this.cartService.getAllCartItems(
       session,
@@ -64,7 +74,7 @@ export class CartController {
     const message = 'Add to cart successfully';
     return new StandardResponse(cart, message, HttpStatusCode.CREATED);
   }
-  @Post(UPDATE_CART)
+  @Put(UPDATE_CART)
   async updateCart(
     @UserSession() session: TUserSession,
     @Body() dto: UpdateCartDto,
@@ -81,6 +91,7 @@ export class CartController {
     const result = await this.cartService.deleteCartItem(session, id);
     return result;
   }
+  @Post(CHECKOUT_CART)
   async checkoutCart(
     @UserSession() session: TUserSession,
     @Body() dto: CheckOutDto,

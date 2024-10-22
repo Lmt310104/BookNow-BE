@@ -10,9 +10,8 @@ import { PageOptionsDto } from 'src/utils/page-options-dto';
 @Injectable()
 export class UsersService {
   constructor(private readonly prisma: PrismaService) {}
-  async findAll() {}
   async createNewUser(body: CreateUserDto) {
-    if (isEmailExist(body.email)) {
+    if (await isEmailExist(body.email)) {
       throw new BadRequestException('Email already exists', {
         cause: new Error('User already exist'),
       });
@@ -24,10 +23,23 @@ export class UsersService {
         password: hashPassword,
         full_name: body.fullName,
         role: body.role,
-        birthday: body.birthday,
+        birthday: new Date(body.birthday),
         gender: body.gender,
+        verification: {
+          create: {
+            verified_code: hashPassword,
+            is_active: true,
+          },
+        },
       },
     });
+    if (newUser.role === 'CUSTOMER') {
+      await this.prisma.carts.create({
+        data: {
+          user_id: newUser.id,
+        },
+      });
+    }
     return newUser;
   }
   async getAllUsers(query: PageOptionsDto) {
@@ -62,10 +74,13 @@ export class UsersService {
         cause: new Error('User not found'),
       });
     }
+    const { birthday, fullName, ...data } = dto;
     const updatedUser = await this.prisma.users.update({
       where: { id: session.id },
       data: {
-        full_name: dto.fullName,
+        full_name: fullName,
+        birthday: birthday ? new Date(birthday) : user.birthday,
+        ...data,
       },
     });
     return updatedUser;

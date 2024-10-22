@@ -25,11 +25,11 @@ async function bootstrap() {
     credentials: true,
   });
   app.useGlobalGuards(new AuthenticationGuard(reflector));
-  // app.useGlobalGuards(new RefreshTokenGuard(reflector));
+  app.useGlobalGuards(new RefreshTokenGuard(reflector));
   app.setGlobalPrefix(END_POINTS.BASE);
   app.useGlobalPipes(new ValidationPipe({ transform: true, whitelist: true }));
   app.use(cookieParser());
-  app.useGlobalFilters(new HttpExceptionFilter());
+  // app.useGlobalFilters(new HttpExceptionFilter());
   InitFirebase();
   SwaggerModule.setup('docs', app, document);
   await app.listen(port || 8080);
