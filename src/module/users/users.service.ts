@@ -6,6 +6,7 @@ import { hashedPassword } from '../auth/services/signup/hash-password';
 import { TUserSession } from 'src/common/decorators/user-session.decorator';
 import { UpdateUserProfileDto } from './dto/update-user-profile.dto';
 import { PageOptionsDto } from 'src/utils/page-options-dto';
+import { ROLE } from 'src/utils/constants';
 
 @Injectable()
 export class UsersService {
@@ -44,11 +45,18 @@ export class UsersService {
   }
   async getAllUsers(query: PageOptionsDto) {
     const users = await this.prisma.users.findMany({
+      where: {
+        role: ROLE.CUSTOMER,
+      },
       skip: query.skip,
       take: query.take,
       orderBy: { [query.sortBy]: query.order },
     });
-    const itemCount = await this.prisma.users.count();
+    const itemCount = await this.prisma.users.count({
+      where: {
+        role: ROLE.CUSTOMER,
+      },
+    });
     return { users, itemCount };
   }
   async findUserById(id: string) {
