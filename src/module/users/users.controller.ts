@@ -33,10 +33,10 @@ export class UsersController {
   constructor(private readonly userService: UsersService) {}
   @Get(GET_ALL)
   async getAllUsers(@Query() query: GetAllUserDto) {
-    const users = await this.userService.getAllUsers(query);
+    const { users, itemCount } = await this.userService.getAllUsers(query);
     const meta = new PageResponseMetaDto({
       pageOptionsDto: query,
-      itemCount: users.length,
+      itemCount: itemCount,
     });
     return new PageResponseDto(users, meta);
   }
