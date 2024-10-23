@@ -47,22 +47,25 @@ export class OrdersController {
   async getListOrders(
     @Query() query: OrderPageOptionsDto,
   ): Promise<PageResponseDto<Orders>> {
-    const listOrders = await this.orderService.getListOrders(query);
+    const { orders, itemCount } = await this.orderService.getListOrders(query);
     const meta = new PageResponseMetaDto({
       pageOptionsDto: query,
-      itemCount: listOrders.length,
+      itemCount: itemCount,
     });
-    return new PageResponseDto(listOrders, meta);
+    return new PageResponseDto(orders, meta);
   }
   @Get(GET_ALL)
   async getAllOrders(
     @Query() query: OrderPageOptionsDto,
     @UserSession() session: TUserSession,
   ): Promise<PageResponseDto<Orders>> {
-    const orders = await this.orderService.getListOrdersByUser(query, session);
+    const { orders, itemCount } = await this.orderService.getListOrdersByUser(
+      query,
+      session,
+    );
     const meta = new PageResponseMetaDto({
       pageOptionsDto: query,
-      itemCount: orders.length,
+      itemCount: itemCount,
     });
     return new PageResponseDto(orders, meta);
   }

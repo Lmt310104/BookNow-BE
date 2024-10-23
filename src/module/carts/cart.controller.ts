@@ -55,13 +55,13 @@ export class CartController {
     @UserSession() session: TUserSession,
     @Query() getCartDto: GetCartDto,
   ) {
-    const cartItems = await this.cartService.getAllCartItems(
+    const { cartItems, itemCount } = await this.cartService.getAllCartItems(
       session,
       getCartDto,
     );
     const meta = new PageResponseMetaDto({
       pageOptionsDto: getCartDto,
-      itemCount: cartItems.length,
+      itemCount: itemCount,
     });
     return new PageResponseDto(cartItems, meta);
   }

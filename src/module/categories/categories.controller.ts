@@ -56,10 +56,10 @@ export class CategoryController {
   async getAll(
     @Query() query: PageOptionsDto,
   ): Promise<PageResponseDto<Category>> {
-    const categories: Category[] = await this.categoryService.getAll(query);
+    const { categories, itemCount } = await this.categoryService.getAll(query);
     const meta = new PageResponseMetaDto({
       pageOptionsDto: query,
-      itemCount: categories.length,
+      itemCount: itemCount,
     });
     return new PageResponseDto(categories, meta);
   }
