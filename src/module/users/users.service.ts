@@ -48,7 +48,8 @@ export class UsersService {
       take: query.take,
       orderBy: { [query.sortBy]: query.order },
     });
-    return users;
+    const itemCount = await this.prisma.users.count();
+    return { users, itemCount };
   }
   async findUserById(id: string) {
     const user = await this.prisma.users.findUnique({
