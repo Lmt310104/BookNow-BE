@@ -42,7 +42,10 @@ export class CartsService {
       take: getCartDto.take,
       orderBy: { [getCartDto.sortBy]: getCartDto.order },
     });
-    return cartItems;
+    const itemCount = await this.prisma.cartItems.count({
+      where: { cart_id: cart.id },
+    });
+    return { cartItems, itemCount };
   }
   async addToCart(session: TUserSession, addToCartDto: AddToCartDto) {
     console.log(session, addToCartDto);

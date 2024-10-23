@@ -94,11 +94,11 @@ export class BooksController {
   async getAllBooks(
     @Query() bookQuery: BookQuery,
   ): Promise<PageResponseDto<Books>> {
-    const books: Books[] = await this.bookService.getAllBooks(bookQuery);
+    const { books, itemCount } = await this.bookService.getAllBooks(bookQuery);
     const pageOptionsDto = new PageOptionsDto(bookQuery);
     const meta = new PageResponseMetaDto({
       pageOptionsDto,
-      itemCount: books.length,
+      itemCount: itemCount,
     });
     return new PageResponseDto(books, meta);
   }
@@ -167,10 +167,13 @@ export class BooksController {
   }
   @Get(SEARCH_BY_PRICE)
   async searchByPrice(@Body() dto: PriceFilterDto, @Query() query: BookQuery) {
-    const books = await this.bookService.searchByPrice(dto, query);
+    const { books, itemCount } = await this.bookService.searchByPrice(
+      dto,
+      query,
+    );
     const meta = new PageResponseMetaDto({
       pageOptionsDto: query,
-      itemCount: books.length,
+      itemCount: itemCount,
     });
     return new PageResponseDto(books, meta);
   }
@@ -179,10 +182,13 @@ export class BooksController {
     @Body() dto: RatingFilterDto,
     @Query() query: BookQuery,
   ) {
-    const books = await this.bookService.searchByRating(dto, query);
+    const { books, itemCount } = await this.bookService.searchByRating(
+      dto,
+      query,
+    );
     const meta = new PageResponseMetaDto({
       pageOptionsDto: query,
-      itemCount: books.length,
+      itemCount: itemCount,
     });
     return new PageResponseDto(books, meta);
   }

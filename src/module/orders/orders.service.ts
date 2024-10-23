@@ -75,15 +75,16 @@ export class OrderService {
   }
   async getListOrders(query: OrderPageOptionsDto) {
     const { take, order, sortBy } = query;
-    const orders = this.prisma.orders.findMany({
+    const orders = await this.prisma.orders.findMany({
       skip: query.skip,
       take: take,
       orderBy: { [sortBy]: order },
     });
-    return orders;
+    const itemCount = await this.prisma.orders.count();
+    return { orders, itemCount };
   }
   async getOrderDetailsByUser(id: number, session: TUserSession) {
-    const order = this.prisma.orders.findUnique({
+    const order = await this.prisma.orders.findUnique({
       where: { user_id: session.id, id: id },
       include: {
         OrderDetails: {
@@ -97,13 +98,16 @@ export class OrderService {
   }
   async getListOrdersByUser(query: OrderPageOptionsDto, session: TUserSession) {
     const { take, order, sortBy } = query;
-    const orders = this.prisma.orders.findMany({
+    const orders = await this.prisma.orders.findMany({
       where: { user_id: session.id },
       skip: query.skip,
       take: take,
       orderBy: { [sortBy]: order },
     });
-    return orders;
+    const itemCount = await this.prisma.orders.count({
+      where: { user_id: session.id },
+    });
+    return { orders, itemCount };
   }
   async updateOrder() {}
   async createReview(

@@ -40,9 +40,10 @@ export class CategoryService {
       where: { is_disable: false },
       skip: query.skip,
       take: query.take,
-      orderBy: { [query.sortBy]: query.order}
+      orderBy: { [query.sortBy]: query.order },
     });
-    return categories;
+    const itemCount = await this.prisma.category.count();
+    return { categories, itemCount };
   }
   async disableCategory(id: string) {
     const category = await this.prisma.category.findUnique({

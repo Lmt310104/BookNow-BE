@@ -1,7 +1,6 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateBookDto } from './dto/create-book.dto';
-import { Books } from '@prisma/client';
 import { BookQuery } from './query/book.query';
 import { UpdateBookDto } from './dto/update-book.dto';
 import { uploadFilesFromFirebase } from 'src/services/files/upload';
@@ -14,7 +13,7 @@ import { RatingFilterDto } from './dto/filter-by-rating.dto';
 export class BooksService {
   constructor(private readonly prismaService: PrismaService) {}
 
-  async getAllBooks(bookQuery: BookQuery): Promise<Books[]> {
+  async getAllBooks(bookQuery: BookQuery) {
     const books = await this.prismaService.books.findMany({
       where: {
         title: {
@@ -36,7 +35,8 @@ export class BooksService {
       skip: bookQuery.skip,
       take: bookQuery.take,
     });
-    return books;
+    const itemCount = await this.prismaService.books.count();
+    return { books, itemCount };
   }
   async createBook(body: CreateBookDto, image?: Express.Multer.File) {
     const {
@@ -147,7 +147,15 @@ export class BooksService {
       skip: query.skip,
       orderBy: { [query.sortBy]: query.order },
     });
-    return books;
+    const itemCount = await this.prismaService.books.count({
+      where: {
+        price: {
+          gte: dto.minPrice,
+          lte: dto.maxPrice,
+        },
+      },
+    });
+    return { books, itemCount };
   }
   async searchByRating(dto: RatingFilterDto, query: BookQuery) {
     const books = await this.prismaService.books.findMany({
@@ -161,6 +169,14 @@ export class BooksService {
       skip: query.skip,
       orderBy: { [query.sortBy]: query.order },
     });
-    return books;
+    const itemCount = await this.prismaService.books.count({
+      where: {
+        avg_stars: {
+          gte: dto.minRating,
+          lte: dto.maxRating,
+        },
+      },
+    });
+    return { books, itemCount };
   }
 }
