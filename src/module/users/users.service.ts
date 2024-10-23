@@ -5,8 +5,7 @@ import { isEmailExist } from './helpers';
 import { hashedPassword } from '../auth/services/signup/hash-password';
 import { TUserSession } from 'src/common/decorators/user-session.decorator';
 import { UpdateUserProfileDto } from './dto/update-user-profile.dto';
-import { PageOptionsDto } from 'src/utils/page-options-dto';
-import { ROLE } from 'src/utils/constants';
+import { GetAllUserDto } from './dto/get-all-user.dto';
 
 @Injectable()
 export class UsersService {
@@ -43,10 +42,10 @@ export class UsersService {
     }
     return newUser;
   }
-  async getAllUsers(query: PageOptionsDto) {
+  async getAllUsers(query: GetAllUserDto) {
     const users = await this.prisma.users.findMany({
       where: {
-        role: ROLE.CUSTOMER,
+        role: query.role,
       },
       skip: query.skip,
       take: query.take,
@@ -54,7 +53,7 @@ export class UsersService {
     });
     const itemCount = await this.prisma.users.count({
       where: {
-        role: ROLE.CUSTOMER,
+        role: query.role,
       },
     });
     return { users, itemCount };
