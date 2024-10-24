@@ -24,8 +24,8 @@ async function bootstrap() {
     origin: true,
     credentials: true,
   });
-  app.useGlobalGuards(new AuthenticationGuard(reflector));
-  app.useGlobalGuards(new RefreshTokenGuard(reflector));
+  // app.useGlobalGuards(new AuthenticationGuard(reflector));
+  // app.useGlobalGuards(new RefreshTokenGuard(reflector));
   app.setGlobalPrefix(END_POINTS.BASE);
   app.useGlobalPipes(new ValidationPipe({ transform: true, whitelist: true }));
   app.use(cookieParser());

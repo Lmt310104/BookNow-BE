@@ -2,7 +2,7 @@ import { BadRequestException, Injectable } from '@nestjs/common';
 import { CreateCategoryDto } from './dtos/create-category.dto';
 import { PrismaService } from '../prisma/prisma.service';
 import { UpdateCategoryDto } from './dtos/update-category.dto';
-import { PageOptionsDto } from 'src/utils/page-options-dto';
+import { CategoryPageOptionsDto } from './dtos/find-all-categories.dto';
 
 @Injectable()
 export class CategoryService {
@@ -22,6 +22,15 @@ export class CategoryService {
     });
     return newCategory;
   }
+  async getCategoryById(id: string) {
+    const category = await this.prisma.category.findUnique({
+      where: { id: id },
+    });
+    if (!category) {
+      throw new BadRequestException('Category not found');
+    }
+    return category;
+  }
   async update(id: string, dto: UpdateCategoryDto) {
     const category = await this.prisma.category.findUnique({
       where: { id: id },
@@ -35,15 +44,27 @@ export class CategoryService {
     });
     return category;
   }
-  async getAll(query: PageOptionsDto) {
-    const categories = await this.prisma.category.findMany({
-      where: { is_disable: false },
-      skip: query.skip,
-      take: query.take,
-      orderBy: { [query.sortBy]: query.order },
-    });
-    const itemCount = await this.prisma.category.count();
-    return { categories, itemCount };
+  async getAll(query: CategoryPageOptionsDto, disable?: boolean) {
+    if (disable !== undefined) {
+      const categories = await this.prisma.category.findMany({
+        where: { is_disable: disable },
+        skip: query.skip,
+        take: query.take,
+        orderBy: { [query.sortBy]: query.order },
+      });
+      const itemCount = await this.prisma.category.count({
+        where: { is_disable: disable },
+      });
+      return { categories, itemCount };
+    } else {
+      const categories = await this.prisma.category.findMany({
+        skip: query.skip,
+        take: query.take,
+        orderBy: { [query.sortBy]: query.order },
+      });
+      const itemCount = await this.prisma.category.count();
+      return { categories, itemCount };
+    }
   }
   async disableCategory(id: string) {
     const category = await this.prisma.category.findUnique({
@@ -70,5 +91,26 @@ export class CategoryService {
       data: { is_disable: false },
     });
     return category;
+  }
+  async search(query: string, pageOption: CategoryPageOptionsDto) {
+    const categories = await this.prisma.category.findMany({
+      where: {
+        name: {
+          contains: query,
+          mode: 'insensitive',
+        },
+      },
+      take: pageOption.take,
+      skip: pageOption.skip,
+      orderBy: { [pageOption.sortBy]: pageOption.order },
+    });
+    const itemCount = await this.prisma.category.count({
+      where: {
+        name: {
+          contains: query,
+        },
+      },
+    });
+    return { categories, itemCount };
   }
 }

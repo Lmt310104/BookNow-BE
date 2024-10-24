@@ -50,10 +50,12 @@ export const END_POINTS = {
     GET_ALL: '/get-all',
     CREATE: '/create',
     UPDATE: '/update/:id',
-    GET_ONE: '/:id',
+    GET_ONE: '/get-one/:id',
     SEARCH: '/search',
     FILTER: '/filter',
     SORT: '/sort',
+    ENABLE: '/enable/:id',
+    DISABLE: '/disable/:id',
     COMMENT: '/:id/comment',
     SEARCH_BY_PRICE: '/search/price',
     SEARCH_BY_RATING: '/search/rating',
@@ -69,10 +71,11 @@ export const END_POINTS = {
     BASE: '/categories',
     GET_ALL: '/get-all',
     CREATE: '/create',
-    UPDATE: '/:id',
-    DISABLE: '/:id/disable',
-    GET_ONE: '/:id',
-    ENABLE: ':id/enable',
+    UPDATE: '/update/:id',
+    DISABLE: '/disable/:id',
+    GET_ONE: '/get-one/:id',
+    ENABLE: '/enable/:id',
+    SEARCH: '/search',
   },
   CARTS: {
     BASE: '/carts',
@@ -130,10 +133,8 @@ export enum ROLE {
   CUSTOMER = 'CUSTOMER',
 }
 export enum BOOKSTATUS {
-  INSTOCK = 'INSTOCK',
-  OUTOFSTOCK = 'OUTOFSTOCK',
+  ACTIVE = 'ACTIVE',
   INACTIVE = 'INACTIVE',
-  LOWSTOCK = 'LOWSTOCK',
 }
 
 export enum ORDER {

@@ -44,7 +44,7 @@ async function main() {
       role: 'ADMIN',
       phone: '0896423104',
       full_name: 'Admin',
-      birthday: new Date('31-01-2004'),
+      birthday: new Date('2004-01-31'),
       gender: Gender.MALE,
       verification: {
         create: {
@@ -61,7 +61,7 @@ async function main() {
       role: 'CUSTOMER',
       phone: '0763769185',
       full_name: 'Customer',
-      birthday: new Date('31-01-2004'),
+      birthday: new Date('2004-01-31'),
       gender: Gender.MALE,
       verification: {
         create: {
