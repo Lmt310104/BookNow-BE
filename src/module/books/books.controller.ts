@@ -43,6 +43,9 @@ const {
     SEARCH,
     SEARCH_BY_PRICE,
     SEARCH_BY_RATING,
+    SEARCH_BY_CATEGORY,
+    ACTIVE,
+    INACTIVE,
   },
 } = END_POINTS;
 
@@ -207,5 +210,38 @@ export class BooksController {
       itemCount: itemCount,
     });
     return new PageResponseDto(books, meta);
+  }
+  @Get(SEARCH_BY_CATEGORY)
+  async searchByCategory(
+    @Param('categoryId', ParseUUIDPipe) categoryId: string,
+    @Query() BookQuery: BookQuery,
+  ) {
+    const { books, itemCount } = await this.bookService.searchByCategory(
+      categoryId,
+      BookQuery,
+    );
+    const meta = new PageResponseMetaDto({
+      pageOptionsDto: BookQuery,
+      itemCount: itemCount,
+    });
+    return new PageResponseDto(books, meta);
+  }
+  @Post(ACTIVE)
+  async enableBook(@Param('id', ParseUUIDPipe) id: string) {
+    const book = await this.bookService.activeBook(id);
+    return new StandardResponse(
+      book,
+      'Enable book successfully',
+      HttpStatusCode.OK,
+    );
+  }
+  @Post(INACTIVE)
+  async disableBook(@Param('id', ParseUUIDPipe) id: string) {
+    const book = await this.bookService.inactiveBook(id);
+    return new StandardResponse(
+      book,
+      'Disable book successfully',
+      HttpStatusCode.OK,
+    );
   }
 }

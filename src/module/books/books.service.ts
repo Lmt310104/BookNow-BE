@@ -221,4 +221,45 @@ export class BooksService {
     });
     return { books, itemCount };
   }
+  async searchByCategory(categoryId: string, bookQuery: BookQuery) {
+    const books = await this.prismaService.books.findMany({
+      where: {
+        Category: {
+          id: categoryId,
+        },
+        ...(bookQuery.status && { status: bookQuery.status }),
+      },
+      take: bookQuery.take,
+      skip: bookQuery.skip,
+      orderBy: { [bookQuery.sortBy]: bookQuery.order },
+    });
+    const itemCount = await this.prismaService.books.count({
+      where: {
+        Category: {
+          id: categoryId,
+        },
+      },
+    });
+    return { books, itemCount };
+  }
+  async activeBook(id: string) {
+    const existingBook = await this.prismaService.books.update({
+      where: { id },
+      data: { status: 'ACTIVE' },
+    });
+    if (!existingBook) {
+      throw new BadRequestException('Book not found');
+    }
+    return existingBook;
+  }
+  async inactiveBook(id: string) {
+    const existingBook = await this.prismaService.books.update({
+      where: { id },
+      data: { status: 'INACTIVE' },
+    });
+    if (!existingBook) {
+      throw new BadRequestException('Book not found');
+    }
+    return existingBook;
+  }
 }
