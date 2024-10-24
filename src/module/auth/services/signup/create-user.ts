@@ -1,6 +1,7 @@
 import { BadRequestException } from '@nestjs/common';
 import { Gender, Role } from '@prisma/client';
 import { PrismaService } from 'src/module/prisma/prisma.service';
+import { USER_IMAGE_URL } from 'src/utils/constants';
 
 type TCreateUserWithEmail = {
   email: string;
@@ -29,6 +30,7 @@ export const createUserWithEmail = async (
       role: Role.CUSTOMER,
       birthday: new Date(birthday),
       gender: gender,
+      avatar_url: USER_IMAGE_URL,
     },
   });
   const user_verification = await prismaService.vertifications.findFirst({
