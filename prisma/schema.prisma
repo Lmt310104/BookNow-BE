@@ -59,7 +59,7 @@ model Books {
   total_reviews      Int            @default(0)
   sold_quantity      Int            @default(0)
   image_url          String[]       @default([])
-  status             BookStatus     @default(INSTOCK)
+  status             BookStatus     @default(ACTIVE)
   created_at         DateTime       @default(now())
   updated_at         DateTime       @updatedAt
   Category           Category       @relation(fields: [category_id], references: [id])
@@ -177,7 +177,5 @@ enum OrderStatus {
 
 enum BookStatus {
   INACTIVE
-  INSTOCK
-  OUTOFSTOCK
-  LOWSTOCK
+  ACTIVE
 }

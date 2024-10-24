@@ -1,26 +1,37 @@
 import {
   Body,
   Controller,
+  DefaultValuePipe,
   Get,
   Param,
   ParseUUIDPipe,
   Post,
   Query,
+  ValidationPipe,
 } from '@nestjs/common';
 import { ApiQuery, ApiTags } from '@nestjs/swagger';
-import { DOCUMENTATION, END_POINTS, ORDER } from 'src/utils/constants';
+import { DOCUMENTATION, END_POINTS } from 'src/utils/constants';
 import { CreateCategoryDto } from './dtos/create-category.dto';
 import { CategoryService } from './categories.service';
 import { StandardResponse } from 'src/utils/response.dto';
 import { Category } from '@prisma/client';
 import HttpStatusCode from 'src/utils/HttpStatusCode';
 import { PageResponseDto } from 'src/utils/page-response.dto';
-import { PageOptionsDto } from 'src/utils/page-options-dto';
 import { PageResponseMetaDto } from 'src/utils/page-response-meta.dto';
 import { UpdateCategoryDto } from './dtos/update-category.dto';
+import { CategoryPageOptionsDto } from './dtos/find-all-categories.dto';
 
 const {
-  CATEGORIES: { BASE, CREATE, GET_ALL, GET_ONE, UPDATE, DISABLE, ENABLE },
+  CATEGORIES: {
+    BASE,
+    CREATE,
+    GET_ALL,
+    GET_ONE,
+    UPDATE,
+    DISABLE,
+    ENABLE,
+    SEARCH,
+  },
 } = END_POINTS;
 @ApiTags(DOCUMENTATION.TAGS.CATEGORIES)
 @Controller(BASE)
@@ -47,16 +58,16 @@ export class CategoryController {
     type: Number,
     description: 'Items per page',
   })
-  @ApiQuery({
-    name: 'order',
-    required: false,
-    enum: ORDER,
-    description: 'Sorting order',
-  })
   async getAll(
-    @Query() query: PageOptionsDto,
+    @Query() query: CategoryPageOptionsDto,
+    @Query('disable', new DefaultValuePipe(undefined))
+    disable: boolean,
   ): Promise<PageResponseDto<Category>> {
-    const { categories, itemCount } = await this.categoryService.getAll(query);
+    console.log(query);
+    const { categories, itemCount } = await this.categoryService.getAll(
+      query,
+      disable,
+    );
     const meta = new PageResponseMetaDto({
       pageOptionsDto: query,
       itemCount: itemCount,
@@ -64,7 +75,13 @@ export class CategoryController {
     return new PageResponseDto(categories, meta);
   }
   @Get(GET_ONE)
-  async getBooksByCategory() {}
+  async getCategoryById(@Param('id', ParseUUIDPipe) id: string) {
+    return new StandardResponse(
+      await this.categoryService.getCategoryById(id),
+      'Get category successfully',
+      HttpStatusCode.OK,
+    );
+  }
   @Post(DISABLE)
   async disableCategory(@Param('id', ParseUUIDPipe) id: string) {
     await this.categoryService.disableCategory(id);
@@ -87,5 +104,22 @@ export class CategoryController {
     const category = await this.categoryService.enable(id);
     const message = 'Enable category successfully';
     return new StandardResponse(category, message, HttpStatusCode.OK);
+  }
+  @Get(SEARCH)
+  async search(
+    @Query(new ValidationPipe({ transform: true }))
+    pageOption: CategoryPageOptionsDto,
+    @Query('state', new DefaultValuePipe(undefined)) state?: boolean,
+    @Query('query', new DefaultValuePipe(undefined)) query?: string,
+  ) {
+    const { categories, itemCount } = await this.categoryService.search(
+      query,
+      pageOption,
+    );
+    const meta = new PageResponseMetaDto({
+      pageOptionsDto: pageOption,
+      itemCount: itemCount,
+    });
+    return new PageResponseDto(categories, meta);
   }
 }

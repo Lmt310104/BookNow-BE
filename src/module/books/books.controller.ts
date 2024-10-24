@@ -40,6 +40,7 @@ const {
     CREATE,
     UPDATE,
     GET_ONE,
+    SEARCH,
     SEARCH_BY_PRICE,
     SEARCH_BY_RATING,
   },
@@ -188,6 +189,21 @@ export class BooksController {
     );
     const meta = new PageResponseMetaDto({
       pageOptionsDto: query,
+      itemCount: itemCount,
+    });
+    return new PageResponseDto(books, meta);
+  }
+  @Get(SEARCH)
+  async searchBook(
+    @Query() bookQuery: BookQuery,
+    @Query('query') query?: string,
+  ) {
+    const { books, itemCount } = await this.bookService.searchBook(
+      query,
+      bookQuery,
+    );
+    const meta = new PageResponseMetaDto({
+      pageOptionsDto: bookQuery,
       itemCount: itemCount,
     });
     return new PageResponseDto(books, meta);

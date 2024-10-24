@@ -24,7 +24,6 @@ export class BooksService {
             contains: bookQuery.category,
           },
         },
-        status: bookQuery.status,
       },
       include: {
         Category: true,
@@ -175,6 +174,49 @@ export class BooksService {
           gte: dto.minRating,
           lte: dto.maxRating,
         },
+      },
+    });
+    return { books, itemCount };
+  }
+  async searchBook(query: string, bookQuery: BookQuery) {
+    const books = await this.prismaService.books.findMany({
+      where: {
+        OR: [
+          {
+            title: {
+              contains: query,
+              mode: 'insensitive',
+            },
+          },
+          {
+            author: {
+              contains: query,
+              mode: 'insensitive',
+            },
+          },
+        ],
+        ...(bookQuery.status && { status: bookQuery.status }),
+      },
+      take: bookQuery.take,
+      skip: bookQuery.skip,
+      orderBy: { [bookQuery.sortBy]: bookQuery.order },
+    });
+    const itemCount = await this.prismaService.books.count({
+      where: {
+        OR: [
+          {
+            title: {
+              contains: query,
+              mode: 'insensitive',
+            },
+          },
+          {
+            author: {
+              contains: query,
+              mode: 'insensitive',
+            },
+          },
+        ],
       },
     });
     return { books, itemCount };
