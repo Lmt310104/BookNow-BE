@@ -111,7 +111,7 @@ export class BooksService {
           data: {
             title: dto.title,
             description: dto.description,
-            image_url: imageUrls.length ? imageUrls[0] : existingBook.image_url,
+            image_url: imageUrls.length ? imageUrls : existingBook.image_url,
             price: dto?.price ?? existingBook.price,
           },
         });
