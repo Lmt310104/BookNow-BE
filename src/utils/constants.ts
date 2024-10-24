@@ -54,11 +54,12 @@ export const END_POINTS = {
     SEARCH: '/search',
     FILTER: '/filter',
     SORT: '/sort',
-    ENABLE: '/enable/:id',
-    DISABLE: '/disable/:id',
+    ACTIVE: '/active/:id',
+    INACTIVE: '/inactive/:id',
     COMMENT: '/:id/comment',
     SEARCH_BY_PRICE: '/search/price',
     SEARCH_BY_RATING: '/search/rating',
+    SEARCH_BY_CATEGORY: '/search/:categoryId',
   },
   AUTHORS: {
     BASE: '/authors',
@@ -166,3 +167,6 @@ export const CURRENCY = 'VND';
 
 export const JWT_ACCESS_STRATEGY = 'jwt-access-strategy';
 export const JWT_REFRESH_STRATEGY = 'jwt-refresh-strategy';
+
+export const USER_IMAGE_URL =
+  'https://firebasestorage.googleapis.com/v0/b/booknow-22cff.appspot.com/o/book%2Fdefault-user.jpeg?alt=media&token=9895f504-8150-436e-b5f3-ee70f4e6964c';

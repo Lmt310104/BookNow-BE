@@ -24,6 +24,7 @@ model Users {
   gender              Gender
   role                Role
   verification        Vertifications?
+  avatar_url          String
   code_reset_password String?         @db.VarChar(6)
   refresh_token       String?         @db.VarChar(255)
   is_disable          Boolean         @default(false)

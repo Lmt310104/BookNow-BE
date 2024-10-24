@@ -27,7 +27,7 @@ class SignOutService {
       });
     }
     await this.prisma.users.updateMany({
-      where: { refresh_token },
+      where: { refresh_token: refresh_token },
       data: { refresh_token: null },
     });
     res.clearCookie('refresh_token');
