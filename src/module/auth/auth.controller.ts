@@ -127,6 +127,7 @@ export class AuthController {
     status: 401,
     description: 'When refresh token expired or incorrect',
   })
+  @Public()
   @Get(REFRESH)
   @UseGuards(RefreshTokenGuard)
   async getRefreshToken(
