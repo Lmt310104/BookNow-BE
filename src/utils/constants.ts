@@ -85,7 +85,7 @@ export const END_POINTS = {
     UPDATE_CART: '/update',
     GET_ONE: '/:id',
     ADD_TO_CART: '/add-to-cart',
-    REMOVE_FROM_CART: '/remove-from-cart',
+    REMOVE_FROM_CART: '/remove-from-cart/:bookId',
     CHECKOUT_CART: '/checkout',
   },
   CART_ITEM: {

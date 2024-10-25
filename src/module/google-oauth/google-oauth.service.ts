@@ -46,6 +46,11 @@ export class GoogleOauthService {
           },
         },
       });
+      await this.prismaService.carts.create({
+        data: {
+          user_id: user.id,
+        },
+      });
     }
     const { id } = user;
     const { access_token, refresh_token } = await this.generateToken({
