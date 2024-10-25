@@ -9,6 +9,7 @@ import {
   Post,
   Query,
   UploadedFile,
+  UploadedFiles,
   UseInterceptors,
   UsePipes,
   ValidationPipe,
@@ -29,7 +30,7 @@ import { PageResponseMetaDto } from 'src/utils/page-response-meta.dto';
 import { PageOptionsDto } from 'src/utils/page-options-dto';
 import { BookQuery } from './query/book.query';
 import { UpdateBookDto } from './dto/update-book.dto';
-import { FileInterceptor } from '@nestjs/platform-express';
+import { FileInterceptor, FilesInterceptor } from '@nestjs/platform-express';
 import { PriceFilterDto } from './dto/filter-by-price.dto';
 import { RatingFilterDto } from './dto/filter-by-rating.dto';
 
@@ -111,10 +112,10 @@ export class BooksController {
     description: 'Allow admin',
   })
   @Post(CREATE)
-  @UseInterceptors(FileInterceptor('image'))
+  @UseInterceptors(FilesInterceptor('images'))
   async createBook(
     @Body() body: CreateBookDto,
-    @UploadedFile(
+    @UploadedFiles(
       new ParseFilePipeBuilder()
         .addFileTypeValidator({
           fileType: FILE_TYPES_REGEX,
@@ -123,9 +124,10 @@ export class BooksController {
           fileIsRequired: false,
         }),
     )
-    image?: Express.Multer.File,
+    images?: Array<Express.Multer.File>,
   ): Promise<StandardResponse<Books>> {
-    const newBook: Books = await this.bookService.createBook(body, image);
+    console.log(images);
+    const newBook: Books = await this.bookService.createBook(body, images);
     const message = 'Create book successfully';
     return new StandardResponse(newBook, message, HttpStatusCode.CREATED);
   }
@@ -134,11 +136,11 @@ export class BooksController {
     description: 'Allow admin',
   })
   @Patch(UPDATE)
-  @UseInterceptors(FileInterceptor('image'))
+  @UseInterceptors(FilesInterceptor('images_update'))
   async updateBook(
     @Param('id', ParseUUIDPipe) id: string,
     @Body() dto: UpdateBookDto,
-    @UploadedFile(
+    @UploadedFiles(
       new ParseFilePipeBuilder()
         .addFileTypeValidator({
           fileType: FILE_TYPES_REGEX,
@@ -147,12 +149,12 @@ export class BooksController {
           fileIsRequired: false,
         }),
     )
-    image?: Express.Multer.File,
+    images?: Array<Express.Multer.File>,
   ): Promise<StandardResponse<Books>> {
     const updatedBook: Books = await this.bookService.updateBook(
       id,
       dto,
-      image,
+      images,
     );
     const message = 'Update book successfully';
     return new StandardResponse(updatedBook, message, HttpStatusCode.OK);
