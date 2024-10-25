@@ -127,6 +127,10 @@ export const END_POINTS = {
     GET_ONE: '/:id',
     REPLY: '/:id/reply',
   },
+  GOOGLE_OAUTH: {
+    BASE: '/auth/google',
+    REDIRECT: '/oauth2/redirect/code',
+  },
 };
 
 export enum ROLE {
@@ -167,6 +171,7 @@ export const CURRENCY = 'VND';
 
 export const JWT_ACCESS_STRATEGY = 'jwt-access-strategy';
 export const JWT_REFRESH_STRATEGY = 'jwt-refresh-strategy';
+export const GOOGLE_STRATEGY = 'google';
 
 export const USER_IMAGE_URL =
   'https://firebasestorage.googleapis.com/v0/b/booknow-22cff.appspot.com/o/book%2Fdefault-user.jpeg?alt=media&token=9895f504-8150-436e-b5f3-ee70f4e6964c';
