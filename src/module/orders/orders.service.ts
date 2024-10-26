@@ -20,6 +20,13 @@ export class OrderService {
     const books = await this.prisma.books.findMany({
       where: { id: { in: bookIds } },
     });
+    const cart = await this.prisma.carts.findFirstOrThrow({
+      where: { user_id: session.id },
+    });
+    const cartItems = await this.prisma.cartItems.findMany({
+      where: { cart_id: cart.id },
+    });
+    const cartItemIds = cartItems.map((item) => item.id);
     if (books.length !== bookIds.length) {
       throw new NotFoundException('Some books are not found');
     }
@@ -31,6 +38,11 @@ export class OrderService {
     );
     try {
       return await this.prisma.$transaction(async (tx) => {
+        await tx.cartItems.deleteMany({
+          where: {
+            id: { in: cartItemIds },
+          },
+        });
         const order = await tx.orders.create({
           data: {
             user_id: session.id,
@@ -50,15 +62,17 @@ export class OrderService {
             total_price: totalPrice,
           };
         });
-        await tx.orderDetails.createMany({ data: orderItems });
-        orderItems.forEach(async (item) => {
-          await tx.books.update({
-            where: { id: item.book_id },
-            data: {
-              stock_quantity: { decrement: item.quantity },
-            },
-          });
-        });
+        await tx.orderItems.createMany({ data: orderItems });
+        await Promise.all(
+          orderItems.map((item) =>
+            tx.books.update({
+              where: { id: item.book_id },
+              data: {
+                stock_quantity: { decrement: item.quantity },
+              },
+            }),
+          ),
+        );
         const totalPrice = orderItems.reduce(
           (acc, item) => acc + item.total_price,
           0,
@@ -69,7 +83,7 @@ export class OrderService {
             total_price: totalPrice,
           },
           include: {
-            OrderDetails: {
+            OrderItems: {
               include: {
                 book: true,
               },
@@ -87,7 +101,7 @@ export class OrderService {
     const { take, order, sortBy } = query;
     const orders = await this.prisma.orders.findMany({
       include: {
-        OrderDetails: {
+        OrderItems: {
           include: {
             book: true,
           },
@@ -100,11 +114,11 @@ export class OrderService {
     const itemCount = await this.prisma.orders.count();
     return { orders, itemCount };
   }
-  async getOrderDetailsByUser(id: string, session: TUserSession) {
+  async getOrderProductsByUser(id: string, session: TUserSession) {
     const order = await this.prisma.orders.findUnique({
       where: { user_id: session.id, id: id },
       include: {
-        OrderDetails: {
+        OrderItems: {
           include: {
             book: true,
           },
@@ -141,7 +155,7 @@ export class OrderService {
     if (dto.status === ORDER_STATUS.REJECT) {
       try {
         return await this.prisma.$transaction(async (tx) => {
-          await this.prisma.orderDetails.deleteMany({
+          await this.prisma.orderItems.deleteMany({
             where: { order_id: id },
           });
           const updatedOrder = await tx.orders.update({
@@ -173,7 +187,7 @@ export class OrderService {
     if (!order) {
       throw new NotFoundException('Order not found');
     }
-    const orderDetail = await this.prisma.orderDetails.findUnique({
+    const orderDetail = await this.prisma.orderItems.findUnique({
       where: { id: orderDetailId },
     });
     if (!orderDetail) {
@@ -230,7 +244,7 @@ export class OrderService {
     if (order.status === ORDER_STATUS.CANCELLED) {
       throw new BadRequestException('Order already cancelled');
     }
-    const orderDetails = await this.prisma.orderDetails.findMany({
+    const orderDetails = await this.prisma.orderItems.findMany({
       where: { order_id: id },
     });
     const bookIds = orderDetails.map((item) => {
@@ -238,7 +252,7 @@ export class OrderService {
     });
     try {
       return await this.prisma.$transaction(async (tx) => {
-        await tx.orderDetails.deleteMany({
+        await tx.orderItems.deleteMany({
           where: { order_id: id },
         });
         await tx.orders.update({
@@ -262,18 +276,23 @@ export class OrderService {
       throw new BadRequestException('Failed to cancel order');
     }
   }
-  async getOrderHistory(session: TUserSession) {
+  async getOrderHistory(session: TUserSession, dto: OrderPageOptionsDto) {
     const orders = await this.prisma.orders.findMany({
-      where: { user_id: session.id },
+      where: { user_id: session.id, ...(dto.status && { status: dto.status }) },
       include: {
-        OrderDetails: {
+        OrderItems: {
           include: {
             book: true,
           },
         },
       },
+      take: dto.take,
+      skip: dto.skip,
+      orderBy: { [dto.sortBy]: dto.order },
     });
-    return orders;
+    const itemCount = await this.prisma.orders.count({
+      where: { user_id: session.id, ...(dto.status && { status: dto.status }) },
+    });
+    return { orders, itemCount };
   }
-  async getOrderState(id: string) {}
 }

@@ -35,7 +35,6 @@ const {
     GET_ONE,
     CANCEL_ORDER,
     ORDER_HISTORY,
-    ORDER_STATE,
   },
 } = END_POINTS;
 
@@ -83,7 +82,7 @@ export class OrdersController {
     @Param('id', ParseUUIDPipe) id: string,
     @Body() dto: UpdateOrderStatusDto,
   ) {
-    const order = await this.orderService.updateOrderStatus(dto);
+    const order = await this.orderService.updateOrderStatus(id, dto);
     const message = 'Order status updated successfully';
     return new StandardResponse<Orders>(order, message, HttpStatusCode.OK);
   }
@@ -92,7 +91,7 @@ export class OrdersController {
     @UserSession() session: TUserSession,
     @Param('id', ParseUUIDPipe) id: string,
   ): Promise<StandardResponse<Orders>> {
-    const order = await this.orderService.getOrderDetailsByUser(id, session);
+    const order = await this.orderService.getOrderProductsByUser(id, session);
     const message = 'Order details retrieved successfully';
     return new StandardResponse<Orders>(order, message, HttpStatusCode.OK);
   }
@@ -125,15 +124,18 @@ export class OrdersController {
     return new StandardResponse(order, message, HttpStatusCode.OK);
   }
   @Get(ORDER_HISTORY)
-  async getOrderHistory(@UserSession() session: TUserSession) {
-    const orders = await this.orderService.getOrderHistory(session);
-    const message = 'Order history retrieved successfully';
-    return new StandardResponse(orders, message, HttpStatusCode.OK);
-  }
-  @Get(ORDER_STATE)
-  async getOrderState(@Param('id', ParseUUIDPipe) id: string) {
-    const order = await this.orderService.getOrderState(id);
-    const message = 'Order state retrieved successfully';
-    return new StandardResponse(order, message, HttpStatusCode.OK);
+  async getOrderHistory(
+    @UserSession() session: TUserSession,
+    @Body() dto: OrderPageOptionsDto,
+  ) {
+    const { orders, itemCount } = await this.orderService.getOrderHistory(
+      session,
+      dto,
+    );
+    const meta = new PageResponseMetaDto({
+      pageOptionsDto: dto,
+      itemCount: itemCount,
+    });
+    return new PageResponseDto(orders, meta);
   }
 }
