@@ -12,7 +12,7 @@ import {
 } from 'class-validator';
 
 export class OrderItemDto {
-  @IsNumber()
+  @IsString()
   @IsNotEmpty()
   bookId: string;
 

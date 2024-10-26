@@ -101,8 +101,8 @@ export const END_POINTS = {
     GET_FULL_LIST: '/list',
     GET_ALL: '/get-all',
     CREATE: '/create',
-    UPDATE_STATUS: '/status/update',
-    GET_ONE: '/:id',
+    UPDATE_STATUS: '/status/update/:id',
+    GET_ONE: '/get-details/:id',
     GET_DETAILS: '/get-details',
     CANCEL_ORDER: '/:id/cancel-order',
     ORDER_HISTORY: '/history',
@@ -165,6 +165,7 @@ export const ORDER_STATUS = {
   DELIVERED: 'DELIVERED',
   CANCELLED: 'CANCELLED',
   SUCCESS: 'SUCCESS',
+  REJECT: 'REJECT',
 };
 
 export const CURRENCY = 'VND';

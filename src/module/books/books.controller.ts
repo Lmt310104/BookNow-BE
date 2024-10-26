@@ -30,7 +30,7 @@ import { PageResponseMetaDto } from 'src/utils/page-response-meta.dto';
 import { PageOptionsDto } from 'src/utils/page-options-dto';
 import { BookQuery } from './query/book.query';
 import { UpdateBookDto } from './dto/update-book.dto';
-import { FileInterceptor, FilesInterceptor } from '@nestjs/platform-express';
+import { FilesInterceptor } from '@nestjs/platform-express';
 import { PriceFilterDto } from './dto/filter-by-price.dto';
 import { RatingFilterDto } from './dto/filter-by-rating.dto';
 
