@@ -9,6 +9,7 @@ export const hashPassword = async (password: string) => {
 import { faker } from '@faker-js/faker';
 import authors_data from './seeds/authors';
 import category_data from './seeds/categories';
+import { USER_IMAGE_URL } from 'src/utils/constants';
 async function main() {
   /**
    * Neccessary to hash the password before seeding
@@ -44,8 +45,9 @@ async function main() {
       role: 'ADMIN',
       phone: '0896423104',
       full_name: 'Admin',
-      birthday: new Date('31-01-2004'),
+      birthday: new Date('2004-01-31'),
       gender: Gender.MALE,
+      avatar_url: USER_IMAGE_URL,
       verification: {
         create: {
           is_active: true,
@@ -61,8 +63,9 @@ async function main() {
       role: 'CUSTOMER',
       phone: '0763769185',
       full_name: 'Customer',
-      birthday: new Date('31-01-2004'),
+      birthday: new Date('2004-01-31'),
       gender: Gender.MALE,
+      avatar_url: USER_IMAGE_URL,
       verification: {
         create: {
           is_active: true,
@@ -81,6 +84,7 @@ async function main() {
         full_name: faker.internet.userName(),
         birthday: new Date('31-01-2004'),
         gender: Gender.MALE,
+        avatar_url: USER_IMAGE_URL,
         verification: {
           create: {
             is_active: true,

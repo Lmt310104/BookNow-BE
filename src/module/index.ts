@@ -6,6 +6,7 @@ import { CartsModule } from './carts/carts.module';
 import { CategoriesModule } from './categories/categories.module';
 import { DashboardModule } from './dashboard/dashboard.module';
 import { EmailModule } from './email/email.module';
+import { GoogleOauthModule } from './google-oauth/google-oauth.module';
 import { OrdersModule } from './orders/orders.module';
 import { UsersModule } from './users/users.module';
 const Modules = [
@@ -19,6 +20,7 @@ const Modules = [
   CartItemsModule,
   OrdersModule,
   DashboardModule,
+  GoogleOauthModule,
 ];
 
 export default Modules;

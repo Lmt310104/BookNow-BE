@@ -6,6 +6,8 @@ import { hashedPassword } from '../auth/services/signup/hash-password';
 import { TUserSession } from 'src/common/decorators/user-session.decorator';
 import { UpdateUserProfileDto } from './dto/update-user-profile.dto';
 import { GetAllUserDto } from './dto/get-all-user.dto';
+import { EUploadFolder, USER_IMAGE_URL } from 'src/utils/constants';
+import { uploadFilesFromFirebase } from 'src/services/files/upload';
 
 @Injectable()
 export class UsersService {
@@ -25,6 +27,7 @@ export class UsersService {
         role: body.role,
         birthday: new Date(body.birthday),
         gender: body.gender,
+        avatar_url: USER_IMAGE_URL,
         verification: {
           create: {
             verified_code: hashPassword,
@@ -73,25 +76,48 @@ export class UsersService {
     });
     return user;
   }
-  async updateUserProfile(session: TUserSession, dto: UpdateUserProfileDto) {
-    const user = await this.prisma.users.findUnique({
-      where: { id: session.id },
-    });
-    if (!user) {
-      throw new BadRequestException('User not found', {
-        cause: new Error('User not found'),
+  async updateUserProfile(
+    session: TUserSession,
+    dto: UpdateUserProfileDto,
+    image?: Express.Multer.File,
+  ) {
+    let imageUrls = [];
+    try {
+      if (image && image.buffer.byteLength > 0) {
+        const uploadImagesData = await uploadFilesFromFirebase(
+          [image],
+          EUploadFolder.user,
+        );
+        if (!uploadImagesData.success) {
+          throw new Error('Failed to upload images!');
+        }
+        imageUrls = uploadImagesData.urls;
+      }
+      const user = await this.prisma.users.findUnique({
+        where: { id: session.id },
+      });
+      if (!user) {
+        throw new BadRequestException('User not found', {
+          cause: new Error('User not found'),
+        });
+      }
+      const { birthday, fullName, ...data } = dto;
+      const updatedUser = await this.prisma.users.update({
+        where: { id: session.id },
+        data: {
+          full_name: fullName,
+          birthday: birthday ? new Date(birthday) : user.birthday,
+          avatar_url: image ? imageUrls[0] : user.avatar_url,
+          ...data,
+        },
+      });
+      return updatedUser;
+    } catch (error) {
+      console.log(error);
+      throw new BadRequestException('Failed to update user profile', {
+        cause: error,
       });
     }
-    const { birthday, fullName, ...data } = dto;
-    const updatedUser = await this.prisma.users.update({
-      where: { id: session.id },
-      data: {
-        full_name: fullName,
-        birthday: birthday ? new Date(birthday) : user.birthday,
-        ...data,
-      },
-    });
-    return updatedUser;
   }
   async enableUserById(id: string) {
     const user = await this.prisma.users.findUnique({

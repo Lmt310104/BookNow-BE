@@ -50,13 +50,16 @@ export const END_POINTS = {
     GET_ALL: '/get-all',
     CREATE: '/create',
     UPDATE: '/update/:id',
-    GET_ONE: '/:id',
+    GET_ONE: '/get-one/:id',
     SEARCH: '/search',
     FILTER: '/filter',
     SORT: '/sort',
+    ACTIVE: '/active/:id',
+    INACTIVE: '/inactive/:id',
     COMMENT: '/:id/comment',
     SEARCH_BY_PRICE: '/search/price',
     SEARCH_BY_RATING: '/search/rating',
+    SEARCH_BY_CATEGORY: '/search/:categoryId',
   },
   AUTHORS: {
     BASE: '/authors',
@@ -69,10 +72,11 @@ export const END_POINTS = {
     BASE: '/categories',
     GET_ALL: '/get-all',
     CREATE: '/create',
-    UPDATE: '/:id',
-    DISABLE: '/:id/disable',
-    GET_ONE: '/:id',
-    ENABLE: ':id/enable',
+    UPDATE: '/update/:id',
+    DISABLE: '/disable/:id',
+    GET_ONE: '/get-one/:id',
+    ENABLE: '/enable/:id',
+    SEARCH: '/search',
   },
   CARTS: {
     BASE: '/carts',
@@ -81,7 +85,7 @@ export const END_POINTS = {
     UPDATE_CART: '/update',
     GET_ONE: '/:id',
     ADD_TO_CART: '/add-to-cart',
-    REMOVE_FROM_CART: '/remove-from-cart',
+    REMOVE_FROM_CART: '/remove-from-cart/:bookId',
     CHECKOUT_CART: '/checkout',
   },
   CART_ITEM: {
@@ -97,8 +101,8 @@ export const END_POINTS = {
     GET_FULL_LIST: '/list',
     GET_ALL: '/get-all',
     CREATE: '/create',
-    UPDATE_STATUS: '/status/update',
-    GET_ONE: '/:id',
+    UPDATE_STATUS: '/status/update/:id',
+    GET_ONE: '/get-details/:id',
     GET_DETAILS: '/get-details',
     CANCEL_ORDER: '/:id/cancel-order',
     ORDER_HISTORY: '/history',
@@ -123,6 +127,10 @@ export const END_POINTS = {
     GET_ONE: '/:id',
     REPLY: '/:id/reply',
   },
+  GOOGLE_OAUTH: {
+    BASE: '/auth/google',
+    REDIRECT: '/oauth2/redirect/code',
+  },
 };
 
 export enum ROLE {
@@ -130,10 +138,8 @@ export enum ROLE {
   CUSTOMER = 'CUSTOMER',
 }
 export enum BOOKSTATUS {
-  INSTOCK = 'INSTOCK',
-  OUTOFSTOCK = 'OUTOFSTOCK',
+  ACTIVE = 'ACTIVE',
   INACTIVE = 'INACTIVE',
-  LOWSTOCK = 'LOWSTOCK',
 }
 
 export enum ORDER {
@@ -159,9 +165,14 @@ export const ORDER_STATUS = {
   DELIVERED: 'DELIVERED',
   CANCELLED: 'CANCELLED',
   SUCCESS: 'SUCCESS',
+  REJECT: 'REJECT',
 };
 
 export const CURRENCY = 'VND';
 
 export const JWT_ACCESS_STRATEGY = 'jwt-access-strategy';
 export const JWT_REFRESH_STRATEGY = 'jwt-refresh-strategy';
+export const GOOGLE_STRATEGY = 'google';
+
+export const USER_IMAGE_URL =
+  'https://firebasestorage.googleapis.com/v0/b/booknow-22cff.appspot.com/o/book%2Fdefault-user.jpeg?alt=media&token=9895f504-8150-436e-b5f3-ee70f4e6964c';

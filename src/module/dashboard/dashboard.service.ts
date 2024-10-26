@@ -11,34 +11,11 @@ export class DashboardService {
   async getBookReport(dto: GetDashboardDto) {
     const { month, year } = dto;
     console.log(month, year);
-    const newBookCreated = await this.prisma.books.findMany({
-      where: {
-        created_at: {
-          gte: new Date(year, month - 1, 1),
-          lt: new Date(year, month, 1),
-        },
-      },
-    });
-    const instockBook = await this.prisma.books.findMany({
-      where: {
-        status: BOOKSTATUS.INSTOCK,
-      },
-    });
-    const outOfStockBook = await this.prisma.books.findMany({
-      where: {
-        status: BOOKSTATUS.OUTOFSTOCK,
-      },
-    });
-    const inActiveBook = await this.prisma.books.findMany({
-      where: {
-        status: BOOKSTATUS.INACTIVE,
-      },
-    });
-    const lowStockBook = await this.prisma.books.findMany({
-      where: {
-        status: BOOKSTATUS.LOWSTOCK,
-      },
-    });
+    const newBookCreated = await this.prisma.books.findMany({});
+    const instockBook = await this.prisma.books.findMany({});
+    const outOfStockBook = await this.prisma.books.findMany({});
+    const inActiveBook = await this.prisma.books.findMany({});
+    const lowStockBook = await this.prisma.books.findMany({});
     return {
       newBookCreated: newBookCreated.length,
       instockBook: instockBook.length,

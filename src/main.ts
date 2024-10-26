@@ -9,7 +9,6 @@ import { HttpExceptionFilter } from './common/exception-filter/http-exception.fi
 import { AuthenticationGuard } from './common/guards/authentication.guard';
 // import { RefreshTokenGuard } from './common/guards/refreshtoken.guard';
 import InitFirebase from './services/firebase';
-import { RefreshTokenGuard } from './common/guards/refreshtoken.guard';
 import { ValidationPipe } from '@nestjs/common';
 
 async function bootstrap() {
@@ -25,7 +24,6 @@ async function bootstrap() {
     credentials: true,
   });
   app.useGlobalGuards(new AuthenticationGuard(reflector));
-  app.useGlobalGuards(new RefreshTokenGuard(reflector));
   app.setGlobalPrefix(END_POINTS.BASE);
   app.useGlobalPipes(new ValidationPipe({ transform: true, whitelist: true }));
   app.use(cookieParser());

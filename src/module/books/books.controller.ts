@@ -9,6 +9,7 @@ import {
   Post,
   Query,
   UploadedFile,
+  UploadedFiles,
   UseInterceptors,
   UsePipes,
   ValidationPipe,
@@ -29,7 +30,7 @@ import { PageResponseMetaDto } from 'src/utils/page-response-meta.dto';
 import { PageOptionsDto } from 'src/utils/page-options-dto';
 import { BookQuery } from './query/book.query';
 import { UpdateBookDto } from './dto/update-book.dto';
-import { FileInterceptor } from '@nestjs/platform-express';
+import { FilesInterceptor } from '@nestjs/platform-express';
 import { PriceFilterDto } from './dto/filter-by-price.dto';
 import { RatingFilterDto } from './dto/filter-by-rating.dto';
 
@@ -40,8 +41,12 @@ const {
     CREATE,
     UPDATE,
     GET_ONE,
+    SEARCH,
     SEARCH_BY_PRICE,
     SEARCH_BY_RATING,
+    SEARCH_BY_CATEGORY,
+    ACTIVE,
+    INACTIVE,
   },
 } = END_POINTS;
 
@@ -107,10 +112,10 @@ export class BooksController {
     description: 'Allow admin',
   })
   @Post(CREATE)
-  @UseInterceptors(FileInterceptor('image'))
+  @UseInterceptors(FilesInterceptor('images'))
   async createBook(
     @Body() body: CreateBookDto,
-    @UploadedFile(
+    @UploadedFiles(
       new ParseFilePipeBuilder()
         .addFileTypeValidator({
           fileType: FILE_TYPES_REGEX,
@@ -119,9 +124,10 @@ export class BooksController {
           fileIsRequired: false,
         }),
     )
-    image?: Express.Multer.File,
+    images?: Array<Express.Multer.File>,
   ): Promise<StandardResponse<Books>> {
-    const newBook: Books = await this.bookService.createBook(body, image);
+    console.log(images);
+    const newBook: Books = await this.bookService.createBook(body, images);
     const message = 'Create book successfully';
     return new StandardResponse(newBook, message, HttpStatusCode.CREATED);
   }
@@ -130,11 +136,11 @@ export class BooksController {
     description: 'Allow admin',
   })
   @Patch(UPDATE)
-  @UseInterceptors(FileInterceptor('image'))
+  @UseInterceptors(FilesInterceptor('images_update'))
   async updateBook(
     @Param('id', ParseUUIDPipe) id: string,
     @Body() dto: UpdateBookDto,
-    @UploadedFile(
+    @UploadedFiles(
       new ParseFilePipeBuilder()
         .addFileTypeValidator({
           fileType: FILE_TYPES_REGEX,
@@ -143,12 +149,12 @@ export class BooksController {
           fileIsRequired: false,
         }),
     )
-    image?: Express.Multer.File,
+    images?: Array<Express.Multer.File>,
   ): Promise<StandardResponse<Books>> {
     const updatedBook: Books = await this.bookService.updateBook(
       id,
       dto,
-      image,
+      images,
     );
     const message = 'Update book successfully';
     return new StandardResponse(updatedBook, message, HttpStatusCode.OK);
@@ -191,5 +197,53 @@ export class BooksController {
       itemCount: itemCount,
     });
     return new PageResponseDto(books, meta);
+  }
+  @Get(SEARCH)
+  async searchBook(
+    @Query() bookQuery: BookQuery,
+    @Query('query') query?: string,
+  ) {
+    const { books, itemCount } = await this.bookService.searchBook(
+      query,
+      bookQuery,
+    );
+    const meta = new PageResponseMetaDto({
+      pageOptionsDto: bookQuery,
+      itemCount: itemCount,
+    });
+    return new PageResponseDto(books, meta);
+  }
+  @Get(SEARCH_BY_CATEGORY)
+  async searchByCategory(
+    @Param('categoryId', ParseUUIDPipe) categoryId: string,
+    @Query() BookQuery: BookQuery,
+  ) {
+    const { books, itemCount } = await this.bookService.searchByCategory(
+      categoryId,
+      BookQuery,
+    );
+    const meta = new PageResponseMetaDto({
+      pageOptionsDto: BookQuery,
+      itemCount: itemCount,
+    });
+    return new PageResponseDto(books, meta);
+  }
+  @Post(ACTIVE)
+  async enableBook(@Param('id', ParseUUIDPipe) id: string) {
+    const book = await this.bookService.activeBook(id);
+    return new StandardResponse(
+      book,
+      'Enable book successfully',
+      HttpStatusCode.OK,
+    );
+  }
+  @Post(INACTIVE)
+  async disableBook(@Param('id', ParseUUIDPipe) id: string) {
+    const book = await this.bookService.inactiveBook(id);
+    return new StandardResponse(
+      book,
+      'Disable book successfully',
+      HttpStatusCode.OK,
+    );
   }
 }

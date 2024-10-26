@@ -4,13 +4,20 @@ import {
   Get,
   HttpStatus,
   Param,
+  ParseFilePipeBuilder,
   ParseUUIDPipe,
   Patch,
   Post,
   Query,
+  UploadedFile,
+  UseInterceptors,
 } from '@nestjs/common';
 import { ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
-import { DOCUMENTATION, END_POINTS } from 'src/utils/constants';
+import {
+  DOCUMENTATION,
+  END_POINTS,
+  FILE_TYPES_REGEX,
+} from 'src/utils/constants';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UsersService } from './users.service';
 import {
@@ -22,6 +29,7 @@ import { GetAllUserDto } from './dto/get-all-user.dto';
 import { PageResponseMetaDto } from 'src/utils/page-response-meta.dto';
 import { PageResponseDto } from 'src/utils/page-response.dto';
 import { StandardResponse } from 'src/utils/response.dto';
+import { FileInterceptor } from '@nestjs/platform-express';
 
 const {
   USERS: { BASE, GET_ALL, CREATE, GET_ONE, UPDATE, ENABLE, DISABLE },
@@ -67,11 +75,22 @@ export class UsersController {
     return new StandardResponse(user, 'Get user successfully', HttpStatus.OK);
   }
   @Patch(UPDATE)
+  @UseInterceptors(FileInterceptor('avatar_url'))
   async updateUserProfile(
     @UserSession() session: TUserSession,
     @Body() dto: UpdateUserProfileDto,
+    @UploadedFile(
+      new ParseFilePipeBuilder()
+        .addFileTypeValidator({
+          fileType: FILE_TYPES_REGEX,
+        })
+        .build({
+          fileIsRequired: false,
+        }),
+    )
+    image?: Express.Multer.File,
   ) {
-    const user = await this.userService.updateUserProfile(session, dto);
+    const user = await this.userService.updateUserProfile(session, dto, image);
     return new StandardResponse(
       user,
       'Update user profile successfully',

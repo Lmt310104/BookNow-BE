@@ -48,7 +48,6 @@ export class CartsService {
     return { cartItems, itemCount };
   }
   async addToCart(session: TUserSession, addToCartDto: AddToCartDto) {
-    console.log(session, addToCartDto);
     const { bookId, quantity } = addToCartDto;
     const cart = await this.prisma.carts.findFirst({
       where: { user_id: session.id },
@@ -71,14 +70,20 @@ export class CartsService {
     if (existingCartItem) {
       await this.prisma.cartItems.update({
         where: { id: existingCartItem.id },
-        data: { quantity: existingCartItem.quantity + quantity },
+        data: {
+          quantity:
+            existingCartItem.quantity + quantity < book.stock_quantity
+              ? existingCartItem.quantity + quantity
+              : book.stock_quantity,
+        },
       });
     } else {
       await this.prisma.cartItems.create({
         data: {
           book_id: bookId,
           cart_id: cart.id,
-          quantity,
+          quantity:
+            quantity < book.stock_quantity ? quantity : book.stock_quantity,
         },
       });
     }
@@ -131,9 +136,6 @@ export class CartsService {
     if (!book) {
       throw new BadRequestException('Book not found');
     }
-    if (book.stock_quantity < quantity) {
-      throw new BadRequestException('Stock quantity is not enough');
-    }
     const cart = await this.prisma.carts.findFirst({
       where: { user_id: session.id },
     });
@@ -147,20 +149,13 @@ export class CartsService {
       throw new BadRequestException('Cart item not found');
     }
     return await this.prisma.$transaction(async (tx) => {
-      await tx.books.update({
-        where: {
-          id: bookId,
-        },
-        data: {
-          stock_quantity: book.stock_quantity - quantity + cartItem.quantity,
-        },
-      });
       await tx.cartItems.update({
         where: {
           id: cartItem.id,
         },
         data: {
-          quantity,
+          quantity:
+            quantity < book.stock_quantity ? quantity : book.stock_quantity,
         },
       });
       const updateCart = await tx.carts.findUnique({

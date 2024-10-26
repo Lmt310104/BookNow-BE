@@ -24,7 +24,6 @@ export class BooksService {
             contains: bookQuery.category,
           },
         },
-        status: bookQuery.status,
       },
       include: {
         Category: true,
@@ -38,7 +37,7 @@ export class BooksService {
     const itemCount = await this.prismaService.books.count();
     return { books, itemCount };
   }
-  async createBook(body: CreateBookDto, image?: Express.Multer.File) {
+  async createBook(body: CreateBookDto, images?: Array<Express.Multer.File>) {
     const {
       title,
       author,
@@ -56,9 +55,9 @@ export class BooksService {
     }
     let imageUrls = [];
     try {
-      if (image && image.buffer.byteLength > 0) {
+      if (images.length > 0) {
         const uploadImagesData = await uploadFilesFromFirebase(
-          [image],
+          images,
           EUploadFolder.book,
         );
         if (!uploadImagesData.success) {
@@ -81,13 +80,18 @@ export class BooksService {
       return newBook;
     } catch (error) {
       console.log('Error:', error.message);
-      if (image && !imageUrls.length) await deleteFilesFromFirebase(imageUrls);
+      if (images.length && !imageUrls.length)
+        await deleteFilesFromFirebase(imageUrls);
       throw new BadRequestException({
         messaging: error.message,
       });
     }
   }
-  async updateBook(id: string, dto: UpdateBookDto, image: Express.Multer.File) {
+  async updateBook(
+    id: string,
+    dto: UpdateBookDto,
+    images: Array<Express.Multer.File>,
+  ) {
     const existingBook = await this.prismaService.books.findFirst({
       where: { id: id },
     });
@@ -96,9 +100,9 @@ export class BooksService {
     }
     let imageUrls = [];
     try {
-      if (image && image.buffer.byteLength > 0) {
+      if (images.length > 0) {
         const uploadImagesData = await uploadFilesFromFirebase(
-          [image],
+          images,
           EUploadFolder.book,
         );
         if (!uploadImagesData.success) {
@@ -112,7 +116,9 @@ export class BooksService {
           data: {
             title: dto.title,
             description: dto.description,
-            image_url: imageUrls.length ? imageUrls[0] : existingBook.image_url,
+            image_url: imageUrls.length
+              ? [...(dto.image_url ? dto.image_url : []), ...imageUrls]
+              : existingBook.image_url,
             price: dto?.price ?? existingBook.price,
           },
         });
@@ -120,7 +126,8 @@ export class BooksService {
       });
     } catch (error) {
       console.log('Error:', error.message);
-      if (image && !imageUrls.length) await deleteFilesFromFirebase(imageUrls);
+      if (imageUrls.length && !imageUrls.length)
+        await deleteFilesFromFirebase(imageUrls);
       throw new BadRequestException({
         messaging: error.message,
       });
@@ -178,5 +185,89 @@ export class BooksService {
       },
     });
     return { books, itemCount };
+  }
+  async searchBook(query: string, bookQuery: BookQuery) {
+    const books = await this.prismaService.books.findMany({
+      where: {
+        OR: [
+          {
+            title: {
+              contains: query,
+              mode: 'insensitive',
+            },
+          },
+          {
+            author: {
+              contains: query,
+              mode: 'insensitive',
+            },
+          },
+        ],
+        ...(bookQuery.status && { status: bookQuery.status }),
+      },
+      take: bookQuery.take,
+      skip: bookQuery.skip,
+      orderBy: { [bookQuery.sortBy]: bookQuery.order },
+    });
+    const itemCount = await this.prismaService.books.count({
+      where: {
+        OR: [
+          {
+            title: {
+              contains: query,
+              mode: 'insensitive',
+            },
+          },
+          {
+            author: {
+              contains: query,
+              mode: 'insensitive',
+            },
+          },
+        ],
+      },
+    });
+    return { books, itemCount };
+  }
+  async searchByCategory(categoryId: string, bookQuery: BookQuery) {
+    const books = await this.prismaService.books.findMany({
+      where: {
+        Category: {
+          id: categoryId,
+        },
+        ...(bookQuery.status && { status: bookQuery.status }),
+      },
+      take: bookQuery.take,
+      skip: bookQuery.skip,
+      orderBy: { [bookQuery.sortBy]: bookQuery.order },
+    });
+    const itemCount = await this.prismaService.books.count({
+      where: {
+        Category: {
+          id: categoryId,
+        },
+      },
+    });
+    return { books, itemCount };
+  }
+  async activeBook(id: string) {
+    const existingBook = await this.prismaService.books.update({
+      where: { id },
+      data: { status: 'ACTIVE' },
+    });
+    if (!existingBook) {
+      throw new BadRequestException('Book not found');
+    }
+    return existingBook;
+  }
+  async inactiveBook(id: string) {
+    const existingBook = await this.prismaService.books.update({
+      where: { id },
+      data: { status: 'INACTIVE' },
+    });
+    if (!existingBook) {
+      throw new BadRequestException('Book not found');
+    }
+    return existingBook;
   }
 }
