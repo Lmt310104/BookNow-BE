@@ -9,6 +9,8 @@ import { TUserSession } from 'src/common/decorators/user-session.decorator';
 import { CreateOrderDto } from './dto/create-order.dto';
 import { CreateReviewDto } from './dto/create-review.dto';
 import { ORDER_STATUS } from 'src/utils/constants';
+import { UpdateOrderStatusDto } from './dto/update-order-status.dto';
+import { OrderStatus } from '@prisma/client';
 
 @Injectable()
 export class OrderService {
@@ -49,6 +51,14 @@ export class OrderService {
           };
         });
         await tx.orderDetails.createMany({ data: orderItems });
+        orderItems.forEach(async (item) => {
+          await tx.books.update({
+            where: { id: item.book_id },
+            data: {
+              stock_quantity: { decrement: item.quantity },
+            },
+          });
+        });
         const totalPrice = orderItems.reduce(
           (acc, item) => acc + item.total_price,
           0,
@@ -76,6 +86,13 @@ export class OrderService {
   async getListOrders(query: OrderPageOptionsDto) {
     const { take, order, sortBy } = query;
     const orders = await this.prisma.orders.findMany({
+      include: {
+        OrderDetails: {
+          include: {
+            book: true,
+          },
+        },
+      },
       skip: query.skip,
       take: take,
       orderBy: { [sortBy]: order },
@@ -83,7 +100,7 @@ export class OrderService {
     const itemCount = await this.prisma.orders.count();
     return { orders, itemCount };
   }
-  async getOrderDetailsByUser(id: number, session: TUserSession) {
+  async getOrderDetailsByUser(id: string, session: TUserSession) {
     const order = await this.prisma.orders.findUnique({
       where: { user_id: session.id, id: id },
       include: {
@@ -109,12 +126,45 @@ export class OrderService {
     });
     return { orders, itemCount };
   }
-  async updateOrder() {}
+  async updateOrderStatus(id: string, dto: UpdateOrderStatusDto) {
+    const order = await this.prisma.orders.findUnique({
+      where: { id },
+    });
+    if (!order) {
+      throw new NotFoundException('Order not found');
+    }
+    if (order.status === ORDER_STATUS.PENDING) {
+      throw new BadRequestException(
+        'Status of this order already exists in the database',
+      );
+    }
+    if (dto.status === ORDER_STATUS.REJECT) {
+      try {
+        return await this.prisma.$transaction(async (tx) => {
+          await this.prisma.orderDetails.deleteMany({
+            where: { order_id: id },
+          });
+          const updatedOrder = await tx.orders.update({
+            where: { id },
+            data: { status: dto.status },
+          });
+          return updatedOrder;
+        });
+      } catch (error) {
+        console.log(error);
+        throw new BadRequestException('Failed to update order status');
+      }
+    }
+    return await this.prisma.orders.update({
+      where: { id },
+      data: { status: dto.status },
+    });
+  }
   async createReview(
     session: TUserSession,
     dto: CreateReviewDto,
-    id: number,
-    orderDetailId: number,
+    id: string,
+    orderDetailId: string,
     bookId: string,
   ) {
     const order = await this.prisma.orders.findUnique({
@@ -170,15 +220,46 @@ export class OrderService {
       });
     }
   }
-  async cancelOrder(id: number) {
+  async cancelOrder(id: string, session: TUserSession) {
     const order = await this.prisma.orders.findUnique({
-      where: { id },
+      where: { id: id, user_id: session.id },
     });
     if (!order) {
       throw new NotFoundException('Order not found');
     }
     if (order.status === ORDER_STATUS.CANCELLED) {
       throw new BadRequestException('Order already cancelled');
+    }
+    const orderDetails = await this.prisma.orderDetails.findMany({
+      where: { order_id: id },
+    });
+    const bookIds = orderDetails.map((item) => {
+      return { id: item.book_id, quantity: item.quantity };
+    });
+    try {
+      return await this.prisma.$transaction(async (tx) => {
+        await tx.orderDetails.deleteMany({
+          where: { order_id: id },
+        });
+        await tx.orders.update({
+          where: { id },
+          data: { status: ORDER_STATUS.REJECT as OrderStatus },
+        });
+        bookIds.forEach(async (item) => {
+          await tx.books.update({
+            where: { id: item.id },
+            data: {
+              stock_quantity: { increment: item.quantity },
+            },
+          });
+        });
+        return await tx.orders.findUnique({
+          where: { id },
+        });
+      });
+    } catch (error) {
+      console.log('Error:', error);
+      throw new BadRequestException('Failed to cancel order');
     }
   }
   async getOrderHistory(session: TUserSession) {
@@ -194,5 +275,5 @@ export class OrderService {
     });
     return orders;
   }
-  async getOrderState(id: number) {}
+  async getOrderState(id: string) {}
 }

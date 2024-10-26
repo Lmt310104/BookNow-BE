@@ -3,7 +3,6 @@ import {
   Controller,
   Get,
   Param,
-  ParseIntPipe,
   ParseUUIDPipe,
   Patch,
   Post,
@@ -24,6 +23,7 @@ import { StandardResponse } from 'src/utils/response.dto';
 import HttpStatusCode from 'src/utils/HttpStatusCode';
 import { CreateOrderDto } from './dto/create-order.dto';
 import { CreateReviewDto } from './dto/create-review.dto';
+import { UpdateOrderStatusDto } from './dto/update-order-status.dto';
 
 const {
   ORDER: {
@@ -79,11 +79,18 @@ export class OrdersController {
     return new StandardResponse<Orders>(order, message, HttpStatusCode.CREATED);
   }
   @Post(UPDATE_STATUS)
-  async updateOrderStatus() {}
+  async updateOrderStatus(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() dto: UpdateOrderStatusDto,
+  ) {
+    const order = await this.orderService.updateOrderStatus(dto);
+    const message = 'Order status updated successfully';
+    return new StandardResponse<Orders>(order, message, HttpStatusCode.OK);
+  }
   @Get(GET_ONE)
   async getOrderDetails(
     @UserSession() session: TUserSession,
-    @Param('id', ParseIntPipe) id: number,
+    @Param('id', ParseUUIDPipe) id: string,
   ): Promise<StandardResponse<Orders>> {
     const order = await this.orderService.getOrderDetailsByUser(id, session);
     const message = 'Order details retrieved successfully';
@@ -93,8 +100,8 @@ export class OrdersController {
   async createReview(
     @UserSession() session: TUserSession,
     @Body() dto: CreateReviewDto,
-    @Param('id', ParseIntPipe) id: number,
-    @Param('orderDetailsId', ParseIntPipe) orderDetailsId: number,
+    @Param('id', ParseUUIDPipe) id: string,
+    @Param('orderDetailsId', ParseUUIDPipe) orderDetailsId: string,
     @Param('bookId', ParseUUIDPipe) bookId: string,
   ): Promise<StandardResponse<Reviews>> {
     console.log(dto);
@@ -109,8 +116,11 @@ export class OrdersController {
     return new StandardResponse(review, message, HttpStatusCode.CREATED);
   }
   @Patch(CANCEL_ORDER)
-  async cancelOrder(@Param('id', ParseIntPipe) id: number) {
-    const order = await this.orderService.cancelOrder(id);
+  async cancelOrder(
+    @Param('id', ParseUUIDPipe) id: string,
+    @UserSession() session: TUserSession,
+  ) {
+    const order = await this.orderService.cancelOrder(id, session);
     const message = 'Order cancelled successfully';
     return new StandardResponse(order, message, HttpStatusCode.OK);
   }
@@ -121,7 +131,7 @@ export class OrdersController {
     return new StandardResponse(orders, message, HttpStatusCode.OK);
   }
   @Get(ORDER_STATE)
-  async getOrderState(@Param('id', ParseIntPipe) id: number) {
+  async getOrderState(@Param('id', ParseUUIDPipe) id: string) {
     const order = await this.orderService.getOrderState(id);
     const message = 'Order state retrieved successfully';
     return new StandardResponse(order, message, HttpStatusCode.OK);
