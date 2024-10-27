@@ -290,6 +290,21 @@ export class OrderService {
       throw new BadRequestException('Failed to cancel order');
     }
   }
+  async getOrderDetailsByAdmin(id: string) {
+    const order = await this.prisma.orders.findUnique({
+      where: {
+        id: id,
+      },
+      include: {
+        OrderItems: true,
+        user: true,
+      },
+    });
+    if (!order) {
+      throw new BadRequestException('Order not found');
+    }
+    return order;
+  }
   async getOrderHistory(session: TUserSession, dto: OrderPageOptionsDto) {
     const orders = await this.prisma.orders.findMany({
       where: { user_id: session.id, ...(dto.status && { status: dto.status }) },
