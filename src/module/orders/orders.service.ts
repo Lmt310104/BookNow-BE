@@ -169,9 +169,6 @@ export class OrderService {
     if (dto.status === ORDER_STATUS.REJECT) {
       try {
         return await this.prisma.$transaction(async (tx) => {
-          await this.prisma.orderItems.deleteMany({
-            where: { order_id: id },
-          });
           const updatedOrder = await tx.orders.update({
             where: { id },
             data: { status: dto.status },
@@ -266,12 +263,9 @@ export class OrderService {
     });
     try {
       return await this.prisma.$transaction(async (tx) => {
-        await tx.orderItems.deleteMany({
-          where: { order_id: id },
-        });
         await tx.orders.update({
           where: { id },
-          data: { status: ORDER_STATUS.REJECT as OrderStatus },
+          data: { status: ORDER_STATUS.CANCELLED as OrderStatus },
         });
         bookIds.forEach(async (item) => {
           await tx.books.update({
