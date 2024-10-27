@@ -81,6 +81,7 @@ export class UsersService {
     dto: UpdateUserProfileDto,
     image?: Express.Multer.File,
   ) {
+    console.log(image);
     let imageUrls = [];
     try {
       if (image && image.buffer.byteLength > 0) {
