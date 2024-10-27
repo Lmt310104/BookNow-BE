@@ -104,6 +104,7 @@ export const END_POINTS = {
     UPDATE_STATUS: '/status/update/:id',
     GET_ONE: '/get-details/:id',
     CANCEL_ORDER: '/:id/cancel-order',
+    GET_ONE_BY_ADMIN: '/get-details-by-admin/:id',
   },
   ORDER_DETAILS: {
     BASE: '/order-details',

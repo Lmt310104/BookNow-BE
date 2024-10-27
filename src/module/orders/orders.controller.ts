@@ -34,6 +34,7 @@ const {
     UPDATE_STATUS,
     GET_ONE,
     CANCEL_ORDER,
+    GET_ONE_BY_ADMIN,
   },
 } = END_POINTS;
 
@@ -83,6 +84,12 @@ export class OrdersController {
   ) {
     const order = await this.orderService.updateOrderStatus(id, dto);
     const message = 'Order status updated successfully';
+    return new StandardResponse<Orders>(order, message, HttpStatusCode.OK);
+  }
+  @Get(GET_ONE_BY_ADMIN)
+  async getOrderDetailsByAdmin(@Param('id', ParseUUIDPipe) id: string) {
+    const order = await this.orderService.getOrderDetailsByAdmin(id);
+    const message = 'Order details retrive';
     return new StandardResponse<Orders>(order, message, HttpStatusCode.OK);
   }
   @Get(GET_ONE)
