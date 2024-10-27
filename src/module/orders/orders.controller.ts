@@ -34,7 +34,7 @@ const {
     UPDATE_STATUS,
     GET_ONE,
     CANCEL_ORDER,
-    ORDER_HISTORY,
+    GET_ONE_BY_ADMIN,
   },
 } = END_POINTS;
 
@@ -86,6 +86,12 @@ export class OrdersController {
     const message = 'Order status updated successfully';
     return new StandardResponse<Orders>(order, message, HttpStatusCode.OK);
   }
+  @Get(GET_ONE_BY_ADMIN)
+  async getOrderDetailsByAdmin(@Param('id', ParseUUIDPipe) id: string) {
+    const order = await this.orderService.getOrderDetailsByAdmin(id);
+    const message = 'Order details retrive';
+    return new StandardResponse<Orders>(order, message, HttpStatusCode.OK);
+  }
   @Get(GET_ONE)
   async getOrderDetails(
     @UserSession() session: TUserSession,
@@ -122,20 +128,5 @@ export class OrdersController {
     const order = await this.orderService.cancelOrder(id, session);
     const message = 'Order cancelled successfully';
     return new StandardResponse(order, message, HttpStatusCode.OK);
-  }
-  @Get(ORDER_HISTORY)
-  async getOrderHistory(
-    @UserSession() session: TUserSession,
-    @Body() dto: OrderPageOptionsDto,
-  ) {
-    const { orders, itemCount } = await this.orderService.getOrderHistory(
-      session,
-      dto,
-    );
-    const meta = new PageResponseMetaDto({
-      pageOptionsDto: dto,
-      itemCount: itemCount,
-    });
-    return new PageResponseDto(orders, meta);
   }
 }

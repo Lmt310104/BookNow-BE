@@ -100,18 +100,32 @@ export class OrderService {
   async getListOrders(query: OrderPageOptionsDto) {
     const { take, order, sortBy } = query;
     const orders = await this.prisma.orders.findMany({
+      where: {
+        ...(query.status && { status: query.status }),
+      },
+      skip: query.skip,
+      take: take,
+      orderBy: { [sortBy]: order },
       include: {
         OrderItems: {
           include: {
             book: true,
           },
         },
+        user: {
+          select: {
+            id: true,
+            email: true,
+            full_name: true,
+          },
+        },
       },
-      skip: query.skip,
-      take: take,
-      orderBy: { [sortBy]: order },
     });
-    const itemCount = await this.prisma.orders.count();
+    const itemCount = await this.prisma.orders.count({
+      where: {
+        ...(query.status && { status: query.status }),
+      },
+    });
     return { orders, itemCount };
   }
   async getOrderProductsByUser(id: string, session: TUserSession) {
@@ -130,13 +144,26 @@ export class OrderService {
   async getListOrdersByUser(query: OrderPageOptionsDto, session: TUserSession) {
     const { take, order, sortBy } = query;
     const orders = await this.prisma.orders.findMany({
-      where: { user_id: session.id },
+      where: {
+        user_id: session.id,
+        ...(query.status && { status: query.status }),
+      },
       skip: query.skip,
       take: take,
       orderBy: { [sortBy]: order },
+      include: {
+        OrderItems: {
+          include: {
+            book: true,
+          },
+        },
+      },
     });
     const itemCount = await this.prisma.orders.count({
-      where: { user_id: session.id },
+      where: {
+        user_id: session.id,
+        ...(query.status && { status: query.status }),
+      },
     });
     return { orders, itemCount };
   }
@@ -155,9 +182,6 @@ export class OrderService {
     if (dto.status === ORDER_STATUS.REJECT) {
       try {
         return await this.prisma.$transaction(async (tx) => {
-          await this.prisma.orderItems.deleteMany({
-            where: { order_id: id },
-          });
           const updatedOrder = await tx.orders.update({
             where: { id },
             data: { status: dto.status },
@@ -252,12 +276,9 @@ export class OrderService {
     });
     try {
       return await this.prisma.$transaction(async (tx) => {
-        await tx.orderItems.deleteMany({
-          where: { order_id: id },
-        });
         await tx.orders.update({
           where: { id },
-          data: { status: ORDER_STATUS.REJECT as OrderStatus },
+          data: { status: ORDER_STATUS.CANCELLED as OrderStatus },
         });
         bookIds.forEach(async (item) => {
           await tx.books.update({
@@ -275,6 +296,25 @@ export class OrderService {
       console.log('Error:', error);
       throw new BadRequestException('Failed to cancel order');
     }
+  }
+  async getOrderDetailsByAdmin(id: string) {
+    const order = await this.prisma.orders.findUnique({
+      where: {
+        id: id,
+      },
+      include: {
+        OrderItems: {
+          include: {
+            book: true,
+          },
+        },
+        user: true,
+      },
+    });
+    if (!order) {
+      throw new BadRequestException('Order not found');
+    }
+    return order;
   }
   async getOrderHistory(session: TUserSession, dto: OrderPageOptionsDto) {
     const orders = await this.prisma.orders.findMany({

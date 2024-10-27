@@ -24,6 +24,7 @@ export class BooksService {
             contains: bookQuery.category,
           },
         },
+        ...(bookQuery.status ? { status: bookQuery.status } : {}),
       },
       include: {
         Category: true,

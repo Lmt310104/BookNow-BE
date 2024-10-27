@@ -16,9 +16,9 @@ class SignInService {
   ) {}
   public async SignInByEmail(body: SignInByEmailDto, res: Response) {
     const { email, password } = body;
-    const CAUSE = 'Email or password is incorrect';
+    const CAUSE = 'Email or password is incorrect or user has been disabled';
     const user = await this.prisma.users.findUnique({
-      where: { email: email },
+      where: { email: email, is_disable: false },
       select: {
         id: true,
         password: true,
