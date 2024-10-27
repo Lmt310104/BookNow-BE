@@ -100,6 +100,9 @@ export class OrderService {
   async getListOrders(query: OrderPageOptionsDto) {
     const { take, order, sortBy } = query;
     const orders = await this.prisma.orders.findMany({
+      where: {
+        ...(query.status && { status: query.status }),
+      },
       skip: query.skip,
       take: take,
       orderBy: { [sortBy]: order },
@@ -118,7 +121,11 @@ export class OrderService {
         },
       },
     });
-    const itemCount = await this.prisma.orders.count();
+    const itemCount = await this.prisma.orders.count({
+      where: {
+        ...(query.status && { status: query.status }),
+      },
+    });
     return { orders, itemCount };
   }
   async getOrderProductsByUser(id: string, session: TUserSession) {
@@ -137,7 +144,10 @@ export class OrderService {
   async getListOrdersByUser(query: OrderPageOptionsDto, session: TUserSession) {
     const { take, order, sortBy } = query;
     const orders = await this.prisma.orders.findMany({
-      where: { user_id: session.id },
+      where: {
+        user_id: session.id,
+        ...(query.status && { status: query.status }),
+      },
       skip: query.skip,
       take: take,
       orderBy: { [sortBy]: order },
@@ -150,7 +160,10 @@ export class OrderService {
       },
     });
     const itemCount = await this.prisma.orders.count({
-      where: { user_id: session.id },
+      where: {
+        user_id: session.id,
+        ...(query.status && { status: query.status }),
+      },
     });
     return { orders, itemCount };
   }
