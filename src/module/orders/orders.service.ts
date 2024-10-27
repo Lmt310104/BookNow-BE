@@ -100,16 +100,23 @@ export class OrderService {
   async getListOrders(query: OrderPageOptionsDto) {
     const { take, order, sortBy } = query;
     const orders = await this.prisma.orders.findMany({
+      skip: query.skip,
+      take: take,
+      orderBy: { [sortBy]: order },
       include: {
         OrderItems: {
           include: {
             book: true,
           },
         },
+        user: {
+          select: {
+            id: true,
+            email: true,
+            full_name: true,
+          },
+        },
       },
-      skip: query.skip,
-      take: take,
-      orderBy: { [sortBy]: order },
     });
     const itemCount = await this.prisma.orders.count();
     return { orders, itemCount };
