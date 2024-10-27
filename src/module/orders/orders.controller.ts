@@ -34,7 +34,6 @@ const {
     UPDATE_STATUS,
     GET_ONE,
     CANCEL_ORDER,
-    ORDER_HISTORY,
   },
 } = END_POINTS;
 
@@ -122,20 +121,5 @@ export class OrdersController {
     const order = await this.orderService.cancelOrder(id, session);
     const message = 'Order cancelled successfully';
     return new StandardResponse(order, message, HttpStatusCode.OK);
-  }
-  @Get(ORDER_HISTORY)
-  async getOrderHistory(
-    @UserSession() session: TUserSession,
-    @Body() dto: OrderPageOptionsDto,
-  ) {
-    const { orders, itemCount } = await this.orderService.getOrderHistory(
-      session,
-      dto,
-    );
-    const meta = new PageResponseMetaDto({
-      pageOptionsDto: dto,
-      itemCount: itemCount,
-    });
-    return new PageResponseDto(orders, meta);
   }
 }

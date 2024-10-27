@@ -8,7 +8,6 @@ import {
   Patch,
   Post,
   Query,
-  UploadedFile,
   UploadedFiles,
   UseInterceptors,
   UsePipes,

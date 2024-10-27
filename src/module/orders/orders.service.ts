@@ -134,6 +134,13 @@ export class OrderService {
       skip: query.skip,
       take: take,
       orderBy: { [sortBy]: order },
+      include: {
+        OrderItems: {
+          include: {
+            book: true,
+          },
+        },
+      },
     });
     const itemCount = await this.prisma.orders.count({
       where: { user_id: session.id },

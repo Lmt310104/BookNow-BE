@@ -103,10 +103,7 @@ export const END_POINTS = {
     CREATE: '/create',
     UPDATE_STATUS: '/status/update/:id',
     GET_ONE: '/get-details/:id',
-    GET_DETAILS: '/get-details',
     CANCEL_ORDER: '/:id/cancel-order',
-    ORDER_HISTORY: '/history',
-    ORDER_STATE: '/:id/state',
   },
   ORDER_DETAILS: {
     BASE: '/order-details',
