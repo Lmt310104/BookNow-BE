@@ -296,7 +296,11 @@ export class OrderService {
         id: id,
       },
       include: {
-        OrderItems: true,
+        OrderItems: {
+          include: {
+            book: true,
+          },
+        },
         user: true,
       },
     });
