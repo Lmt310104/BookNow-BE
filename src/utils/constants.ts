@@ -43,7 +43,8 @@ export const END_POINTS = {
     UPDATE: '/update',
     DISABLE: '/:id/disable',
     ENABLE: '/:id/enable',
-    GET_ONE: '/:id',
+    GET_ONE: '/get-one/:id',
+    SEARCH: '/search',
   },
   BOOKS: {
     BASE: '/books',

@@ -45,11 +45,11 @@ export class UsersService {
     }
     return newUser;
   }
-  async getAllUsers(query: GetAllUserDto) {
+  async getAllUsers(query: GetAllUserDto, isDisabled: boolean) {
     const users = await this.prisma.users.findMany({
       where: {
         ...(query.role && { role: query.role }),
-        ...(query.isDisabled && { is_disable: query.isDisabled }),
+        ...(isDisabled && { is_disable: isDisabled }),
       },
       skip: query.skip,
       take: query.take,
@@ -141,5 +141,30 @@ export class UsersService {
       },
     });
     return updatedUser;
+  }
+  async searchUser(keyword: string, query: GetAllUserDto, disable: boolean) {
+    const users = await this.prisma.users.findMany({
+      where: {
+        full_name: {
+          contains: keyword,
+          mode: 'insensitive',
+        },
+        ...(query.role && { role: query.role }),
+        ...(disable && { is_disable: disable }),
+      },
+      skip: query.skip,
+      take: query.take,
+      orderBy: { [query.sortBy]: query.order },
+    });
+    const itemCount = await this.prisma.users.count({
+      where: {
+        full_name: {
+          contains: keyword,
+          mode: 'insensitive',
+        },
+        role: query.role,
+      },
+    });
+    return { users, itemCount };
   }
 }
