@@ -4,8 +4,10 @@ import {
   DefaultValuePipe,
   Get,
   Param,
+  ParseIntPipe,
   ParseUUIDPipe,
   Post,
+  Put,
   Query,
   ValidationPipe,
 } from '@nestjs/common';
@@ -20,6 +22,7 @@ import { PageResponseDto } from 'src/utils/page-response.dto';
 import { PageResponseMetaDto } from 'src/utils/page-response-meta.dto';
 import { UpdateCategoryDto } from './dtos/update-category.dto';
 import { CategoryPageOptionsDto } from './dtos/find-all-categories.dto';
+import { PageOptionsDto } from 'src/utils/page-options-dto';
 
 const {
   CATEGORIES: {
@@ -61,10 +64,9 @@ export class CategoryController {
   async getAll(
     @Query() query: CategoryPageOptionsDto,
     @Query('disable', new DefaultValuePipe(undefined))
-    disable: boolean,
+    disable?: boolean,
   ): Promise<PageResponseDto<Category>> {
-    console.log(query);
-    const { categories, itemCount } = await this.categoryService.getAll(
+    const { categories, itemCount } = await this.categoryService.getCategories(
       query,
       disable,
     );
@@ -84,11 +86,11 @@ export class CategoryController {
   }
   @Post(DISABLE)
   async disableCategory(@Param('id', ParseUUIDPipe) id: string) {
-    await this.categoryService.disableCategory(id);
+    const result = await this.categoryService.disableCategory(id);
     const message = 'Disable category successfully';
-    return new StandardResponse(null, message, HttpStatusCode.OK);
+    return new StandardResponse(result, message, HttpStatusCode.OK);
   }
-  @Post(UPDATE)
+  @Put(UPDATE)
   async update(
     @Param('id', ParseUUIDPipe) id: string,
     @Body() dto: UpdateCategoryDto,
@@ -109,12 +111,13 @@ export class CategoryController {
   async search(
     @Query(new ValidationPipe({ transform: true }))
     pageOption: CategoryPageOptionsDto,
-    @Query('state', new DefaultValuePipe(undefined)) state?: boolean,
+    @Query('disable', new DefaultValuePipe(undefined)) disable?: boolean,
     @Query('query', new DefaultValuePipe(undefined)) query?: string,
   ) {
     const { categories, itemCount } = await this.categoryService.search(
       query,
       pageOption,
+      disable,
     );
     const meta = new PageResponseMetaDto({
       pageOptionsDto: pageOption,
