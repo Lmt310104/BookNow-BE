@@ -44,28 +44,24 @@ export class CategoryService {
     });
     return category;
   }
-  async getAll(query: CategoryPageOptionsDto, disable?: boolean) {
-    if (disable !== undefined) {
-      const categories = await this.prisma.category.findMany({
-        where: { is_disable: disable },
+  async getCategories(query: CategoryPageOptionsDto, disable: boolean) {
+    const where = disable !== undefined ? { is_disable: disable } : undefined;
+
+    const [categories, itemCount] = await Promise.all([
+      this.prisma.category.findMany({
+        where,
         skip: query.skip,
         take: query.take,
-        orderBy: { [query.sortBy]: query.order },
-      });
-      const itemCount = await this.prisma.category.count({
-        where: { is_disable: disable },
-      });
-      return { categories, itemCount };
-    } else {
-      const categories = await this.prisma.category.findMany({
-        skip: query.skip,
-        take: query.take,
-        orderBy: { [query.sortBy]: query.order },
-      });
-      const itemCount = await this.prisma.category.count();
-      return { categories, itemCount };
-    }
+        orderBy: {
+          [query.sortBy]: query.order,
+        },
+      }),
+      this.prisma.category.count({ where }),
+    ]);
+
+    return { categories, itemCount };
   }
+
   async disableCategory(id: string) {
     const category = await this.prisma.category.findUnique({
       where: { id: id },
@@ -73,11 +69,11 @@ export class CategoryService {
     if (!category) {
       throw new BadRequestException('Category not found');
     }
-    await this.prisma.category.update({
+    const result = await this.prisma.category.update({
       where: { id: id },
       data: { is_disable: true },
     });
-    return category;
+    return result;
   }
   async enable(id: string) {
     const category = await this.prisma.category.findUnique({
@@ -92,13 +88,20 @@ export class CategoryService {
     });
     return category;
   }
-  async search(query: string, pageOption: CategoryPageOptionsDto) {
+  async search(
+    query: string,
+    pageOption: CategoryPageOptionsDto,
+    disable: boolean,
+  ) {
     const categories = await this.prisma.category.findMany({
       where: {
         name: {
           contains: query,
           mode: 'insensitive',
         },
+        ...(disable !== undefined && {
+          is_disable: disable,
+        }),
       },
       take: pageOption.take,
       skip: pageOption.skip,
@@ -109,6 +112,9 @@ export class CategoryService {
         name: {
           contains: query,
         },
+        ...(disable !== undefined && {
+          is_disable: disable,
+        }),
       },
     });
     return { categories, itemCount };
