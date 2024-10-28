@@ -45,10 +45,11 @@ export class UsersService {
     }
     return newUser;
   }
-  async getAllUsers(query: GetAllUserDto) {
+  async getAllUsers(query: GetAllUserDto, isDisabled: boolean) {
     const users = await this.prisma.users.findMany({
       where: {
-        role: query.role,
+        ...(query.role && { role: query.role }),
+        ...(isDisabled && { is_disable: isDisabled }),
       },
       skip: query.skip,
       take: query.take,
@@ -81,7 +82,6 @@ export class UsersService {
     dto: UpdateUserProfileDto,
     image?: Express.Multer.File,
   ) {
-    console.log(image);
     let imageUrls = [];
     try {
       if (image && image.buffer.byteLength > 0) {
@@ -103,13 +103,18 @@ export class UsersService {
         });
       }
       const { birthday, fullName, ...data } = dto;
+      const filteredData = Object.fromEntries(
+        Object.entries(data).filter(
+          ([_, value]) => value !== null && value !== '',
+        ),
+      );
       const updatedUser = await this.prisma.users.update({
         where: { id: session.id },
         data: {
-          full_name: fullName,
+          full_name: fullName ?? user.full_name,
           birthday: birthday ? new Date(birthday) : user.birthday,
           avatar_url: image ? imageUrls[0] : user.avatar_url,
-          ...data,
+          ...filteredData,
         },
       });
       return updatedUser;
@@ -136,5 +141,30 @@ export class UsersService {
       },
     });
     return updatedUser;
+  }
+  async searchUser(keyword: string, query: GetAllUserDto, disable: boolean) {
+    const users = await this.prisma.users.findMany({
+      where: {
+        full_name: {
+          contains: keyword,
+          mode: 'insensitive',
+        },
+        ...(query.role && { role: query.role }),
+        ...(disable && { is_disable: disable }),
+      },
+      skip: query.skip,
+      take: query.take,
+      orderBy: { [query.sortBy]: query.order },
+    });
+    const itemCount = await this.prisma.users.count({
+      where: {
+        full_name: {
+          contains: keyword,
+          mode: 'insensitive',
+        },
+        role: query.role,
+      },
+    });
+    return { users, itemCount };
   }
 }

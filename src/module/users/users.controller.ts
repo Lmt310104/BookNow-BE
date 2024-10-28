@@ -1,6 +1,7 @@
 import {
   Body,
   Controller,
+  DefaultValuePipe,
   Get,
   HttpStatus,
   Param,
@@ -32,7 +33,7 @@ import { StandardResponse } from 'src/utils/response.dto';
 import { FileInterceptor } from '@nestjs/platform-express';
 
 const {
-  USERS: { BASE, GET_ALL, CREATE, GET_ONE, UPDATE, ENABLE, DISABLE },
+  USERS: { BASE, GET_ALL, CREATE, GET_ONE, UPDATE, ENABLE, DISABLE, SEARCH },
 } = END_POINTS;
 
 @ApiTags(DOCUMENTATION.TAGS.USERS)
@@ -40,8 +41,14 @@ const {
 export class UsersController {
   constructor(private readonly userService: UsersService) {}
   @Get(GET_ALL)
-  async getAllUsers(@Query() query: GetAllUserDto) {
-    const { users, itemCount } = await this.userService.getAllUsers(query);
+  async getAllUsers(
+    @Query() query: GetAllUserDto,
+    @Query('disable', new DefaultValuePipe(undefined)) disable?: boolean,
+  ) {
+    const { users, itemCount } = await this.userService.getAllUsers(
+      query,
+      disable,
+    );
     const meta = new PageResponseMetaDto({
       pageOptionsDto: query,
       itemCount: itemCount,
@@ -114,5 +121,22 @@ export class UsersController {
       'Disable user successfully',
       HttpStatus.CREATED,
     );
+  }
+  @Get(SEARCH)
+  async searchUser(
+    @Query() query: GetAllUserDto,
+    @Query('keyword', new DefaultValuePipe(undefined)) keyword?: string,
+    @Query('disable', new DefaultValuePipe(undefined)) disable?: boolean,
+  ) {
+    const { users, itemCount } = await this.userService.searchUser(
+      keyword,
+      query,
+      disable,
+    );
+    const meta = new PageResponseMetaDto({
+      pageOptionsDto: query,
+      itemCount: itemCount,
+    });
+    return new PageResponseDto(users, meta);
   }
 }
