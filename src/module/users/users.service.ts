@@ -48,7 +48,8 @@ export class UsersService {
   async getAllUsers(query: GetAllUserDto) {
     const users = await this.prisma.users.findMany({
       where: {
-        role: query.role,
+        ...(query.role && { role: query.role }),
+        ...(query.isDisabled && { is_disable: query.isDisabled }),
       },
       skip: query.skip,
       take: query.take,
@@ -81,7 +82,6 @@ export class UsersService {
     dto: UpdateUserProfileDto,
     image?: Express.Multer.File,
   ) {
-    console.log(image);
     let imageUrls = [];
     try {
       if (image && image.buffer.byteLength > 0) {
@@ -103,13 +103,18 @@ export class UsersService {
         });
       }
       const { birthday, fullName, ...data } = dto;
+      const filteredData = Object.fromEntries(
+        Object.entries(data).filter(
+          ([_, value]) => value !== null && value !== '',
+        ),
+      );
       const updatedUser = await this.prisma.users.update({
         where: { id: session.id },
         data: {
-          full_name: fullName,
+          full_name: fullName ?? user.full_name,
           birthday: birthday ? new Date(birthday) : user.birthday,
           avatar_url: image ? imageUrls[0] : user.avatar_url,
-          ...data,
+          ...filteredData,
         },
       });
       return updatedUser;
