@@ -57,6 +57,10 @@ export class GoogleOauthService {
       id,
       role,
     });
+    await this.prismaService.users.update({
+      where: { id: user.id },
+      data: { refresh_token: refresh_token },
+    });
     res.cookie('access_token', access_token);
     res.cookie('refresh_token', refresh_token, {
       httpOnly: true,
