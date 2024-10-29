@@ -36,12 +36,14 @@ class ForgotPwdService {
     });
 
     const url = `${this.config.get<string>('url_web')}/reset-password?email=${user.email}`;
+    const urlToRedirectWithCode = `${this.config.get<string>('url_web')}/reset-password?email=${user.email}&code=${code}`;
     await this.emailService.sendEmailForgotPwd({
       to: user.email,
       subject: 'Reset password',
       userFirstname: user.full_name,
       url: url,
       code: code.toString(),
+      urlRedirectWithCode: urlToRedirectWithCode,
     });
     return {
       message: 'Email for reseting password has been sent to your email',

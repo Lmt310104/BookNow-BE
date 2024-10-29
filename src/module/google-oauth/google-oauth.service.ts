@@ -57,13 +57,18 @@ export class GoogleOauthService {
       id,
       role,
     });
+    await this.prismaService.users.update({
+      where: { id: user.id },
+      data: { refresh_token: refresh_token },
+    });
+    res.cookie('access_token', access_token);
     res.cookie('refresh_token', refresh_token, {
       httpOnly: true,
       secure: true,
       sameSite: 'lax',
       maxAge: 1000 * 60 * 60 * 24 * 10,
     });
-    return { access_token, user_id: id };
+    res.redirect(this.configSerivce.get<string>('success_auth_google'));
   }
 
   private async generateToken<T extends { id: string; role: Role }>(
