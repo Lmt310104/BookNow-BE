@@ -38,11 +38,11 @@ export class CategoryService {
     if (!category) {
       throw new BadRequestException('Category not found');
     }
-    await this.prisma.category.update({
+    const updatedCategory = await this.prisma.category.update({
       where: { id: id },
-      data: dto?.name ? dto.name : category.name,
+      data: { name: dto?.name ? dto.name : category.name },
     });
-    return category;
+    return updatedCategory;
   }
   async getCategories(query: CategoryPageOptionsDto, disable: boolean) {
     const where = disable !== undefined ? { is_disable: disable } : undefined;
