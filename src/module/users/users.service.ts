@@ -45,11 +45,11 @@ export class UsersService {
     }
     return newUser;
   }
-  async getAllUsers(query: GetAllUserDto, isDisabled: boolean) {
+  async getAllUsers(query: GetAllUserDto, isDisabled?: boolean) {
     const users = await this.prisma.users.findMany({
       where: {
         ...(query.role && { role: query.role }),
-        ...(isDisabled && { is_disable: isDisabled }),
+        ...(isDisabled != undefined && { is_disable: isDisabled }),
       },
       skip: query.skip,
       take: query.take,
@@ -57,7 +57,8 @@ export class UsersService {
     });
     const itemCount = await this.prisma.users.count({
       where: {
-        role: query.role,
+        ...(query.role && { role: query.role }),
+        ...(isDisabled != undefined && { is_disable: isDisabled }),
       },
     });
     return { users, itemCount };

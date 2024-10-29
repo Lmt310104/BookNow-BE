@@ -22,7 +22,6 @@ import { PageResponseDto } from 'src/utils/page-response.dto';
 import { PageResponseMetaDto } from 'src/utils/page-response-meta.dto';
 import { UpdateCategoryDto } from './dtos/update-category.dto';
 import { CategoryPageOptionsDto } from './dtos/find-all-categories.dto';
-import { PageOptionsDto } from 'src/utils/page-options-dto';
 
 const {
   CATEGORIES: {
