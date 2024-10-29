@@ -39,6 +39,7 @@ export class EmailService {
     subject,
     userFirstname,
     url,
+    urlRedirectWithCode,
     code,
   }: {
     to: string;
@@ -46,12 +47,14 @@ export class EmailService {
     userFirstname: string;
     url: string;
     code: string;
+    urlRedirectWithCode: string;
   }) {
     const emailHtml = renderToStaticMarkup(
       <ResetPasswordEmail
         url={url}
         code={code}
         userFirstname={userFirstname}
+        urlRedirectWithCode={urlRedirectWithCode}
       />,
     );
     const mailOptions = {

@@ -14,12 +14,14 @@ interface ResetPasswordEmailProps {
   userFirstname?: string;
   url?: string;
   code?: string;
+  urlRedirectWithCode?: string;
 }
 
 export const ResetPasswordEmail = ({
   userFirstname,
   code,
   url,
+  urlRedirectWithCode,
 }: ResetPasswordEmailProps) => {
   return (
     <Html>
@@ -30,15 +32,22 @@ export const ResetPasswordEmail = ({
       <Body style={main}>
         <Container style={container}>
           <Text style={paragraphTitle}>CHÀO MỪNG BẠN ĐẾN VỚI BOOKNOW</Text>
-
           <Text style={paragraph}>Xin chào {userFirstname},</Text>
           <Text style={paragraph}>
-            Đây là email reset password của bạn. Bạn vui lòng lấy mã code và
-            nhấn vào để tới trang reset password của mình.
+            Đây là email reset password của bạn. Bạn vui lòng nhập mã đặt lại
+            mật khẩu sau đây:
           </Text>
           <Section style={btnContainer}>
-            <Button style={button} href={url}>
+            <Button style={buttonWithCode} href={url}>
               {code}
+            </Button>
+          </Section>
+          <Text style={paragraph}>
+            Ngoài ra bạn cũng có thể thay đổi trực tiếp mật khẩu của mình
+          </Text>
+          <Section style={btnContainer}>
+            <Button style={button} href={urlRedirectWithCode}>
+              Đổi mật khẩu
             </Button>
           </Section>
           <Text style={paragraph}>
@@ -87,9 +96,15 @@ const paragraphTitle = {
 const btnContainer = {
   textAlign: 'center' as const,
 };
+const buttonWithCode = {
+  backgroundColor: 'transparent',
+  border: '1px solid #1977f3',
+  fontSize: '16px',
+  padding: '12px',
+};
 
 const button = {
-  backgroundColor: '#f8a600',
+  backgroundColor: '#1977f3',
   borderRadius: '3px',
   color: '#fff',
   fontSize: '16px',
