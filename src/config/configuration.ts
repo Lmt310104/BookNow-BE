@@ -13,4 +13,5 @@ export default () => ({
   redirect_url: process.env.OAUTH_GOOGLE_REDIRECT_URL,
   jwt_oauth_access_secret: process.env.JWT_OAUTH_ACCESS_SECRET,
   default_password: process.env.DEFAULT_PASSWORD,
+  success_auth_google: process.env.SUCCESS_AUTH_GOOGLE,
 });
