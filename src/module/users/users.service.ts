@@ -49,7 +49,7 @@ export class UsersService {
     const users = await this.prisma.users.findMany({
       where: {
         ...(query.role && { role: query.role }),
-        ...(isDisabled != undefined && { is_disable: isDisabled }),
+        ...(isDisabled !== undefined && { is_disable: isDisabled }),
       },
       skip: query.skip,
       take: query.take,
@@ -58,7 +58,7 @@ export class UsersService {
     const itemCount = await this.prisma.users.count({
       where: {
         ...(query.role && { role: query.role }),
-        ...(isDisabled != undefined && { is_disable: isDisabled }),
+        ...(isDisabled !== undefined && { is_disable: isDisabled }),
       },
     });
     return { users, itemCount };
@@ -151,7 +151,7 @@ export class UsersService {
           mode: 'insensitive',
         },
         ...(query.role && { role: query.role }),
-        ...(disable && { is_disable: disable }),
+        ...(disable !== undefined && { is_disable: disable }),
       },
       skip: query.skip,
       take: query.take,
@@ -163,7 +163,8 @@ export class UsersService {
           contains: keyword,
           mode: 'insensitive',
         },
-        role: query.role,
+        ...(query.role && { role: query.role }),
+        ...(disable !== undefined && { is_disable: disable }),
       },
     });
     return { users, itemCount };

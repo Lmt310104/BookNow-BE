@@ -55,7 +55,7 @@ export class GoogleOauthService {
     const { id } = user;
     const { access_token, refresh_token } = await this.generateToken({
       id,
-      role,
+      role: user.role,
     });
     await this.prismaService.users.update({
       where: { id: user.id },
