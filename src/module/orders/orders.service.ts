@@ -24,7 +24,7 @@ export class OrderService {
       where: { user_id: session.id },
     });
     const cartItems = await this.prisma.cartItems.findMany({
-      where: { cart_id: cart.id },
+      where: { cart_id: cart.id, book_id: { in: bookIds } },
     });
     const cartItemIds = cartItems.map((item) => item.id);
     if (books.length !== bookIds.length) {
