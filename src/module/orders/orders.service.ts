@@ -103,6 +103,9 @@ export class OrderService {
     const orders = await this.prisma.orders.findMany({
       where: {
         ...(query.status && { status: query.status }),
+        ...(query.search && {
+          id: { contains: query.search, mode: 'insensitive' },
+        }),
       },
       skip: query.skip,
       take: take,
@@ -125,6 +128,9 @@ export class OrderService {
     const itemCount = await this.prisma.orders.count({
       where: {
         ...(query.status && { status: query.status }),
+        ...(query.search && {
+          id: { contains: query.search, mode: 'insensitive' },
+        }),
       },
     });
     return { orders, itemCount };
@@ -148,6 +154,9 @@ export class OrderService {
       where: {
         user_id: session.id,
         ...(query.status && { status: query.status }),
+        ...(query.search && {
+          id: { contains: query.search, mode: 'insensitive' },
+        }),
       },
       skip: query.skip,
       take: take,
@@ -164,6 +173,9 @@ export class OrderService {
       where: {
         user_id: session.id,
         ...(query.status && { status: query.status }),
+        ...(query.search && {
+          id: { contains: query.search, mode: 'insensitive' },
+        }),
       },
     });
     return { orders, itemCount };
