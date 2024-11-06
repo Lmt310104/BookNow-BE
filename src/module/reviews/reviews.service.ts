@@ -59,11 +59,7 @@ export class ReviewsService {
         });
         return await tx.replyReviews.create({
           data: {
-            review: {
-              connect: {
-                id: id,
-              },
-            },
+            review_id: id,
             reply: dto.reply,
           },
         });
