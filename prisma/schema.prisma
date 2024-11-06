@@ -137,6 +137,7 @@ model Reviews {
   title           String
   rating          Decimal
   description     String
+  state           ReviewState   @default(UNANSWERED)
   reply_review_id Int?
   created_at      DateTime      @default(now())
   ReplyReviews    ReplyReviews?
@@ -180,4 +181,9 @@ enum OrderStatus {
 enum BookStatus {
   INACTIVE
   ACTIVE
+}
+
+enum ReviewState {
+  UNANSWERED
+  ANSWERED
 }
