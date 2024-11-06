@@ -8,4 +8,4 @@ import { ReviewsService } from './reviews.service';
   controllers: [ReviewsController],
   providers: [ReviewsService],
 })
-export class CommentsModule {}
+export class ReviewsModule {}

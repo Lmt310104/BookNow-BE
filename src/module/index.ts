@@ -8,6 +8,7 @@ import { DashboardModule } from './dashboard/dashboard.module';
 import { EmailModule } from './email/email.module';
 import { GoogleOauthModule } from './google-oauth/google-oauth.module';
 import { OrdersModule } from './orders/orders.module';
+import { ReviewsModule } from './reviews/reviews.module';
 import { UsersModule } from './users/users.module';
 const Modules = [
   AuthorsModule,
@@ -21,6 +22,7 @@ const Modules = [
   OrdersModule,
   DashboardModule,
   GoogleOauthModule,
+  ReviewsModule,
 ];
 
 export default Modules;

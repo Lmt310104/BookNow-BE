@@ -158,6 +158,11 @@ export enum DateFormat {
   TIME_DATE = 'HH:mm:ss DD-MM-YYYY',
 }
 
+export enum ReviewState {
+  UNANSWERED = 'UNANSWERED',
+  ANSWERED = 'ANSWERED',
+}
+
 export const ORDER_STATUS = {
   PENDING: 'PENDING',
   PROCESSING: 'PROCESSING',
