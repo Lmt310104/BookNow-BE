@@ -1,4 +1,5 @@
 import {
+  Body,
   Controller,
   Get,
   Param,
@@ -29,10 +30,11 @@ export class ReviewsController {
   async getAll(
     @Query() query: GetReviewsDto,
   ): Promise<PageResponseDto<Reviews>> {
-    const reviews = await this.reviewService.getAllReviews(query);
+    const { reviews, itemCount } =
+      await this.reviewService.getAllReviews(query);
     const pageResponseMetaDto = new PageResponseMetaDto({
       pageOptionsDto: query,
-      itemCount: reviews.length,
+      itemCount: itemCount,
     });
     return new PageResponseDto<Reviews>(reviews, pageResponseMetaDto);
   }
@@ -43,7 +45,7 @@ export class ReviewsController {
   @Post(REPLY)
   async replyReview(
     @Param('id', ParseIntPipe) id: number,
-    dto: AdminReplyReviewDto,
+    @Body() dto: AdminReplyReviewDto,
   ) {
     const reply = await this.reviewService.createAdminReply(id, dto);
     return new StandardResponse<ReplyReviews>(

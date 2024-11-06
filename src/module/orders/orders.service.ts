@@ -24,7 +24,7 @@ export class OrderService {
       where: { user_id: session.id },
     });
     const cartItems = await this.prisma.cartItems.findMany({
-      where: { cart_id: cart.id },
+      where: { cart_id: cart.id, book_id: { in: bookIds } },
     });
     const cartItemIds = cartItems.map((item) => item.id);
     if (books.length !== bookIds.length) {
@@ -69,6 +69,7 @@ export class OrderService {
               where: { id: item.book_id },
               data: {
                 stock_quantity: { decrement: item.quantity },
+                sold_quantity: { increment: item.quantity },
               },
             }),
           ),
@@ -102,6 +103,9 @@ export class OrderService {
     const orders = await this.prisma.orders.findMany({
       where: {
         ...(query.status && { status: query.status }),
+        ...(query.search && {
+          id: { contains: query.search, mode: 'insensitive' },
+        }),
       },
       skip: query.skip,
       take: take,
@@ -124,6 +128,9 @@ export class OrderService {
     const itemCount = await this.prisma.orders.count({
       where: {
         ...(query.status && { status: query.status }),
+        ...(query.search && {
+          id: { contains: query.search, mode: 'insensitive' },
+        }),
       },
     });
     return { orders, itemCount };
@@ -147,6 +154,9 @@ export class OrderService {
       where: {
         user_id: session.id,
         ...(query.status && { status: query.status }),
+        ...(query.search && {
+          id: { contains: query.search, mode: 'insensitive' },
+        }),
       },
       skip: query.skip,
       take: take,
@@ -163,6 +173,9 @@ export class OrderService {
       where: {
         user_id: session.id,
         ...(query.status && { status: query.status }),
+        ...(query.search && {
+          id: { contains: query.search, mode: 'insensitive' },
+        }),
       },
     });
     return { orders, itemCount };
@@ -174,10 +187,11 @@ export class OrderService {
     if (!order) {
       throw new NotFoundException('Order not found');
     }
-    if (order.status === ORDER_STATUS.PENDING) {
-      throw new BadRequestException(
-        'Status of this order already exists in the database',
-      );
+    if (
+      order.status === ORDER_STATUS.CANCELLED ||
+      order.status === ORDER_STATUS.REJECT
+    ) {
+      throw new BadRequestException('Order already cancelled or rejected');
     }
     if (dto.status === ORDER_STATUS.REJECT) {
       try {
@@ -223,7 +237,6 @@ export class OrderService {
     if (!book) {
       throw new NotFoundException('Book not found');
     }
-
     try {
       return await this.prisma.$transaction(async (tx) => {
         const newTotalReviews = book.total_reviews + 1;
