@@ -1,4 +1,5 @@
 import {
+  Body,
   Controller,
   Get,
   Param,
@@ -44,7 +45,7 @@ export class ReviewsController {
   @Post(REPLY)
   async replyReview(
     @Param('id', ParseIntPipe) id: number,
-    dto: AdminReplyReviewDto,
+    @Body() dto: AdminReplyReviewDto,
   ) {
     const reply = await this.reviewService.createAdminReply(id, dto);
     return new StandardResponse<ReplyReviews>(
