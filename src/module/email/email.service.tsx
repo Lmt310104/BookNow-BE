@@ -1,7 +1,6 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { Transporter } from 'nodemailer';
-import React from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
 import ResetPasswordEmail from 'src/config/email_pwd.template';
 import WelcomeEmail from 'src/config/email_template';
