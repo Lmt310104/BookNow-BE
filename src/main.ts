@@ -5,7 +5,6 @@ import { SwaggerModule } from '@nestjs/swagger';
 import documentation from './config/documentation';
 import { END_POINTS } from './utils/constants';
 import * as cookieParser from 'cookie-parser';
-import { HttpExceptionFilter } from './common/exception-filter/http-exception.filter';
 import { AuthenticationGuard } from './common/guards/authentication.guard';
 // import { RefreshTokenGuard } from './common/guards/refreshtoken.guard';
 import InitFirebase from './services/firebase';
