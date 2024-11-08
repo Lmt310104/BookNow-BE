@@ -45,7 +45,7 @@ export class OrderService {
         });
         const order = await tx.orders.create({
           data: {
-            user_id: session.id,
+            user: { connect: { id: session.id } },
             full_name: dto.fullName,
             phone_number: dto.phoneNumber,
             address: dto.address,
@@ -277,11 +277,7 @@ export class OrderService {
             rating: dto.star,
             description: dto.description,
             title: dto.title,
-            OrderItems: {
-              connect: {
-                id: orderDetailId,
-              },
-            },
+            order_item_id: orderDetailId,
           },
           include: {
             book: true,
