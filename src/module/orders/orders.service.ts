@@ -45,7 +45,7 @@ export class OrderService {
         });
         const order = await tx.orders.create({
           data: {
-            user_id: session.id,
+            user: { connect: { id: session.id } },
             full_name: dto.fullName,
             phone_number: dto.phoneNumber,
             address: dto.address,
@@ -250,10 +250,26 @@ export class OrderService {
             avg_stars: newAvgStars,
           },
         });
-        await tx.orders.update({
-          where: { id },
-          data: { review_state: ReviewState.ANSWERED },
+        await tx.orderItems.update({
+          where: { id: orderDetailId },
+          data: { review_status: ReviewState.REVIEWED },
         });
+        const orderItems = await tx.orderItems.findMany({
+          where: { order_id: id },
+        });
+        let flag = true;
+        for (const item of orderItems) {
+          if (item.review_status !== ReviewState.REVIEWED) {
+            flag = false;
+            break;
+          }
+        }
+        if (flag) {
+          await tx.orders.update({
+            where: { id },
+            data: { review_state: ReviewState.REVIEWED },
+          });
+        }
         const review = await tx.reviews.create({
           data: {
             user_id: session.id,
@@ -261,7 +277,7 @@ export class OrderService {
             rating: dto.star,
             description: dto.description,
             title: dto.title,
-            order_id: id,
+            order_item_id: orderDetailId,
           },
           include: {
             book: true,

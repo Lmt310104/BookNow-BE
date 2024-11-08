@@ -18,7 +18,7 @@ export class ReviewsService {
       include: {
         book: true,
         user: true,
-        order: true,
+        OrderItem: true,
       },
       skip: dto.skip,
       take: dto.take,
@@ -50,26 +50,109 @@ export class ReviewsService {
     if (!review) {
       throw new BadRequestException('Review not found');
     }
+    const orderItem = await this.prisma.orderItems.findUnique({
+      where: {
+        id: review.order_item_id,
+      },
+    });
+    const order = await this.prisma.orders.findUnique({
+      where: {
+        id: orderItem.order_id,
+      },
+    });
     try {
       return await this.prisma.$transaction(async (tx) => {
-        await tx.reviews.update({
+        await tx.orderItems.update({
           where: {
-            id: id,
+            id: review.order_item_id,
           },
           data: {
-            state: ReviewState.ANSWERED,
+            review_status: ReviewState.REPLIED,
           },
         });
-        return await tx.replyReviews.create({
-          data: {
-            review_id: id,
-            reply: dto.reply,
+        const orderItems = await tx.orderItems.findMany({
+          where: {
+            order_id: order.id,
           },
         });
+        const isAllReviewReplied = orderItems.every(
+          (item) => item.review_status === ReviewState.REPLIED,
+        );
+        if (isAllReviewReplied) {
+          await tx.orders.update({
+            where: {
+              id: order.id,
+            },
+            data: {
+              review_state: ReviewState.REPLIED,
+            },
+          });
+          await tx.reviews.update({
+            where: {
+              id: id,
+            },
+            data: {
+              state: ReviewState.REPLIED,
+            },
+          });
+          return await tx.replyReviews.create({
+            data: {
+              review_id: id,
+              reply: dto.reply,
+            },
+          });
+        }
       });
     } catch (error) {
       console.log(error);
       throw new BadRequestException('Failed to create admin reply');
     }
+  }
+  async getReviewsByBookId(bookId: string, query: GetReviewsDto) {
+    const reviews = await this.prisma.reviews.findMany({
+      where: {
+        book_id: bookId,
+      },
+      include: {
+        book: true,
+        ReplyReviews: true,
+      },
+      skip: query.skip,
+      take: query.take,
+    });
+    const itemCount = await this.prisma.reviews.count({
+      where: {
+        book_id: bookId,
+      },
+    });
+    return { reviews, itemCount };
+  }
+  async getReviewsByOrderId(orderId: string, query: GetReviewsDto) {
+    const orderItems = await this.prisma.orderItems.findMany({
+      where: {
+        order_id: orderId,
+      },
+    });
+    const reviews = await this.prisma.reviews.findMany({
+      where: {
+        order_item_id: {
+          in: orderItems.map((item) => item.id),
+        },
+      },
+      include: {
+        book: true,
+        ReplyReviews: true,
+      },
+      skip: query.skip,
+      take: query.take,
+    });
+    const itemCount = await this.prisma.reviews.count({
+      where: {
+        order_item_id: {
+          in: orderItems.map((item) => item.id),
+        },
+      },
+    });
+    return { reviews, itemCount };
   }
 }

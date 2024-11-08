@@ -90,9 +90,7 @@ model Orders {
   user_id      String
   user         Users        @relation(fields: [user_id], references: [id])
   status       OrderStatus  @default(PENDING)
-  review_state ReviewState  @default(UNANSWERED)
-  review_id    Int?
-  review       Reviews?
+  review_state ReviewState  @default(UNREVIEW)
   total_price  Decimal      @default(0)
   full_name    String
   phone_number String
@@ -103,14 +101,18 @@ model Orders {
 }
 
 model OrderItems {
-  id          String  @id @default(uuid())
-  order_id    String
-  order       Orders  @relation(fields: [order_id], references: [id])
-  book_id     String
-  book        Books   @relation(fields: [book_id], references: [id])
-  quantity    Int
-  price       Decimal
-  total_price Decimal
+  id            String      @id @default(uuid())
+  order_id      String
+  order         Orders      @relation(fields: [order_id], references: [id])
+  book_id       String
+  book          Books       @relation(fields: [book_id], references: [id])
+  review_status ReviewState @default(UNREVIEW)
+  review_id     Int?
+  review        Reviews?
+  quantity      Int
+  price         Decimal
+  total_price   Decimal
+  reviewsId     Int?
 }
 
 model Carts {
@@ -137,15 +139,15 @@ model Reviews {
   user            Users         @relation(fields: [user_id], references: [id])
   book_id         String
   book            Books         @relation(fields: [book_id], references: [id])
-  order_id        String        @unique
-  order           Orders        @relation(fields: [order_id], references: [id])
   title           String
   rating          Decimal
   description     String
-  state           ReviewState   @default(UNANSWERED)
+  state           ReviewState   @default(UNREVIEW)
   reply_review_id Int?
   created_at      DateTime      @default(now())
   ReplyReviews    ReplyReviews?
+  order_item_id   String        @unique
+  OrderItem       OrderItems    @relation(fields: [order_item_id], references: [id])
 }
 
 model ReplyReviews {
@@ -189,6 +191,7 @@ enum BookStatus {
 }
 
 enum ReviewState {
-  UNANSWERED
-  ANSWERED
+  UNREVIEW
+  REVIEWED
+  REPLIED
 }
