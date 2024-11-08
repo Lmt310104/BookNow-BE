@@ -108,7 +108,7 @@ model OrderItems {
   book          Books       @relation(fields: [book_id], references: [id])
   review_status ReviewState @default(UNREVIEW)
   review_id     Int?
-  review        Reviews?    @relation(fields: [reviewsId], references: [id])
+  review        Reviews?
   quantity      Int
   price         Decimal
   total_price   Decimal
@@ -146,7 +146,8 @@ model Reviews {
   reply_review_id Int?
   created_at      DateTime      @default(now())
   ReplyReviews    ReplyReviews?
-  OrderItems      OrderItems[]
+  order_item_id   String        @unique
+  OrderItem       OrderItems    @relation(fields: [order_item_id], references: [id])
 }
 
 model ReplyReviews {

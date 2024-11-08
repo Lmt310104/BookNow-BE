@@ -125,6 +125,8 @@ export const END_POINTS = {
     GET_ALL: '/get-all',
     GET_ONE: '/:id',
     REPLY: '/:id/reply',
+    GET_REVIEW_BY_ORDER_ID: '/get-review-by-order-id/:orderId',
+    GET_REVIEW_BY_BOOK_ID: '/get-review-by-book-id/:bookId',
   },
   GOOGLE_OAUTH: {
     BASE: '/auth/google',
@@ -159,8 +161,9 @@ export enum DateFormat {
 }
 
 export enum ReviewState {
-  UNANSWERED = 'UNANSWERED',
-  ANSWERED = 'ANSWERED',
+  UNREVIEW = 'UNREVIEW',
+  REVIEWED = 'REVIEWED',
+  REPLIED = 'REPLIED',
 }
 
 export const ORDER_STATUS = {
