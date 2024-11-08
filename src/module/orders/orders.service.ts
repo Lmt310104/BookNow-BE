@@ -8,7 +8,7 @@ import { OrderPageOptionsDto } from './dto/find-all-orders.dto';
 import { TUserSession } from 'src/common/decorators/user-session.decorator';
 import { CreateOrderDto } from './dto/create-order.dto';
 import { CreateReviewDto } from './dto/create-review.dto';
-import { ORDER_STATUS } from 'src/utils/constants';
+import { ORDER_STATUS, ReviewState } from 'src/utils/constants';
 import { UpdateOrderStatusDto } from './dto/update-order-status.dto';
 import { OrderStatus } from '@prisma/client';
 
@@ -249,6 +249,10 @@ export class OrderService {
             total_reviews: newTotalReviews,
             avg_stars: newAvgStars,
           },
+        });
+        await tx.orders.update({
+          where: { id },
+          data: { review_state: ReviewState.ANSWERED },
         });
         const review = await tx.reviews.create({
           data: {

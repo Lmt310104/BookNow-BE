@@ -90,6 +90,9 @@ model Orders {
   user_id      String
   user         Users        @relation(fields: [user_id], references: [id])
   status       OrderStatus  @default(PENDING)
+  review_state ReviewState  @default(UNANSWERED)
+  review_id    Int?
+  review       Reviews?
   total_price  Decimal      @default(0)
   full_name    String
   phone_number String
@@ -97,7 +100,6 @@ model Orders {
   created_at   DateTime     @default(now())
   updated_at   DateTime     @updatedAt
   OrderItems   OrderItems[]
-  Reviews      Reviews[]
 }
 
 model OrderItems {
@@ -135,7 +137,7 @@ model Reviews {
   user            Users         @relation(fields: [user_id], references: [id])
   book_id         String
   book            Books         @relation(fields: [book_id], references: [id])
-  order_id        String
+  order_id        String        @unique
   order           Orders        @relation(fields: [order_id], references: [id])
   title           String
   rating          Decimal
