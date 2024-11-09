@@ -160,8 +160,7 @@ model ReplyReviews {
 model Address {
   id      Int    @id @default(autoincrement())
   user_id String
-  lon     Float
-  lat     Float
+  address String
   Users   Users? @relation(fields: [user_id], references: [id])
 }
 

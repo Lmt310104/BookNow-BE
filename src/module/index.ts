@@ -1,3 +1,4 @@
+import { AddressModule } from './address/address.module';
 import { AuthModule } from './auth/auth.module';
 import { AuthorsModule } from './authors/authors.module';
 import { BooksModule } from './books/books.module';
@@ -23,6 +24,7 @@ const Modules = [
   DashboardModule,
   GoogleOauthModule,
   ReviewsModule,
+  AddressModule,
 ];
 
 export default Modules;
