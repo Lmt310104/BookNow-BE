@@ -109,7 +109,6 @@ export class OrdersController {
     @Param('orderDetailsId', ParseUUIDPipe) orderDetailsId: string,
     @Param('bookId', ParseUUIDPipe) bookId: string,
   ): Promise<StandardResponse<Reviews>> {
-    console.log(dto);
     const review = await this.orderService.createReview(
       session,
       dto,

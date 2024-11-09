@@ -243,6 +243,19 @@ export class OrderService {
         const newAvgStars =
           (Number(book.avg_stars) * book.total_reviews + dto.star) /
           newTotalReviews;
+        const review = await tx.reviews.create({
+          data: {
+            user_id: session.id,
+            book_id: book.id,
+            rating: dto.star,
+            description: dto.description,
+            title: dto.title,
+            order_item_id: orderDetailId,
+          },
+          include: {
+            book: true,
+          },
+        });
         await tx.books.update({
           where: { id: book.id },
           data: {
@@ -252,7 +265,7 @@ export class OrderService {
         });
         await tx.orderItems.update({
           where: { id: orderDetailId },
-          data: { review_status: ReviewState.REVIEWED },
+          data: { review_status: ReviewState.REVIEWED, review_id: review.id },
         });
         const orderItems = await tx.orderItems.findMany({
           where: { order_id: id },
@@ -270,19 +283,6 @@ export class OrderService {
             data: { review_state: ReviewState.REVIEWED },
           });
         }
-        const review = await tx.reviews.create({
-          data: {
-            user_id: session.id,
-            book_id: book.id,
-            rating: dto.star,
-            description: dto.description,
-            title: dto.title,
-            order_item_id: orderDetailId,
-          },
-          include: {
-            book: true,
-          },
-        });
         return review;
       });
     } catch (error) {

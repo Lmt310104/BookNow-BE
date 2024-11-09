@@ -112,7 +112,6 @@ model OrderItems {
   quantity      Int
   price         Decimal
   total_price   Decimal
-  reviewsId     Int?
 }
 
 model Carts {
