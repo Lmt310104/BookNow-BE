@@ -19,6 +19,7 @@ export class ReviewsService {
         book: true,
         user: true,
         OrderItem: true,
+        ReplyReviews: true,
       },
       skip: dto.skip,
       take: dto.take,
@@ -37,6 +38,12 @@ export class ReviewsService {
     const reviewDetail = await this.prisma.reviews.findUnique({
       where: {
         id: id,
+      },
+      include: {
+        book: true,
+        user: true,
+        OrderItem: true,
+        ReplyReviews: true,
       },
     });
     return reviewDetail;
@@ -116,6 +123,8 @@ export class ReviewsService {
       include: {
         book: true,
         ReplyReviews: true,
+        user: true,
+        OrderItem: true,
       },
       skip: query.skip,
       take: query.take,

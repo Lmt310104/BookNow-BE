@@ -82,7 +82,7 @@ async function main() {
         role: Role.CUSTOMER,
         phone: faker.phone.number({ style: 'national' }),
         full_name: faker.internet.userName(),
-        birthday: new Date('31-01-2004'),
+        birthday: new Date('2004-01-31'),
         gender: Gender.MALE,
         avatar_url: USER_IMAGE_URL,
         verification: {
