@@ -13,6 +13,8 @@ export class AddressService {
       data: {
         user_id: userId,
         address: dto.address,
+        full_name: dto.fullName,
+        phone_number: dto.phoneNumber,
       },
     });
   }
@@ -66,7 +68,24 @@ export class AddressService {
         id,
       },
       data: {
-        address: dto.address,
+        address: dto.address ? dto.address : address.address,
+        full_name: dto.fullName ? dto.fullName : address.full_name,
+        phone_number: dto.phoneNumber ? dto.phoneNumber : address.phone_number,
+      },
+    });
+  }
+  async deleteAddress(id: number) {
+    const address = await this.prisma.address.findFirst({
+      where: {
+        id,
+      },
+    });
+    if (!address) {
+      throw new Error('Address not found');
+    }
+    return this.prisma.address.delete({
+      where: {
+        id,
       },
     });
   }

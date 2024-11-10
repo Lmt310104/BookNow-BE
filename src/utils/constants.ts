@@ -138,6 +138,7 @@ export const END_POINTS = {
     GET_ALL_BY_ADMIN: '/get-all-by-admin',
     CREATE: '/create',
     UPDATE: '/update',
+    DELETE: '/delete/:id',
   },
 };
 
