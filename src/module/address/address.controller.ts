@@ -1,6 +1,7 @@
 import {
   Body,
   Controller,
+  Delete,
   Get,
   Param,
   ParseIntPipe,
@@ -23,7 +24,7 @@ import { PageResponseDto } from 'src/utils/page-response.dto';
 import { GetAllAddressByAdminDto } from './dto/get_address_by_admin..dto';
 
 const {
-  ADDRESS: { BASE, CREATE, GET_ALL_BY_ADMIN, GET_ALL_BY_USER, UPDATE },
+  ADDRESS: { BASE, CREATE, GET_ALL_BY_ADMIN, GET_ALL_BY_USER, UPDATE, DELETE },
 } = END_POINTS;
 
 @Controller(BASE)
@@ -76,5 +77,14 @@ export class AddressController {
       itemCount: count,
     });
     return new PageResponseDto(addresses, meta);
+  }
+  @Delete(DELETE)
+  async deleteAddress(@Param('id', ParseIntPipe) id: number) {
+    await this.addressService.deleteAddress(id);
+    return new StandardResponse(
+      null,
+      'Address deleted successfully',
+      HttpStatusCode.OK,
+    );
   }
 }
