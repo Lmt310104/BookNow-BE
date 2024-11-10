@@ -119,6 +119,10 @@ export class ReviewsService {
     const reviews = await this.prisma.reviews.findMany({
       where: {
         book_id: bookId,
+        ...(query.search && { book: { title: { contains: query.search } } }),
+        ...(query.rating && { rating: { in: query.rating } }),
+        ...(query.date && { created_at: { equals: new Date(query.date) } }),
+        ...(query.state && { state: query.state }),
       },
       include: {
         book: true,
@@ -132,6 +136,10 @@ export class ReviewsService {
     const itemCount = await this.prisma.reviews.count({
       where: {
         book_id: bookId,
+        ...(query.search && { book: { title: { contains: query.search } } }),
+        ...(query.rating && { rating: { in: query.rating } }),
+        ...(query.date && { created_at: { equals: new Date(query.date) } }),
+        ...(query.state && { state: query.state }),
       },
     });
     return { reviews, itemCount };
@@ -147,6 +155,10 @@ export class ReviewsService {
         order_item_id: {
           in: orderItems.map((item) => item.id),
         },
+        ...(query.search && { book: { title: { contains: query.search } } }),
+        ...(query.rating && { rating: { in: query.rating } }),
+        ...(query.date && { created_at: { equals: new Date(query.date) } }),
+        ...(query.state && { state: query.state }),
       },
       include: {
         book: true,
@@ -160,6 +172,10 @@ export class ReviewsService {
         order_item_id: {
           in: orderItems.map((item) => item.id),
         },
+        ...(query.search && { book: { title: { contains: query.search } } }),
+        ...(query.rating && { rating: { in: query.rating } }),
+        ...(query.date && { created_at: { equals: new Date(query.date) } }),
+        ...(query.state && { state: query.state }),
       },
     });
     return { reviews, itemCount };
