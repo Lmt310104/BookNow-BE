@@ -1,4 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
+import { Transform } from 'class-transformer';
 import { IsEnum, IsNumber, IsOptional, IsString } from 'class-validator';
 import { BOOKSTATUS } from 'src/utils/constants';
 import { PageOptionsDto } from 'src/utils/page-options-dto';
@@ -38,18 +39,22 @@ export class BookQuery extends PageOptionsDto {
   status?: BOOKSTATUS;
 
   @IsOptional()
+  @Transform(({ value }) => parseFloat(value))
   @IsNumber()
   min_star?: number;
 
   @IsOptional()
+  @Transform(({ value }) => parseFloat(value))
   @IsNumber()
   max_star?: number;
 
   @IsOptional()
+  @Transform(({ value }) => parseFloat(value))
   @IsNumber()
   min_price?: number;
 
   @IsOptional()
+  @Transform(({ value }) => parseFloat(value))
   @IsNumber()
   max_price?: number;
 
