@@ -25,6 +25,7 @@ export class BooksService {
             contains: bookQuery.search ? bookQuery.search : undefined,
             mode: 'insensitive',
           },
+          ...(bookQuery.categoryStatus && { status: bookQuery.categoryStatus }),
         },
         ...(bookQuery.status ? { status: bookQuery.status } : {}),
         ...(bookQuery.min_price && { price: { gte: bookQuery.min_price } }),
@@ -52,6 +53,7 @@ export class BooksService {
             contains: bookQuery.search ? bookQuery.search : undefined,
             mode: 'insensitive',
           },
+          ...(bookQuery.categoryStatus && { status: bookQuery.categoryStatus }),
         },
         ...(bookQuery.status ? { status: bookQuery.status } : {}),
         ...(bookQuery.min_price && { price: { gte: bookQuery.min_price } }),
@@ -144,6 +146,7 @@ export class BooksService {
             image_url: imageUrls.length
               ? [...(dto.image_url ? dto.image_url : []), ...imageUrls]
               : existingBook.image_url,
+            category_id: dto.categoryId ?? existingBook.category_id,
             price: dto?.price ?? existingBook.price,
           },
         });
