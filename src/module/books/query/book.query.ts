@@ -1,12 +1,6 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { Transform } from 'class-transformer';
-import {
-  IsBoolean,
-  IsEnum,
-  IsNumber,
-  IsOptional,
-  IsString,
-} from 'class-validator';
+import { IsEnum, IsNumber, IsOptional, IsString } from 'class-validator';
 import { BOOKSTATUS } from 'src/utils/constants';
 import { PageOptionsDto } from 'src/utils/page-options-dto';
 
@@ -67,11 +61,6 @@ export class BookQuery extends PageOptionsDto {
   @IsOptional()
   @IsString()
   search?: string;
-
-  @IsBoolean()
-  @Transform(({ value }) => value === 'true')
-  @IsOptional()
-  categoryStatus?: boolean;
 
   constructor(bookQuery: Partial<BookQuery> = {}) {
     super();
