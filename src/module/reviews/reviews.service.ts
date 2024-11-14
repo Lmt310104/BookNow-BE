@@ -57,6 +57,14 @@ export class ReviewsService {
     if (!review) {
       throw new BadRequestException('Review not found');
     }
+    const existingReply = await this.prisma.replyReviews.findFirst({
+      where: {
+        review_id: id,
+      },
+    });
+    if (existingReply) {
+      throw new BadRequestException('Reply already exists');
+    }
     const orderItem = await this.prisma.orderItems.findUnique({
       where: {
         id: review.order_item_id,
@@ -102,13 +110,13 @@ export class ReviewsService {
               state: ReviewState.REPLIED,
             },
           });
-          return await tx.replyReviews.create({
-            data: {
-              review_id: id,
-              reply: dto.reply,
-            },
-          });
         }
+        return await tx.replyReviews.create({
+          data: {
+            review_id: id,
+            reply: dto.reply,
+          },
+        });
       });
     } catch (error) {
       console.log(error);
