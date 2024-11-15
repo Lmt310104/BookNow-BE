@@ -28,6 +28,7 @@ export class BooksService {
           ...('categoryStatus' in bookQuery && {
             is_disable: bookQuery.categoryStatus,
           }),
+          ...(bookQuery.categoryId && { id: bookQuery.categoryId }),
         },
         ...(bookQuery.status ? { status: bookQuery.status } : {}),
         ...(bookQuery.min_price && { price: { gte: bookQuery.min_price } }),
@@ -55,7 +56,10 @@ export class BooksService {
             contains: bookQuery.search ? bookQuery.search : undefined,
             mode: 'insensitive',
           },
-          ...(bookQuery.categoryStatus && { status: bookQuery.categoryStatus }),
+          ...('categoryStatus' in bookQuery && {
+            is_disable: bookQuery.categoryStatus,
+          }),
+          ...(bookQuery.categoryId && { id: bookQuery.categoryId }),
         },
         ...(bookQuery.status ? { status: bookQuery.status } : {}),
         ...(bookQuery.min_price && { price: { gte: bookQuery.min_price } }),
