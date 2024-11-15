@@ -150,6 +150,7 @@ export class BooksService {
               : existingBook.image_url,
             category_id: dto.categoryId ?? existingBook.category_id,
             price: dto?.price ?? existingBook.price,
+            entry_price: dto?.entryPrice ?? existingBook.entry_price,
           },
         });
         return updatedBook;
