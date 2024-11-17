@@ -140,6 +140,15 @@ export const END_POINTS = {
     UPDATE: '/update',
     DELETE: '/delete/:id',
   },
+  STATISTIC: {
+    BASE: '/statistic',
+    GET_OVERVIEW_STATISTIC: '/get-statistic',
+    GET_PRODUCT_STATISTIC_BY_REVENUE: '/get-product-statistic',
+    GET_PRODUCT_STATISTIC_BY_ORDER: '/get-product-statistic-order',
+    GET_PRODUCT_STATISTIC_BY_ADD_TO_CART: '/get-product-statistic-add-to-cart',
+    GET_REVENUE_STATISTIC_BY_CATEGROY: '/get-revenue-statistic-category',
+    GET_REVENUE_STATISTIC_BY_CUSTOMER: '/get-revenue-statistic-customer',
+  },
 };
 
 export enum ROLE {
@@ -172,6 +181,15 @@ export enum ReviewState {
   UNREVIEW = 'UNREVIEW',
   REVIEWED = 'REVIEWED',
   REPLIED = 'REPLIED',
+}
+
+export enum ORDER_STATUS_ENUM {
+  PENDING = 'PENDING',
+  PROCESSING = 'PROCESSING',
+  DELIVERED = 'DELIVERED',
+  CANCELLED = 'CANCELLED',
+  SUCCESS = 'SUCCESS',
+  REJECT = 'REJECT',
 }
 
 export const ORDER_STATUS = {
