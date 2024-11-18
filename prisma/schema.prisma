@@ -34,6 +34,7 @@ model Users {
   Orders              Orders[]
   Carts               Carts?
   Reviews             Reviews[]
+  Messages            Messages[]
 }
 
 model Vertifications {
@@ -164,6 +165,44 @@ model Address {
   phone_number String
   address      String
   Users        Users? @relation(fields: [user_id], references: [id])
+}
+
+model Chats {
+  id              String     @id @default(uuid())
+  admin_id        String
+  user_id         String
+  last_message_id String?
+  created_at      DateTime   @default(now())
+  updated_at      DateTime   @updatedAt
+  is_deleted      Boolean    @default(false)
+  Messages        Messages[]
+}
+
+model Messages {
+  id            String       @id @default(uuid())
+  chat_id       String
+  sender_id     String
+  Sender        Users        @relation(fields: [sender_id], references: [id])
+  content       String
+  timestamp     DateTime     @default(now())
+  is_read       Boolean      @default(false)
+  attachment_id String?      @unique
+  Attachment    Attachments? @relation(fields: [attachment_id], references: [id])
+  created_at    DateTime     @default(now())
+  updated_at    DateTime     @updatedAt
+  chat          Chats        @relation(fields: [chat_id], references: [id])
+}
+
+model Attachments {
+  id           String    @id @default(uuid())
+  file_name    String
+  content_type String
+  length       Int
+  chunk_size   Int
+  upload_date  DateTime
+  created_at   DateTime  @default(now())
+  updated_at   DateTime  @updatedAt
+  Messages     Messages?
 }
 
 enum Role {
