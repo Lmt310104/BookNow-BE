@@ -128,6 +128,40 @@ export class StatisticService {
     );
     return bookResult;
   }
+  async getProductStatisBySoldQuantity(query: StatisticQuery) {
+    const orders = await this.prisma.orderItems.groupBy({
+      by: ['book_id'],
+      where: {
+        order: {
+          created_at: {
+            gte: new Date(query.fromDate),
+            lte: new Date(query.toDate),
+          },
+          status: query.status,
+        },
+      },
+      _sum: {
+        quantity: true,
+      },
+      orderBy: {
+        _sum: {
+          quantity: 'desc',
+        },
+      },
+    });
+    const bookResult = await Promise.all(
+      orders.map(async (o) => {
+        const book = await this.prisma.books.findUnique({
+          where: { id: o.book_id },
+        });
+        return {
+          book,
+          totalQuantity: o._sum.quantity,
+        };
+      }),
+    );
+    return bookResult;
+  }
   async getRevenueStatisByCustomer(query: StatisticQuery) {
     console.log(query);
     const customers = await this.prisma.orders.groupBy({
