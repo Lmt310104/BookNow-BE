@@ -148,6 +148,8 @@ export const END_POINTS = {
     GET_PRODUCT_STATISTIC_BY_ADD_TO_CART: '/get-product-statistic-add-to-cart',
     GET_REVENUE_STATISTIC_BY_CATEGROY: '/get-revenue-statistic-category',
     GET_REVENUE_STATISTIC_BY_CUSTOMER: '/get-revenue-statistic-customer',
+    GET_PRODUCT_STATISTIC_BY_SOLD_QUANTITY:
+      '/get-product-statistic-sold-quantity',
   },
 };
 
