@@ -7,6 +7,7 @@ import { CartsModule } from './carts/carts.module';
 import { CategoriesModule } from './categories/categories.module';
 import { DashboardModule } from './dashboard/dashboard.module';
 import { EmailModule } from './email/email.module';
+import { EventsModule } from './events_gateway/event_gateway.module';
 import { GoogleOauthModule } from './google-oauth/google-oauth.module';
 import { OrdersModule } from './orders/orders.module';
 import { ReviewsModule } from './reviews/reviews.module';
@@ -27,6 +28,7 @@ const Modules = [
   ReviewsModule,
   AddressModule,
   StatisticModule,
+  EventsModule,
 ];
 
 export default Modules;
