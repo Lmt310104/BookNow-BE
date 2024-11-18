@@ -85,6 +85,14 @@ export class ReviewsService {
             review_status: ReviewState.REPLIED,
           },
         });
+        await tx.reviews.update({
+          where: {
+            id: id,
+          },
+          data: {
+            state: ReviewState.REPLIED,
+          },
+        });
         const orderItems = await tx.orderItems.findMany({
           where: {
             order_id: order.id,
