@@ -151,6 +151,19 @@ export const END_POINTS = {
     GET_PRODUCT_STATISTIC_BY_SOLD_QUANTITY:
       '/get-product-statistic-sold-quantity',
   },
+  MESSAGES: {
+    BASE: '/messages',
+    GET_LATEST_MESSAGE_BY_CHAT: '/get-latest-by-chat/:chatId',
+    GET_CHAT_BY_USER: '/get-chat-by-user/:userId',
+    CREATE: '/create/:chatId',
+    DELETE: '/delete/:id',
+  },
+  CHATS: {
+    BASE: '/chats',
+    GET_ALL_BY_ADMIN: '/get-all-chats',
+    GET_ONE: '/get-one/:id',
+    CREATE: '/create',
+  },
 };
 
 export enum ROLE {

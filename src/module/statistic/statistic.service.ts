@@ -15,6 +15,7 @@ export class StatisticService {
         },
         ...(status && { status }),
       },
+      ...(query.top && { take: query.top }),
     });
     const revenue = orders.reduce(
       (acc, order) => acc + Number(order.total_price),
@@ -43,6 +44,7 @@ export class StatisticService {
           book_id: 'desc',
         },
       },
+      ...(query.top && { take: query.top }),
     });
     const bookResult = await Promise.all(
       books.map(async (b) => {
@@ -77,6 +79,7 @@ export class StatisticService {
           book_id: 'desc',
         },
       },
+      ...(query.top && { take: query.top }),
     });
     const bookResult = await Promise.all(
       orders.map(async (o) => {
@@ -114,6 +117,7 @@ export class StatisticService {
           total_price: 'desc',
         },
       },
+      ...(query.top && { take: query.top }),
     });
     const bookResult = await Promise.all(
       books.map(async (b) => {
@@ -148,6 +152,7 @@ export class StatisticService {
           quantity: 'desc',
         },
       },
+      ...(query.top && { take: query.top }),
     });
     const bookResult = await Promise.all(
       orders.map(async (o) => {
@@ -184,6 +189,7 @@ export class StatisticService {
           total_price: 'desc',
         },
       },
+      ...(query.top && { take: query.top }),
     });
     const customersWithUser = await Promise.all(
       customers.map(async ({ user_id, ...customer }) => {
@@ -234,6 +240,7 @@ export class StatisticService {
       include: {
         Category: true,
       },
+      ...(query.top && { take: query.top }),
     });
     type BookCategoryWithTotalPrice = {
       total_price?: number;
@@ -255,8 +262,6 @@ export class StatisticService {
       }
       categoryMap[b.category_id].totalRevenues += b.total_price;
     });
-
-    // Lấy thông tin category và gộp vào kết quả
     const categoriesResult = await Promise.all(
       Object.values(categoryMap).map(
         async (entry: { categoryId: string; totalRevenues: number }) => {
@@ -270,7 +275,6 @@ export class StatisticService {
         },
       ),
     );
-
     return categoriesResult;
   }
 }
