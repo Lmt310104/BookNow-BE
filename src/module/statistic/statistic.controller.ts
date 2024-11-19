@@ -12,6 +12,7 @@ const {
     GET_PRODUCT_STATISTIC_BY_REVENUE,
     GET_REVENUE_STATISTIC_BY_CUSTOMER,
     GET_REVENUE_STATISTIC_BY_CATEGROY,
+    GET_PRODUCT_STATISTIC_BY_SOLD_QUANTITY,
   },
 } = END_POINTS;
 
@@ -48,6 +49,14 @@ export class StatisticController {
     return new StandardResponse(
       await this.statisticService.getProductStatisByOrder(query),
       'Get product statistic by order successfully',
+      200,
+    );
+  }
+  @Get(GET_PRODUCT_STATISTIC_BY_SOLD_QUANTITY)
+  async getProductStatisBySoldQuantity(@Query() query: StatisticQuery) {
+    return new StandardResponse(
+      await this.statisticService.getProductStatisBySoldQuantity(query),
+      'Get product statistic by sold quantity successfully',
       200,
     );
   }
