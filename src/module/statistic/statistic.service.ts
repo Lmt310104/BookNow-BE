@@ -152,6 +152,7 @@ export class StatisticService {
           quantity: 'desc',
         },
       },
+      ...(query.top && { take: query.top }),
     });
     const bookResult = await Promise.all(
       orders.map(async (o) => {
