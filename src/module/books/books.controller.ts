@@ -32,6 +32,7 @@ import { UpdateBookDto } from './dto/update-book.dto';
 import { FilesInterceptor } from '@nestjs/platform-express';
 import { PriceFilterDto } from './dto/filter-by-price.dto';
 import { RatingFilterDto } from './dto/filter-by-rating.dto';
+import { Public } from 'src/common/decorators/public.decorator';
 
 const {
   BOOKS: {
@@ -94,6 +95,7 @@ export class BooksController {
     description: 'Book status',
   })
   @Get(GET_ALL)
+  @Public()
   @UsePipes(new ValidationPipe({ transform: true }))
   async getAllBooks(
     @Query() bookQuery: BookQuery,

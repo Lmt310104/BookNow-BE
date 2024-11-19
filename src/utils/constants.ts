@@ -125,10 +125,44 @@ export const END_POINTS = {
     GET_ALL: '/get-all',
     GET_ONE: '/:id',
     REPLY: '/:id/reply',
+    GET_REVIEW_BY_ORDER_ID: '/get-review-by-order-id/:orderId',
+    GET_REVIEW_BY_BOOK_ID: '/get-review-by-book-id/:bookId',
   },
   GOOGLE_OAUTH: {
     BASE: '/auth/google',
     REDIRECT: '/oauth2/redirect/code',
+  },
+  ADDRESS: {
+    BASE: '/address',
+    GET_ALL_BY_USER: '/get-all-by-user',
+    GET_ALL_BY_ADMIN: '/get-all-by-admin',
+    CREATE: '/create',
+    UPDATE: '/update/:id',
+    DELETE: '/delete/:id',
+  },
+  STATISTIC: {
+    BASE: '/statistic',
+    GET_OVERVIEW_STATISTIC: '/get-statistic',
+    GET_PRODUCT_STATISTIC_BY_REVENUE: '/get-product-statistic',
+    GET_PRODUCT_STATISTIC_BY_ORDER: '/get-product-statistic-order',
+    GET_PRODUCT_STATISTIC_BY_ADD_TO_CART: '/get-product-statistic-add-to-cart',
+    GET_REVENUE_STATISTIC_BY_CATEGROY: '/get-revenue-statistic-category',
+    GET_REVENUE_STATISTIC_BY_CUSTOMER: '/get-revenue-statistic-customer',
+    GET_PRODUCT_STATISTIC_BY_SOLD_QUANTITY:
+      '/get-product-statistic-sold-quantity',
+  },
+  MESSAGES: {
+    BASE: '/messages',
+    GET_LATEST_MESSAGE_BY_CHAT: '/get-latest-by-chat/:chatId',
+    GET_CHAT_BY_USER: '/get-chat-by-user/:userId',
+    CREATE: '/create/:chatId',
+    DELETE: '/delete/:id',
+  },
+  CHATS: {
+    BASE: '/chats',
+    GET_ALL_BY_ADMIN: '/get-all-chats',
+    GET_ONE: '/get-one/:id',
+    CREATE: '/create',
   },
 };
 
@@ -159,8 +193,18 @@ export enum DateFormat {
 }
 
 export enum ReviewState {
-  UNANSWERED = 'UNANSWERED',
-  ANSWERED = 'ANSWERED',
+  UNREVIEW = 'UNREVIEW',
+  REVIEWED = 'REVIEWED',
+  REPLIED = 'REPLIED',
+}
+
+export enum ORDER_STATUS_ENUM {
+  PENDING = 'PENDING',
+  PROCESSING = 'PROCESSING',
+  DELIVERED = 'DELIVERED',
+  CANCELLED = 'CANCELLED',
+  SUCCESS = 'SUCCESS',
+  REJECT = 'REJECT',
 }
 
 export const ORDER_STATUS = {

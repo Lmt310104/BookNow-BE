@@ -8,7 +8,7 @@ import { OrderPageOptionsDto } from './dto/find-all-orders.dto';
 import { TUserSession } from 'src/common/decorators/user-session.decorator';
 import { CreateOrderDto } from './dto/create-order.dto';
 import { CreateReviewDto } from './dto/create-review.dto';
-import { ORDER_STATUS } from 'src/utils/constants';
+import { ORDER_STATUS, ReviewState } from 'src/utils/constants';
 import { UpdateOrderStatusDto } from './dto/update-order-status.dto';
 import { OrderStatus } from '@prisma/client';
 
@@ -45,7 +45,7 @@ export class OrderService {
         });
         const order = await tx.orders.create({
           data: {
-            user_id: session.id,
+            user: { connect: { id: session.id } },
             full_name: dto.fullName,
             phone_number: dto.phoneNumber,
             address: dto.address,
@@ -243,13 +243,6 @@ export class OrderService {
         const newAvgStars =
           (Number(book.avg_stars) * book.total_reviews + dto.star) /
           newTotalReviews;
-        await tx.books.update({
-          where: { id: book.id },
-          data: {
-            total_reviews: newTotalReviews,
-            avg_stars: newAvgStars,
-          },
-        });
         const review = await tx.reviews.create({
           data: {
             user_id: session.id,
@@ -257,11 +250,39 @@ export class OrderService {
             rating: dto.star,
             description: dto.description,
             title: dto.title,
+            order_item_id: orderDetailId,
           },
           include: {
             book: true,
           },
         });
+        await tx.books.update({
+          where: { id: book.id },
+          data: {
+            total_reviews: newTotalReviews,
+            avg_stars: newAvgStars,
+          },
+        });
+        await tx.orderItems.update({
+          where: { id: orderDetailId },
+          data: { review_status: ReviewState.REVIEWED, review_id: review.id },
+        });
+        const orderItems = await tx.orderItems.findMany({
+          where: { order_id: id },
+        });
+        let flag = true;
+        for (const item of orderItems) {
+          if (item.review_status !== ReviewState.REVIEWED) {
+            flag = false;
+            break;
+          }
+        }
+        if (flag) {
+          await tx.orders.update({
+            where: { id },
+            data: { review_state: ReviewState.REVIEWED },
+          });
+        }
         return review;
       });
     } catch (error) {

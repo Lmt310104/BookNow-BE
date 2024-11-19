@@ -19,7 +19,14 @@ import { StandardResponse } from 'src/utils/response.dto';
 import HttpStatusCode from 'src/utils/HttpStatusCode';
 
 const {
-  REVIEW: { BASE, GET_ALL, GET_ONE, REPLY },
+  REVIEW: {
+    BASE,
+    GET_ALL,
+    GET_ONE,
+    REPLY,
+    GET_REVIEW_BY_BOOK_ID,
+    GET_REVIEW_BY_ORDER_ID,
+  },
 } = END_POINTS;
 
 @Controller(BASE)
@@ -53,5 +60,35 @@ export class ReviewsController {
       'Create reply successfully',
       HttpStatusCode.CREATED,
     );
+  }
+  @Get(GET_REVIEW_BY_BOOK_ID)
+  async getReviewByBookId(
+    @Param('bookId') bookId: string,
+    @Query() query: GetReviewsDto,
+  ) {
+    const { reviews, itemCount } = await this.reviewService.getReviewsByBookId(
+      bookId,
+      query,
+    );
+    const pageResponseMetaDto = new PageResponseMetaDto({
+      pageOptionsDto: query,
+      itemCount: itemCount,
+    });
+    return new PageResponseDto(reviews, pageResponseMetaDto);
+  }
+  @Get(GET_REVIEW_BY_ORDER_ID)
+  async getReviewByOrderId(
+    @Param('orderId') orderId: string,
+    @Query() query: GetReviewsDto,
+  ) {
+    const { reviews, itemCount } = await this.reviewService.getReviewsByOrderId(
+      orderId,
+      query,
+    );
+    const pageResponseMetaDto = new PageResponseMetaDto({
+      pageOptionsDto: query,
+      itemCount: itemCount,
+    });
+    return new PageResponseDto(reviews, pageResponseMetaDto);
   }
 }

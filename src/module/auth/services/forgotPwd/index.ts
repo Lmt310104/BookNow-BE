@@ -18,6 +18,7 @@ class ForgotPwdService {
     const user = await this.prisma.users.findUnique({
       where: {
         email,
+        is_disable: false,
       },
     });
     if (!user) {

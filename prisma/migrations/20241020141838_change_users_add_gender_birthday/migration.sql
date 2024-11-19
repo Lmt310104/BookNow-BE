@@ -1,6 +1,0 @@
--- CreateEnum
-CREATE TYPE "Gender" AS ENUM ('MALE', 'FEMALE');
-
--- AlterTable
-ALTER TABLE "Users" ADD COLUMN     "birthday" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
-ADD COLUMN     "gender" "Gender" NOT NULL DEFAULT 'MALE';
