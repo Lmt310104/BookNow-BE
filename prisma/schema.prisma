@@ -168,29 +168,32 @@ model Address {
 }
 
 model Chats {
-  id              String     @id @default(uuid())
-  admin_id        String
-  user_id         String
-  last_message_id String?
-  created_at      DateTime   @default(now())
-  updated_at      DateTime   @updatedAt
-  is_deleted      Boolean    @default(false)
-  Messages        Messages[]
+  id                String     @id @default(uuid())
+  user_id           String
+  latest_message_id String?    @unique
+  LatestMessage     Messages?  @relation("ChatLatest", fields: [latest_message_id], references: [id])
+  created_at        DateTime   @default(now())
+  updated_at        DateTime   @updatedAt
+  is_deleted        Boolean    @default(false)
+  Messages          Messages[] @relation("ChatRelation")
 }
 
 model Messages {
-  id            String       @id @default(uuid())
-  chat_id       String
-  sender_id     String
-  Sender        Users        @relation(fields: [sender_id], references: [id])
-  content       String
-  timestamp     DateTime     @default(now())
-  is_read       Boolean      @default(false)
-  attachment_id String?      @unique
-  Attachment    Attachments? @relation(fields: [attachment_id], references: [id])
-  created_at    DateTime     @default(now())
-  updated_at    DateTime     @updatedAt
-  chat          Chats        @relation(fields: [chat_id], references: [id])
+  id             String       @id @default(uuid())
+  chat_id        String
+  chat_latest_id String?      @unique
+  sender_id      String
+  Sender         Users        @relation(fields: [sender_id], references: [id])
+  content        String
+  timestamp      DateTime     @default(now())
+  is_read        Boolean      @default(false)
+  attachment_id  String?      @unique
+  Attachment     Attachments? @relation(fields: [attachment_id], references: [id])
+  created_at     DateTime     @default(now())
+  updated_at     DateTime     @updatedAt
+  is_deleted     Boolean      @default(false)
+  Chat           Chats        @relation("ChatRelation", fields: [chat_id], references: [id])
+  ChatLatest     Chats?       @relation("ChatLatest")
 }
 
 model Attachments {
@@ -202,6 +205,7 @@ model Attachments {
   upload_date  DateTime
   created_at   DateTime  @default(now())
   updated_at   DateTime  @updatedAt
+  is_deleted   Boolean   @default(false)
   Messages     Messages?
 }
 

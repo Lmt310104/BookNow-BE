@@ -149,6 +149,19 @@ export const END_POINTS = {
     GET_REVENUE_STATISTIC_BY_CATEGROY: '/get-revenue-statistic-category',
     GET_REVENUE_STATISTIC_BY_CUSTOMER: '/get-revenue-statistic-customer',
   },
+  MESSAGES: {
+    BASE: '/messages',
+    GET_LATEST_MESSAGE_BY_CHAT: '/get-latest-by-chat/:chatId',
+    GET_CHAT_BY_USER: '/get-chat-by-user/:userId',
+    CREATE: '/create/:chatId',
+    DELETE: '/delete/:id',
+  },
+  CHATS: {
+    BASE: '/chats',
+    GET_ALL_BY_ADMIN: '/get-all-chats',
+    GET_ONE: '/get-one/:id',
+    CREATE: '/create',
+  },
 };
 
 export enum ROLE {

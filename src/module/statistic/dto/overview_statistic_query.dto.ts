@@ -1,4 +1,11 @@
-import { IsEnum, IsNotEmpty, IsOptional, IsString } from 'class-validator';
+import {
+  IsEnum,
+  IsNotEmpty,
+  IsNumber,
+  IsOptional,
+  IsPositive,
+  IsString,
+} from 'class-validator';
 import { ORDER_STATUS_ENUM } from 'src/utils/constants';
 
 export class StatisticQuery {
@@ -15,4 +22,9 @@ export class StatisticQuery {
   @IsEnum(ORDER_STATUS_ENUM)
   @IsOptional()
   status: ORDER_STATUS_ENUM = ORDER_STATUS_ENUM.SUCCESS;
+
+  @IsOptional()
+  @IsNumber()
+  @IsPositive()
+  top: number;
 }
