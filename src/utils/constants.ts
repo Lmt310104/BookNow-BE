@@ -150,6 +150,7 @@ export const END_POINTS = {
     GET_REVENUE_STATISTIC_BY_CUSTOMER: '/get-revenue-statistic-customer',
     GET_PRODUCT_STATISTIC_BY_SOLD_QUANTITY:
       '/get-product-statistic-sold-quantity',
+    GET_REVENUE_STATISTIC_BY_DATE: '/get-revenue-statistic-date',
   },
   MESSAGES: {
     BASE: '/messages',

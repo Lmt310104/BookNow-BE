@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { StatisticQuery } from './dto/overview_statistic_query.dto';
+import { ORDER_STATUS } from 'src/utils/constants';
 
 @Injectable()
 export class StatisticService {
@@ -168,7 +169,6 @@ export class StatisticService {
     return bookResult;
   }
   async getRevenueStatisByCustomer(query: StatisticQuery) {
-    console.log(query);
     const customers = await this.prisma.orders.groupBy({
       by: ['user_id'],
       where: {
@@ -193,17 +193,72 @@ export class StatisticService {
     });
     const customersWithUser = await Promise.all(
       customers.map(async ({ user_id, ...customer }) => {
+        let isNewCustomer = true;
         const user = await this.prisma.users.findUnique({
           where: { id: user_id },
         });
+        if (user) {
+          const userOrders = await this.prisma.orders.findMany({
+            where: {
+              user_id,
+              created_at: {
+                lt: new Date(query.fromDate),
+              },
+            },
+          });
+          isNewCustomer = userOrders.length === 0;
+        }
         return {
+          isNewCustomer: isNewCustomer,
           totalOrders: customer._count.id,
           totalRevenue: customer._sum.total_price,
           user,
         };
       }),
     );
-    return customersWithUser;
+    const totalRevenue = customersWithUser.reduce(
+      (acc, c) => acc + Number(c.totalRevenue),
+      0,
+    );
+    const result = {
+      totalCustomers: customers.length,
+      newCustomers: {
+        totalNewCustomers: customersWithUser.filter((c) => c.isNewCustomer)
+          .length,
+        percentage:
+          (customersWithUser.filter((c) => c.isNewCustomer).length /
+            customers.length) *
+          100,
+        newCustomerRevenue: customersWithUser
+          .filter((c) => c.isNewCustomer)
+          .reduce((acc, c) => acc + Number(c.totalRevenue), 0),
+        percentageRevenue:
+          (customersWithUser
+            .filter((c) => c.isNewCustomer)
+            .reduce((acc, c) => acc + Number(c.totalRevenue), 0) /
+            totalRevenue) *
+          100,
+      },
+      oldCustomers: {
+        totalOldCustomers: customersWithUser.filter((c) => !c.isNewCustomer)
+          .length,
+        percentage:
+          (customersWithUser.filter((c) => !c.isNewCustomer).length /
+            customers.length) *
+          100,
+        oldCustomerRevenue: customersWithUser
+          .filter((c) => !c.isNewCustomer)
+          .reduce((acc, c) => acc + Number(c.totalRevenue), 0),
+        percentageRevenue:
+          (customersWithUser
+            .filter((c) => !c.isNewCustomer)
+            .reduce((acc, c) => acc + Number(c.totalRevenue), 0) /
+            totalRevenue) *
+          100,
+      },
+    };
+
+    return result;
   }
 
   async getRevenueStatisByCategory(query: StatisticQuery) {
@@ -276,5 +331,40 @@ export class StatisticService {
       ),
     );
     return categoriesResult;
+  }
+  async getRevenueStatisByDate(query: StatisticQuery) {
+    const orders = await this.prisma.orders.findMany({
+      where: {
+        created_at: {
+          gte: new Date(query.fromDate),
+          lte: new Date(query.toDate),
+        },
+      },
+    });
+    const dateMap = {};
+    orders.forEach((order) => {
+      const date = new Date(order.created_at).toISOString().split('T')[0];
+      if (!dateMap[date]) {
+        dateMap[date] = {
+          date,
+          totalRevenue: 0,
+          orderDelivered: 0,
+          orderSuccess: 0,
+          orderCancelledAndRejected: 0,
+        };
+      }
+      dateMap[date].totalRevenue +=
+        order.status === ORDER_STATUS.SUCCESS ? Number(order.total_price) : 0;
+      dateMap[date].orderDelivered +=
+        order.status === ORDER_STATUS.DELIVERED ? 1 : 0;
+      dateMap[date].orderSuccess +=
+        order.status === ORDER_STATUS.SUCCESS ? 1 : 0;
+      dateMap[date].orderCancelledAndRejected +=
+        order.status === ORDER_STATUS.CANCELLED ||
+        order.status === ORDER_STATUS.REJECT
+          ? 1
+          : 0;
+    });
+    return Object.values(dateMap);
   }
 }
