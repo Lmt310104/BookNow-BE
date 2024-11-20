@@ -355,8 +355,6 @@ export class StatisticService {
       }
       dateMap[date].totalRevenue +=
         order.status === ORDER_STATUS.SUCCESS ? Number(order.total_price) : 0;
-      dateMap[date].orderDelivered +=
-        order.status === ORDER_STATUS.DELIVERED ? 1 : 0;
       dateMap[date].orderSuccess +=
         order.status === ORDER_STATUS.SUCCESS ? 1 : 0;
       dateMap[date].orderCancelledAndRejected +=
