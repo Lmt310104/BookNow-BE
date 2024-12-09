@@ -24,6 +24,7 @@ import HttpStatusCode from 'src/utils/HttpStatusCode';
 import { CreateOrderDto } from './dto/create-order.dto';
 import { CreateReviewDto } from './dto/create-review.dto';
 import { UpdateOrderStatusDto } from './dto/update-order-status.dto';
+import { CreatePaymentUrlDto } from './dto/create-payment-url.dto';
 
 const {
   ORDER: {
@@ -35,6 +36,15 @@ const {
     GET_ONE,
     CANCEL_ORDER,
     GET_ONE_BY_ADMIN,
+    CREATE_PAYMENT_URL_WITH_MOMO,
+    CALLBACK_WITH_MOMO,
+    GET_PAYMENT_STATUS_WITH_MOMO,
+    CREATE_PAYMENT_URL_WITH_ZALO,
+    CALLBACK_WITH_ZALO,
+    GET_PAYMENT_STATUS_WITH_ZALO,
+    CREATE_PAYMENT_URL_WITH_VNPAY,
+    CALLBACK_WITH_VNPAY,
+    GET_PAYMENT_STATUS_WITH_VNPAY,
   },
 } = END_POINTS;
 
@@ -119,6 +129,27 @@ export class OrdersController {
     const message = 'Comment created successfully';
     return new StandardResponse(review, message, HttpStatusCode.CREATED);
   }
+
+  @Post(CREATE_PAYMENT_URL_WITH_MOMO)
+  async createPaymentUrlWithMomo(
+    @UserSession() session: TUserSession,
+    @Body() dto: CreatePaymentUrlDto,
+  ) {
+    const paymentUrl = await this.orderService.createPaymentUrlWithMomo(
+      session,
+      dto,
+    );
+    const message = 'Payment url created successfully';
+    return new StandardResponse(paymentUrl, message, HttpStatusCode.CREATED);
+  }
+
+  @Post(CALLBACK_WITH_MOMO)
+  async callbackWithMomo(@Body() body: any) {
+    const order = await this.orderService.callbackWithMomo(body);
+    const message = 'Callback successfully';
+    return new StandardResponse(order, message, HttpStatusCode.OK);
+  }
+
   @Patch(CANCEL_ORDER)
   async cancelOrder(
     @Param('id', ParseUUIDPipe) id: string,

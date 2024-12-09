@@ -20,4 +20,9 @@ export default () => ({
   aws_bucket_name: process.env.AWS_BUCKET_NAME,
   client_url: process.env.CLIENT_URL,
   gemini_api_key: process.env.GEMINI_API_KEY,
+  redirect_url_payment: process.env.REDIRECT_URL_PAYMENT,
+  ipn_url_momo: process.env.IPN_URL_MOMO,
+  partner_code_momo: process.env.PARTNER_CODE_MOMO,
+  access_key_momo: process.env.ACCESS_KEY_MOMO,
+  secret_key_momo: process.env.SECRET_KEY_MOMO,
 });
