@@ -11,10 +11,15 @@ import { CreateReviewDto } from './dto/create-review.dto';
 import { ORDER_STATUS, ReviewState } from 'src/utils/constants';
 import { UpdateOrderStatusDto } from './dto/update-order-status.dto';
 import { OrderStatus } from '@prisma/client';
-
+import { ConfigService } from '@nestjs/config';
+import * as crypto from 'crypto';
+import * as axios from 'axios';
 @Injectable()
 export class OrderService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly config: ConfigService,
+  ) {}
   async createOrder(session: TUserSession, dto: CreateOrderDto) {
     const bookIds = dto.items.map((item) => item.bookId);
     const books = await this.prisma.books.findMany({
@@ -368,5 +373,72 @@ export class OrderService {
       where: { user_id: session.id, ...(dto.status && { status: dto.status }) },
     });
     return { orders, itemCount };
+  }
+  async createPaymentUrlWithMomo(session: TUserSession, id: string) {
+    try {
+      const order = await this.prisma.orders.findUniqueOrThrow({
+        where: { id, user_id: session.id },
+      });
+      const partnerCodeMomo = this.config.get<string>('partner_code_momo');
+      const accessKeyMomo = this.config.get<string>('access_key_momo');
+      const secretKeyMomo = this.config.get<string>('secret_key_momo');
+      const orderInfo = `Thanh toán đơn hàng ${order.id}`;
+      const redirectUrl = this.config.get<string>('redirect_url_payment');
+      const ipnUrl = this.config.get<string>('ipn_url_momo');
+      const requestId = partnerCodeMomo + new Date().getTime();
+      const orderId = requestId;
+      const amount = '50000';
+      const requestType = 'captureWallet';
+      const extraData = 'bookstore';
+
+      const rawSignature =
+        'accessKey=' +
+        accessKeyMomo +
+        '&amount=' +
+        amount +
+        '&extraData=' +
+        extraData +
+        '&ipnUrl=' +
+        ipnUrl +
+        '&orderId=' +
+        orderId +
+        '&orderInfo=' +
+        orderInfo +
+        '&partnerCode=' +
+        partnerCodeMomo +
+        '&redirectUrl=' +
+        redirectUrl +
+        '&requestId=' +
+        requestId +
+        '&requestType=' +
+        requestType;
+      const signature = crypto
+        .createHmac('sha256', secretKeyMomo)
+        .update(rawSignature)
+        .digest('hex');
+      const requestBody = JSON.stringify({
+        partnerCode: partnerCodeMomo,
+        accessKey: accessKeyMomo,
+        requestId: requestId,
+        amount: amount,
+        orderId: orderId,
+        orderInfo: orderInfo,
+        redirectUrl: redirectUrl,
+        ipnUrl: ipnUrl,
+        extraData: extraData,
+        requestType: requestType,
+        signature: signature,
+        lang: 'en',
+      });
+      const options = {
+        headers: {
+          'Content-Type': 'application/json',
+          'Content-Length': Buffer.byteLength(requestBody, 'utf8'),
+        },
+      }
+    } catch (error) {
+      console.log('Error:', error);
+      throw new BadRequestException('Failed to create payment url');
+    }
   }
 }

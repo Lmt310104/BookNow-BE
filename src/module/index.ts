@@ -15,6 +15,7 @@ import { OrdersModule } from './orders/orders.module';
 import { ReviewsModule } from './reviews/reviews.module';
 import { StatisticModule } from './statistic/statistic.module';
 import { UsersModule } from './users/users.module';
+import { WebhookModule } from './webhook/webhook.module';
 const Modules = [
   AuthorsModule,
   EmailModule,
@@ -33,6 +34,7 @@ const Modules = [
   EventsModule,
   ChatModule,
   MessagesModule,
+  WebhookModule,
 ];
 
 export default Modules;
