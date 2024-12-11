@@ -9,12 +9,14 @@ import { ChatModule } from './chats/chat.module';
 import { DashboardModule } from './dashboard/dashboard.module';
 import { EmailModule } from './email/email.module';
 import { EventsModule } from './events_gateway/event_gateway.module';
+import { GeminiModule } from './gemini/gemini.module';
 import { GoogleOauthModule } from './google-oauth/google-oauth.module';
 import { MessagesModule } from './messages/message.module';
 import { OrdersModule } from './orders/orders.module';
 import { ReviewsModule } from './reviews/reviews.module';
 import { StatisticModule } from './statistic/statistic.module';
 import { UsersModule } from './users/users.module';
+import { WebhookModule } from './webhook/webhook.module';
 const Modules = [
   AuthorsModule,
   EmailModule,
@@ -33,6 +35,8 @@ const Modules = [
   EventsModule,
   ChatModule,
   MessagesModule,
+  WebhookModule,
+  GeminiModule,
 ];
 
 export default Modules;

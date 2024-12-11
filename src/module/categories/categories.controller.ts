@@ -4,7 +4,6 @@ import {
   DefaultValuePipe,
   Get,
   Param,
-  ParseIntPipe,
   ParseUUIDPipe,
   Post,
   Put,
@@ -22,6 +21,7 @@ import { PageResponseDto } from 'src/utils/page-response.dto';
 import { PageResponseMetaDto } from 'src/utils/page-response-meta.dto';
 import { UpdateCategoryDto } from './dtos/update-category.dto';
 import { CategoryPageOptionsDto } from './dtos/find-all-categories.dto';
+import { Public } from 'src/common/decorators/public.decorator';
 
 const {
   CATEGORIES: {
@@ -47,6 +47,7 @@ export class CategoryController {
     const message = 'Create category successfully';
     return new StandardResponse(category, message, HttpStatusCode.CREATED);
   }
+  @Public()
   @Get(GET_ALL)
   @ApiQuery({
     name: 'page',

@@ -13,6 +13,7 @@ const {
     GET_REVENUE_STATISTIC_BY_CUSTOMER,
     GET_REVENUE_STATISTIC_BY_CATEGROY,
     GET_PRODUCT_STATISTIC_BY_SOLD_QUANTITY,
+    GET_REVENUE_STATISTIC_BY_DATE,
   },
 } = END_POINTS;
 
@@ -73,6 +74,14 @@ export class StatisticController {
     return new StandardResponse(
       await this.statisticService.getRevenueStatisByCategory(query),
       'Get revenue statistic by category successfully',
+      200,
+    );
+  }
+  @Get(GET_REVENUE_STATISTIC_BY_DATE)
+  async getRevenueStatisByDate(@Query() query: StatisticQuery){
+    return new StandardResponse(
+      await this.statisticService.getRevenueStatisByDate(query),
+      'Get revenue statistic by date successfully',
       200,
     );
   }

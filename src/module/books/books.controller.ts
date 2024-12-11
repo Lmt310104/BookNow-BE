@@ -163,6 +163,7 @@ export class BooksController {
     summary: 'Get a book by id',
     description: 'Allow admin/ customer',
   })
+  @Public()
   @Get(GET_ONE)
   async getBookDetailsById(
     @Param('id', ParseUUIDPipe) id: string,
