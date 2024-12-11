@@ -25,4 +25,9 @@ export default () => ({
   partner_code_momo: process.env.PARTNER_CODE_MOMO,
   access_key_momo: process.env.ACCESS_KEY_MOMO,
   secret_key_momo: process.env.SECRET_KEY_MOMO,
+  ipn_url_zalopay: process.env.IPN_URL_ZALOPAY,
+  key1_zalopay: process.env.KEY1_ZALOPAY,
+  key2_zalopay: process.env.KEY2_ZALOPAY,
+  endpoint_zalopay: process.env.ENDPOINT_ZALOPAY,
+  app_id_zalopay: process.env.APP_ID_ZALOPAY,
 });

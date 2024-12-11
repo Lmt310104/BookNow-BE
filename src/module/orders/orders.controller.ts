@@ -7,6 +7,7 @@ import {
   Patch,
   Post,
   Query,
+  Req,
 } from '@nestjs/common';
 import { END_POINTS, ROLE } from 'src/utils/constants';
 import { OrderService } from './orders.service';
@@ -25,6 +26,8 @@ import { CreateOrderDto } from './dto/create-order.dto';
 import { CreateReviewDto } from './dto/create-review.dto';
 import { UpdateOrderStatusDto } from './dto/update-order-status.dto';
 import { CreatePaymentUrlDto } from './dto/create-payment-url.dto';
+import { Public } from 'src/common/decorators/public.decorator';
+import { Request } from 'express';
 
 const {
   ORDER: {
@@ -143,11 +146,38 @@ export class OrdersController {
     return new StandardResponse(paymentUrl, message, HttpStatusCode.CREATED);
   }
 
+  @Public()
   @Post(CALLBACK_WITH_MOMO)
-  async callbackWithMomo(@Body() body: any) {
-    const order = await this.orderService.callbackWithMomo(body);
-    const message = 'Callback successfully';
-    return new StandardResponse(order, message, HttpStatusCode.OK);
+  async callbackWithMomo(@Query() body: any) {
+    const result = await this.orderService.callbackWithMomo(body);
+    return result;
+  }
+
+  @Post(CREATE_PAYMENT_URL_WITH_ZALO)
+  async createPaymentUrlWithZalo(
+    @UserSession() session: TUserSession,
+    @Body() dto: CreatePaymentUrlDto,
+  ) {
+    const paymentUrl = await this.orderService.createPaymentUrlWithZaloPay(
+      dto,
+      session,
+    );
+    const message = 'Payment url created successfully';
+    return new StandardResponse(paymentUrl, message, HttpStatusCode.CREATED);
+  }
+
+  @Public()
+  @Post(CALLBACK_WITH_ZALO)
+  async callbackWithZalo(@Req() req: Request) {
+    const result = await this.orderService.callbackWithZaloPay(req);
+    return result;
+  }
+
+  @Public()
+  @Get(GET_PAYMENT_STATUS_WITH_ZALO)
+  async getPaymentStatusWithZalo(@Query() query: any) {
+    const result = await this.orderService.getPaymentStatusWithZaloPay(query);
+    return result;
   }
 
   @Patch(CANCEL_ORDER)
