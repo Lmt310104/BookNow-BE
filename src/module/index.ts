@@ -9,6 +9,7 @@ import { ChatModule } from './chats/chat.module';
 import { DashboardModule } from './dashboard/dashboard.module';
 import { EmailModule } from './email/email.module';
 import { EventsModule } from './events_gateway/event_gateway.module';
+import { GeminiModule } from './gemini/gemini.module';
 import { GoogleOauthModule } from './google-oauth/google-oauth.module';
 import { MessagesModule } from './messages/message.module';
 import { OrdersModule } from './orders/orders.module';
@@ -35,6 +36,7 @@ const Modules = [
   ChatModule,
   MessagesModule,
   WebhookModule,
+  GeminiModule,
 ];
 
 export default Modules;
