@@ -98,7 +98,7 @@ model Orders {
   address        String
   created_at     DateTime      @default(now())
   updated_at     DateTime      @updatedAt
-  payment_method PaymentMethod
+  payment_method PaymentMethod @default(COD)
   is_deleted     Boolean       @default(false)
   OrderItems     OrderItems[]
 }
