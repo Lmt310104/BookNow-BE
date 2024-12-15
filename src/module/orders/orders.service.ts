@@ -57,6 +57,7 @@ export class OrderService {
             user: { connect: { id: session.id } },
             full_name: dto.fullName,
             phone_number: dto.phoneNumber,
+            payment_method: dto.paymentMethod,
             address: dto.address,
           },
         });

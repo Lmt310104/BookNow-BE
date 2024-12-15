@@ -226,6 +226,13 @@ export const ORDER_STATUS = {
   REJECT: 'REJECT',
 };
 
+export enum PAYMENT_METHOD {
+  COD = 'COD',
+  MOMO = 'MOMO',
+  ZALO = 'ZALO',
+  VNPAY = 'VNPAY',
+}
+
 export const CURRENCY = 'VND';
 
 export const JWT_ACCESS_STRATEGY = 'jwt-access-strategy';
