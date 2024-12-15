@@ -11,10 +11,19 @@ import { CreateReviewDto } from './dto/create-review.dto';
 import { ORDER_STATUS, ReviewState } from 'src/utils/constants';
 import { UpdateOrderStatusDto } from './dto/update-order-status.dto';
 import { OrderStatus } from '@prisma/client';
-
+import { ConfigService } from '@nestjs/config';
+import * as crypto from 'crypto';
+import * as axios from 'axios';
+import * as qs from 'qs';
+import * as moment from 'moment';
+import { CreatePaymentUrlDto } from './dto/create-payment-url.dto';
+import { Request } from 'express';
 @Injectable()
 export class OrderService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly config: ConfigService,
+  ) {}
   async createOrder(session: TUserSession, dto: CreateOrderDto) {
     const bookIds = dto.items.map((item) => item.bookId);
     const books = await this.prisma.books.findMany({
@@ -48,6 +57,7 @@ export class OrderService {
             user: { connect: { id: session.id } },
             full_name: dto.fullName,
             phone_number: dto.phoneNumber,
+            payment_method: dto.paymentMethod,
             address: dto.address,
           },
         });
@@ -368,5 +378,233 @@ export class OrderService {
       where: { user_id: session.id, ...(dto.status && { status: dto.status }) },
     });
     return { orders, itemCount };
+  }
+  async createPaymentUrlWithMomo(
+    session: TUserSession,
+    dto: CreatePaymentUrlDto,
+  ) {
+    try {
+      const order = await this.prisma.orders.findUniqueOrThrow({
+        where: { id: dto.orderId, user_id: session.id },
+      });
+      const partnerCodeMomo = this.config.get<string>('partner_code_momo');
+      const accessKeyMomo = this.config.get<string>('access_key_momo');
+      const secretKeyMomo = this.config.get<string>('secret_key_momo');
+      const orderInfo = `Thanh toán đơn hàng ${order.id}`;
+      const redirectUrl = this.config.get<string>('redirect_url_payment');
+      const ipnUrl = this.config.get<string>('ipn_url_momo');
+      const requestId = partnerCodeMomo + new Date().getTime();
+      const orderId = requestId;
+      const amount = Number(order.total_price);
+      const requestType = 'captureWallet';
+      const extraData = 'bookstore';
+
+      const rawSignature =
+        'accessKey=' +
+        accessKeyMomo +
+        '&amount=' +
+        amount +
+        '&extraData=' +
+        extraData +
+        '&ipnUrl=' +
+        ipnUrl +
+        '&orderId=' +
+        orderId +
+        '&orderInfo=' +
+        orderInfo +
+        '&partnerCode=' +
+        partnerCodeMomo +
+        '&redirectUrl=' +
+        redirectUrl +
+        '&requestId=' +
+        requestId +
+        '&requestType=' +
+        requestType;
+      const signature = crypto
+        .createHmac('sha256', secretKeyMomo)
+        .update(rawSignature)
+        .digest('hex');
+      const requestBody = JSON.stringify({
+        partnerCode: partnerCodeMomo,
+        accessKey: accessKeyMomo,
+        requestId: requestId,
+        amount: amount,
+        orderId: orderId,
+        orderInfo: orderInfo,
+        redirectUrl: redirectUrl,
+        ipnUrl: ipnUrl,
+        extraData: extraData,
+        requestType: requestType,
+        signature: signature,
+        lang: 'en',
+      });
+      const options = {
+        headers: {
+          'Content-Type': 'application/json',
+          'Content-Length': Buffer.byteLength(requestBody, 'utf8'),
+        },
+        method: 'POST',
+        url: 'https://test-payment.momo.vn/v2/gateway/api/create', // Dùng URL đầy đủ
+        data: requestBody,
+      };
+      const response = await axios.default(options);
+      return response.data;
+    } catch (error) {
+      console.log('Error:', error);
+      throw new BadRequestException('Failed to create payment url');
+    }
+  }
+  async callbackWithMomo(query: any) {}
+
+  async validatePayment(query: any) {
+    try {
+    } catch (error) {
+      console.log('Error:', error);
+      throw new BadRequestException('Failed to validate payment');
+    }
+  }
+
+  async createPaymentUrlWithVNPay() {}
+  async callbackWithVNPay() {}
+  async validatePaymentWithVNPay() {}
+
+  async createPaymentUrlWithZaloPay(
+    body: CreatePaymentUrlDto,
+    user: TUserSession,
+  ) {
+    try {
+      const order = await this.prisma.orders.findUniqueOrThrow({
+        where: { id: body.orderId, user_id: user.id },
+      });
+      const config = {
+        app_id: this.config.get<string>('app_id_zalopay'),
+        key1: this.config.get<string>('key1_zalopay'),
+        key2: this.config.get<string>('key2_zalopay'),
+        endpoint: this.config.get<string>('endpoint_zalopay'),
+      };
+      const embed_data = {
+        redirecturl: this.config.get<string>('redirect_url_payment'),
+      };
+      const items = [
+        {
+          itemid: order.id,
+          itemname: `${order.id}_${order.full_name}_${order.phone_number}_${order.address}`,
+          itemprice: order.total_price,
+          itemquantity: 1,
+        },
+      ];
+      const transID = Math.floor(Math.random() * 1000000);
+
+      const orderData = {
+        app_id: config.app_id,
+        app_trans_id: `${moment().format('YYMMDD')}_${transID}`,
+        app_user: user.id,
+        app_time: Date.now(),
+        bank_code: '',
+        item: JSON.stringify(items),
+        embed_data: JSON.stringify(embed_data),
+        amount: Number(order.total_price),
+        callback_url: this.config.get<string>('ipn_url_zalopay'),
+        description: 'Thanh toán đơn hàng',
+        mac: '',
+      };
+      const data =
+        config.app_id +
+        '|' +
+        orderData.app_trans_id +
+        '|' +
+        orderData.app_user +
+        '|' +
+        orderData.amount +
+        '|' +
+        orderData.app_time +
+        '|' +
+        orderData.embed_data +
+        '|' +
+        orderData.item;
+      orderData.mac = crypto
+        .createHmac('sha256', config.key1)
+        .update(data)
+        .digest('hex');
+      console.log(orderData);
+      const response = await axios.default.post(config.endpoint, null, {
+        params: orderData,
+      });
+      return response.data;
+    } catch (error) {
+      console.log('Error:', error);
+      throw new BadRequestException('Failed to create payment url');
+    }
+  }
+  async callbackWithZaloPay(req: Request) {
+    try {
+      const result = {
+        return_code: 1,
+        return_message: 'Success',
+      };
+      const dataStr = req.body.data;
+      const reqMac = req.body.mac;
+      const key2 = this.config.get('key2_zalopay');
+      const mac = crypto
+        .createHmac('sha256', key2)
+        .update(dataStr)
+        .digest('hex');
+      if (reqMac !== mac) {
+        result.return_code = -1;
+        result.return_message = 'mac not equal';
+      } else {
+        console.log('data:', dataStr);
+        const dataJson = JSON.parse(dataStr, key2);
+        console.log(
+          "update order's status = success where app_trans_id =",
+          dataJson['app_trans_id'],
+        );
+        result.return_code = 1;
+        result.return_message = 'Success';
+      }
+      return result;
+    } catch (error) {
+      console.log('Error:', error);
+      return {
+        return_code: -1,
+        return_message: 'Error',
+      };
+    }
+  }
+  async getPaymentStatusWithZaloPay(query: any) {
+    try {
+      const config = {
+        app_id: this.config.get<string>('app_id_zalopay'),
+        key1: this.config.get<string>('key1_zalopay'),
+        key2: this.config.get<string>('key2_zalopay'),
+        endpoint: 'https://sb-openapi.zalopay.vn/v2/query',
+      };
+      const postData = {
+        app_id: config.app_id,
+        app_trans_id: query.app_trans_id,
+        mac: '',
+      };
+      const data =
+        postData.app_id + '|' + postData.app_trans_id + '|' + config.key1;
+      postData.mac = crypto
+        .createHmac('sha256', config.key1)
+        .update(data)
+        .digest('hex');
+      const postConfig = {
+        method: 'post',
+        url: config.endpoint,
+        headers: {
+          'Content-Type': 'application/x-www-form-urlencoded',
+        },
+        data: qs.stringify(postData),
+      };
+
+      console.log('postConfig:', postConfig);
+      const response = await axios.default(postConfig);
+      return response.data;
+    } catch (error) {
+      console.log('Error:', error);
+      throw new BadRequestException('Failed to get payment status');
+    }
   }
 }

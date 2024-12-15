@@ -1,3 +1,4 @@
+import { Transform } from 'class-transformer';
 import {
   IsEnum,
   IsNotEmpty,
@@ -26,5 +27,6 @@ export class StatisticQuery {
   @IsOptional()
   @IsNumber()
   @IsPositive()
+  @Transform(({ value }) => parseFloat(value))
   top: number;
 }

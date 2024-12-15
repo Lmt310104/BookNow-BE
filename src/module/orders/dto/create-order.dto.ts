@@ -2,6 +2,7 @@ import { Type } from 'class-transformer';
 import {
   ArrayMinSize,
   IsArray,
+  IsEnum,
   IsNotEmpty,
   IsNumber,
   IsPositive,
@@ -9,6 +10,7 @@ import {
   Min,
   ValidateNested,
 } from 'class-validator';
+import { PAYMENT_METHOD } from 'src/utils/constants';
 
 export class OrderItemDto {
   @IsString()
@@ -37,6 +39,10 @@ export class CreateOrderDto {
   @IsString()
   @IsNotEmpty()
   phoneNumber: string;
+
+  @IsEnum(PAYMENT_METHOD)
+  @IsNotEmpty()
+  paymentMethod: PAYMENT_METHOD;
 
   @IsNotEmpty({ message: 'Address must not be empty ' })
   @IsString()

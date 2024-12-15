@@ -7,6 +7,7 @@ import {
   Patch,
   Post,
   Query,
+  Req,
 } from '@nestjs/common';
 import { END_POINTS, ROLE } from 'src/utils/constants';
 import { OrderService } from './orders.service';
@@ -24,6 +25,9 @@ import HttpStatusCode from 'src/utils/HttpStatusCode';
 import { CreateOrderDto } from './dto/create-order.dto';
 import { CreateReviewDto } from './dto/create-review.dto';
 import { UpdateOrderStatusDto } from './dto/update-order-status.dto';
+import { CreatePaymentUrlDto } from './dto/create-payment-url.dto';
+import { Public } from 'src/common/decorators/public.decorator';
+import { Request } from 'express';
 
 const {
   ORDER: {
@@ -35,6 +39,15 @@ const {
     GET_ONE,
     CANCEL_ORDER,
     GET_ONE_BY_ADMIN,
+    CREATE_PAYMENT_URL_WITH_MOMO,
+    CALLBACK_WITH_MOMO,
+    GET_PAYMENT_STATUS_WITH_MOMO,
+    CREATE_PAYMENT_URL_WITH_ZALO,
+    CALLBACK_WITH_ZALO,
+    GET_PAYMENT_STATUS_WITH_ZALO,
+    CREATE_PAYMENT_URL_WITH_VNPAY,
+    CALLBACK_WITH_VNPAY,
+    GET_PAYMENT_STATUS_WITH_VNPAY,
   },
 } = END_POINTS;
 
@@ -119,6 +132,54 @@ export class OrdersController {
     const message = 'Comment created successfully';
     return new StandardResponse(review, message, HttpStatusCode.CREATED);
   }
+
+  @Post(CREATE_PAYMENT_URL_WITH_MOMO)
+  async createPaymentUrlWithMomo(
+    @UserSession() session: TUserSession,
+    @Body() dto: CreatePaymentUrlDto,
+  ) {
+    const paymentUrl = await this.orderService.createPaymentUrlWithMomo(
+      session,
+      dto,
+    );
+    const message = 'Payment url created successfully';
+    return new StandardResponse(paymentUrl, message, HttpStatusCode.CREATED);
+  }
+
+  @Public()
+  @Post(CALLBACK_WITH_MOMO)
+  async callbackWithMomo(@Query() body: any) {
+    const result = await this.orderService.callbackWithMomo(body);
+    return result;
+  }
+
+  @Post(CREATE_PAYMENT_URL_WITH_ZALO)
+  async createPaymentUrlWithZalo(
+    @UserSession() session: TUserSession,
+    @Body() dto: CreatePaymentUrlDto,
+  ) {
+    const paymentUrl = await this.orderService.createPaymentUrlWithZaloPay(
+      dto,
+      session,
+    );
+    const message = 'Payment url created successfully';
+    return new StandardResponse(paymentUrl, message, HttpStatusCode.CREATED);
+  }
+
+  @Public()
+  @Post(CALLBACK_WITH_ZALO)
+  async callbackWithZalo(@Req() req: Request) {
+    const result = await this.orderService.callbackWithZaloPay(req);
+    return result;
+  }
+
+  @Public()
+  @Get(GET_PAYMENT_STATUS_WITH_ZALO)
+  async getPaymentStatusWithZalo(@Query() query: any) {
+    const result = await this.orderService.getPaymentStatusWithZaloPay(query);
+    return result;
+  }
+
   @Patch(CANCEL_ORDER)
   async cancelOrder(
     @Param('id', ParseUUIDPipe) id: string,

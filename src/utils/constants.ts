@@ -106,6 +106,15 @@ export const END_POINTS = {
     GET_ONE: '/get-details/:id',
     CANCEL_ORDER: '/:id/cancel-order',
     GET_ONE_BY_ADMIN: '/get-details-by-admin/:id',
+    CREATE_PAYMENT_URL_WITH_MOMO: '/create-payment-url-momo',
+    CALLBACK_WITH_MOMO: '/momo/ipn-callback',
+    GET_PAYMENT_STATUS_WITH_MOMO: '/get-payment-status-momo',
+    CREATE_PAYMENT_URL_WITH_ZALO: '/create-payment-url-zalo',
+    CALLBACK_WITH_ZALO: '/zalopay/ipn-callback',
+    GET_PAYMENT_STATUS_WITH_ZALO: '/get-payment-status-zalo',
+    CREATE_PAYMENT_URL_WITH_VNPAY: '/create-payment-url-vnpay',
+    CALLBACK_WITH_VNPAY: '/vnpay/ipn-callback',
+    GET_PAYMENT_STATUS_WITH_VNPAY: '/get-payment-status-vnpay',
   },
   ORDER_DETAILS: {
     BASE: '/order-details',
@@ -150,6 +159,7 @@ export const END_POINTS = {
     GET_REVENUE_STATISTIC_BY_CUSTOMER: '/get-revenue-statistic-customer',
     GET_PRODUCT_STATISTIC_BY_SOLD_QUANTITY:
       '/get-product-statistic-sold-quantity',
+    GET_REVENUE_STATISTIC_BY_DATE: '/get-revenue-statistic-date',
   },
   MESSAGES: {
     BASE: '/messages',
@@ -215,6 +225,13 @@ export const ORDER_STATUS = {
   SUCCESS: 'SUCCESS',
   REJECT: 'REJECT',
 };
+
+export enum PAYMENT_METHOD {
+  COD = 'COD',
+  MOMO = 'MOMO',
+  ZALO = 'ZALO',
+  VNPAY = 'VNPAY',
+}
 
 export const CURRENCY = 'VND';
 
