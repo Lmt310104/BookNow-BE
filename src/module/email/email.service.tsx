@@ -1,9 +1,12 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
+import { Users } from '@prisma/client';
 import { Transporter } from 'nodemailer';
 import { renderToStaticMarkup } from 'react-dom/server';
 import ResetPasswordEmail from 'src/config/email_pwd.template';
 import WelcomeEmail from 'src/config/email_template';
+import { OrderEmailTemplateDto } from 'src/config/order-templates/dto/order-email-template-dto';
+import { OrderProcessing } from 'src/config/order-templates/order-processing-template';
 
 @Injectable()
 export class EmailService {
@@ -60,6 +63,24 @@ export class EmailService {
       from: this.configService.get<string>('smtp_user'),
       to,
       subject,
+      html: emailHtml,
+    };
+    await this.transporter.sendMail(mailOptions);
+  }
+  async sendOrderProcessing({
+    order,
+    user,
+  }: {
+    order: OrderEmailTemplateDto;
+    user: Users;
+  }) {
+    const emailHtml = renderToStaticMarkup(
+      <OrderProcessing order={order} userName={user.full_name} />,
+    );
+    const mailOptions = {
+      from: this.configService.get<string>('smtp_user'),
+      to: user.email,
+      subject: 'Order Processing',
       html: emailHtml,
     };
     await this.transporter.sendMail(mailOptions);

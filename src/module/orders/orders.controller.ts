@@ -8,6 +8,7 @@ import {
   Post,
   Query,
   Req,
+  Res,
 } from '@nestjs/common';
 import { END_POINTS, ROLE } from 'src/utils/constants';
 import { OrderService } from './orders.service';
@@ -27,7 +28,7 @@ import { CreateReviewDto } from './dto/create-review.dto';
 import { UpdateOrderStatusDto } from './dto/update-order-status.dto';
 import { CreatePaymentUrlDto } from './dto/create-payment-url.dto';
 import { Public } from 'src/common/decorators/public.decorator';
-import { Request } from 'express';
+import { Request, Response } from 'express';
 
 const {
   ORDER: {
@@ -148,9 +149,8 @@ export class OrdersController {
 
   @Public()
   @Post(CALLBACK_WITH_MOMO)
-  async callbackWithMomo(@Query() body: any) {
-    const result = await this.orderService.callbackWithMomo(body);
-    return result;
+  async callbackWithMomo(@Req() req: Request, @Res() res: Response) {
+    await this.orderService.callbackWithMomo(req, res);
   }
 
   @Post(CREATE_PAYMENT_URL_WITH_ZALO)
@@ -169,14 +169,47 @@ export class OrdersController {
   @Public()
   @Post(CALLBACK_WITH_ZALO)
   async callbackWithZalo(@Req() req: Request) {
-    const result = await this.orderService.callbackWithZaloPay(req);
-    return result;
+    await this.orderService.callbackWithZaloPay(req);
   }
 
   @Public()
   @Get(GET_PAYMENT_STATUS_WITH_ZALO)
   async getPaymentStatusWithZalo(@Query() query: any) {
     const result = await this.orderService.getPaymentStatusWithZaloPay(query);
+    return result;
+  }
+
+  @Public()
+  @Get(GET_PAYMENT_STATUS_WITH_MOMO)
+  async getPaymentStatusWithMomo(@Query() query: any) {
+    const result = await this.orderService.validatePaymentWithMomo(query);
+    return result;
+  }
+
+  @Post(CREATE_PAYMENT_URL_WITH_VNPAY)
+  async createPaymentUrlWithVNPay(
+    @UserSession() session: TUserSession,
+    @Req() req: Request,
+    @Body() dto: CreatePaymentUrlDto,
+  ) {
+    const paymentUrl = await this.orderService.createPaymentUrlWithVNPay(
+      dto,
+      req,
+    );
+    const message = 'Payment url created successfully';
+    return new StandardResponse(paymentUrl, message, HttpStatusCode.CREATED);
+  }
+
+  @Public()
+  @Get(CALLBACK_WITH_VNPAY)
+  async callbackWithVNPay(@Req() req: Request, @Res() res: Response) {
+    await this.orderService.callbackWithVNPay(req, res);
+  }
+
+  @Public()
+  @Get(GET_PAYMENT_STATUS_WITH_VNPAY)
+  async getPaymentStatusWithVNPay(@Query() query: any) {
+    const result = await this.orderService.validatePaymentWithVNPay(query);
     return result;
   }
 

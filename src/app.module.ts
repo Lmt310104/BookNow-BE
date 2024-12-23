@@ -2,6 +2,8 @@ import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import Modules from './module';
 import configuration from './config/configuration';
+import { AutomapperModule } from '@automapper/nestjs';
+import { classes } from '@automapper/classes';
 @Module({
   imports: [
     ConfigModule.forRoot({
@@ -9,6 +11,10 @@ import configuration from './config/configuration';
       envFilePath: ['.env', '.env.development'],
       load: [configuration],
     }),
+    AutomapperModule.forRoot({
+      strategyInitializer: classes(),
+    }),
+
     ...Modules,
   ],
   controllers: [],

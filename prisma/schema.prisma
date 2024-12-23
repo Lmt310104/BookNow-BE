@@ -96,6 +96,12 @@ model Orders {
   full_name      String
   phone_number   String
   address        String
+  pending_at     DateTime
+  processing_at  DateTime?
+  delivered_at   DateTime?
+  cancelled_at   DateTime?
+  success_at     DateTime?
+  reject_at      DateTime?
   created_at     DateTime      @default(now())
   updated_at     DateTime      @updatedAt
   payment_method PaymentMethod @default(COD)
