@@ -230,7 +230,7 @@ export const ORDER_STATUS = {
 export enum PAYMENT_METHOD {
   COD = 'COD',
   MOMO = 'MOMO',
-  ZALO = 'ZALO',
+  ZALOPAY = 'ZALOPAY',
   VNPAY = 'VNPAY',
 }
 

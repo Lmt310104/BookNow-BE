@@ -500,7 +500,10 @@ export class OrderService {
       if (resultCode === 0) {
         await this.prisma.orders.update({
           where: { id: orderId as string },
-          data: { status: ORDER_STATUS.PROCESSING as OrderStatus },
+          data: {
+            status: ORDER_STATUS.PROCESSING as OrderStatus,
+            processing_at: convertToUTC7(new Date()),
+          },
         });
         const order = await this.prisma.orders.findUnique({
           where: { id: orderId },
@@ -795,6 +798,7 @@ export class OrderService {
           itemquantity: 1,
         },
       ];
+      const callback_url = this.config.get<string>('ipn_url_zalopay');
       const transID = Math.floor(Math.random() * 1000000);
 
       const orderData = {
@@ -806,7 +810,7 @@ export class OrderService {
         item: JSON.stringify(items),
         embed_data: JSON.stringify(embed_data),
         amount: Number(order.total_price),
-        callback_url: this.config.get<string>('ipn_url_zalopay'),
+        callback_url: callback_url,
         description: 'Thanh toán đơn hàng',
         mac: '',
       };
@@ -861,6 +865,49 @@ export class OrderService {
           "update order's status = success where app_trans_id =",
           dataJson['app_trans_id'],
         );
+        const items = JSON.parse(dataJson['item']);
+        const orderId = items[0].itemid;
+        const order = await this.prisma.orders.findUnique({
+          where: { id: orderId as string },
+        });
+        await this.prisma.orders.update({
+          where: { id: orderId as string },
+          data: {
+            status: ORDER_STATUS.PROCESSING as OrderStatus,
+            processing_at: convertToUTC7(new Date()),
+          },
+        });
+        const newOrder = await this.prisma.orders.findUnique({
+          where: { id: orderId as string },
+          include: {
+            OrderItems: {
+              include: {
+                book: true,
+              },
+            },
+          },
+        });
+        const user = await this.prisma.users.findUnique({
+          where: { id: order.user_id },
+        });
+        await this.emailService.sendOrderProcessing({
+          order: {
+            ...newOrder,
+            total_price: Number(newOrder.total_price),
+            payment_method: PAYMENT_METHOD[newOrder.payment_method],
+            OrderItems: newOrder.OrderItems.map((item) => ({
+              ...item,
+              Book: item.book,
+              price: Number(item.price),
+              total_price: Number(item.total_price),
+            })),
+          },
+          user,
+        });
+        await sendSMS({
+          to: user.phone,
+          content: `Đơn hàng ${order.id} của bạn đã được thanh toán và đang được xử lý. Cảm ơn bạn đã mua hàng tại BookNow!`,
+        });
         result.return_code = 1;
         result.return_message = 'Success';
       }
