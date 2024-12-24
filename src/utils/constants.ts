@@ -61,6 +61,7 @@ export const END_POINTS = {
     SEARCH_BY_PRICE: '/search/price',
     SEARCH_BY_RATING: '/search/rating',
     SEARCH_BY_CATEGORY: '/search/:categoryId',
+    NEW_SEARCH: '/new-search',
   },
   AUTHORS: {
     BASE: '/authors',
@@ -189,7 +190,7 @@ export enum ORDER {
   ASC = 'asc',
   DESC = 'desc',
 }
-export const FILE_TYPES_REGEX = /(jpg|jpeg|png)$/i;
+export const FILE_TYPES_REGEX = /(jpg|jpeg|png|webp)$/i;
 export enum EUploadFolder {
   book = 'book',
   author = 'author',

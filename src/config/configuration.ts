@@ -30,4 +30,7 @@ export default () => ({
   key2_zalopay: process.env.KEY2_ZALOPAY,
   endpoint_zalopay: process.env.ENDPOINT_ZALOPAY,
   app_id_zalopay: process.env.APP_ID_ZALOPAY,
+  vnpay_url: process.env.VNPAY_URL,
+  vnpay_tmn_code: process.env.VNPAY_TMN_CODE,
+  vnpay_hash_secret: process.env.VNPAY_HASH_SECRET,
 });

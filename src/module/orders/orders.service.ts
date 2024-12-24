@@ -1,5 +1,6 @@
 import {
   BadRequestException,
+  HttpException,
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
@@ -8,7 +9,7 @@ import { OrderPageOptionsDto } from './dto/find-all-orders.dto';
 import { TUserSession } from 'src/common/decorators/user-session.decorator';
 import { CreateOrderDto } from './dto/create-order.dto';
 import { CreateReviewDto } from './dto/create-review.dto';
-import { ORDER_STATUS, ReviewState } from 'src/utils/constants';
+import { ORDER_STATUS, PAYMENT_METHOD, ReviewState } from 'src/utils/constants';
 import { UpdateOrderStatusDto } from './dto/update-order-status.dto';
 import { OrderStatus } from '@prisma/client';
 import { ConfigService } from '@nestjs/config';
@@ -17,14 +18,22 @@ import * as axios from 'axios';
 import * as qs from 'qs';
 import * as moment from 'moment';
 import { CreatePaymentUrlDto } from './dto/create-payment-url.dto';
-import { Request } from 'express';
+import { Request, Response } from 'express';
+import convertToUTC7 from 'src/utils/UTC7Transfer';
+import { EmailService } from '../email/email.service';
+import { sendSMS } from 'src/services/sms-gateway';
+import { sortObject } from 'src/utils/vnpay.utils';
 @Injectable()
 export class OrderService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly config: ConfigService,
+    private readonly emailService: EmailService,
   ) {}
   async createOrder(session: TUserSession, dto: CreateOrderDto) {
+    const user = await this.prisma.users.findUnique({
+      where: { id: session.id },
+    });
     const bookIds = dto.items.map((item) => item.bookId);
     const books = await this.prisma.books.findMany({
       where: { id: { in: bookIds } },
@@ -52,15 +61,44 @@ export class OrderService {
             id: { in: cartItemIds },
           },
         });
-        const order = await tx.orders.create({
-          data: {
-            user: { connect: { id: session.id } },
-            full_name: dto.fullName,
-            phone_number: dto.phoneNumber,
-            payment_method: dto.paymentMethod,
-            address: dto.address,
-          },
-        });
+        let order = null;
+        if (dto.paymentMethod === PAYMENT_METHOD.COD) {
+          const orderTemp = await tx.orders.create({
+            data: {
+              user: { connect: { id: session.id } },
+              full_name: dto.fullName,
+              phone_number: dto.phoneNumber,
+              payment_method: dto.paymentMethod,
+              address: dto.address,
+              pending_at: convertToUTC7(new Date()),
+              status: ORDER_STATUS.PROCESSING as OrderStatus,
+              processing_at: convertToUTC7(new Date()),
+            },
+          });
+          order = await tx.orders.findFirst({
+            where: { id: orderTemp.id },
+            include: {
+              OrderItems: {
+                include: {
+                  book: true,
+                },
+              },
+            },
+          });
+          await this.emailService.sendOrderProcessing({ user, order });
+        } else {
+          const orderTemp = await tx.orders.create({
+            data: {
+              user: { connect: { id: session.id } },
+              full_name: dto.fullName,
+              phone_number: dto.phoneNumber,
+              payment_method: dto.paymentMethod,
+              address: dto.address,
+              pending_at: convertToUTC7(new Date()),
+            },
+          });
+          order = orderTemp;
+        }
         const orderItems = dto.items.map((item) => {
           const { price, finalPrice } = bookPriceMap.get(item.bookId);
           const totalPrice = Number(finalPrice) * item.quantity;
@@ -454,19 +492,283 @@ export class OrderService {
       throw new BadRequestException('Failed to create payment url');
     }
   }
-  async callbackWithMomo(query: any) {}
-
-  async validatePayment(query: any) {
+  async callbackWithMomo(req: Request, res: Response) {
     try {
+      // check signature sẽ implement sau, tạm thời bỏ qua bước này
+      const { orderId, resultCode } = req.body;
+      //update order status and send email, sms
+      if (resultCode === 0) {
+        await this.prisma.orders.update({
+          where: { id: orderId as string },
+          data: { status: ORDER_STATUS.PROCESSING as OrderStatus },
+        });
+        const order = await this.prisma.orders.findUnique({
+          where: { id: orderId },
+          include: {
+            OrderItems: {
+              include: {
+                book: true,
+              },
+            },
+          },
+        });
+        const user = await this.prisma.users.findUnique({
+          where: { id: order.user_id },
+        });
+        // send email, sms
+        await this.emailService.sendOrderProcessing({
+          order: {
+            ...order,
+            total_price: Number(order.total_price),
+            payment_method: PAYMENT_METHOD[order.payment_method],
+            OrderItems: order.OrderItems.map((item) => ({
+              ...item,
+              Book: item.book,
+              price: Number(item.price),
+              total_price: Number(item.total_price),
+            })),
+          },
+          user,
+        });
+        await sendSMS({
+          to: user.phone,
+          content: `Đơn hàng ${order.id} của bạn đã được thanh toán và đang được xử lý. Cảm ơn bạn đã mua hàng tại BookNow!`,
+        });
+        return res.status(204).json({
+          resultCode: 0,
+          message: 'Success',
+        });
+      } else {
+        return res.status(204).json({
+          resultCode: 10,
+          message: 'Failed',
+        });
+      }
+    } catch (error) {
+      console.log('Error:', error);
+      const response = {
+        resultCode: 10,
+        message: 'Error',
+      };
+      return res.status(204).json(response);
+    }
+  }
+
+  async validatePaymentWithMomo(query: any) {
+    try {
+      const partnerCodeMomo = this.config.get<string>('partner_code_momo');
+      const accessKeyMomo = this.config.get<string>('access_key_momo');
+      const orderId = query.orderId;
+      const requestId = partnerCodeMomo + new Date().getTime();
+      const secretKeyMomo = this.config.get<string>('secret_key_momo');
+      const lang = 'en';
+      const data = `accessKey=${accessKeyMomo}&orderId=${orderId}&partnerCode=${partnerCodeMomo}&requestId=${requestId}`;
+      const signature = crypto
+        .createHmac('sha256', secretKeyMomo)
+        .update(data)
+        .digest('hex');
+      const options = {
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        method: 'POST',
+        url: 'https://test-payment.momo.vn/v2/gateway/api/query',
+        data: JSON.stringify({
+          partnerCode: partnerCodeMomo,
+          requestId: requestId,
+          orderId: orderId,
+          signature: signature,
+          lang: lang,
+        }),
+      };
+      const response = await axios.default(options);
+      return response.data;
     } catch (error) {
       console.log('Error:', error);
       throw new BadRequestException('Failed to validate payment');
     }
   }
 
-  async createPaymentUrlWithVNPay() {}
-  async callbackWithVNPay() {}
-  async validatePaymentWithVNPay() {}
+  async createPaymentUrlWithVNPay(dto: CreatePaymentUrlDto, req: Request) {
+    try {
+      const order = await this.prisma.orders.findUniqueOrThrow({
+        where: { id: dto.orderId },
+      });
+      process.env.TZ = 'Asia/Ho_Chi_Minh';
+      const date = new Date();
+      const vnpCreateDate = moment(date).format('YYYYMMDDHHmmss');
+      const vnpIpAddr =
+        req.headers['x-forwarded-for'] ||
+        req.connection.remoteAddress ||
+        req.socket.remoteAddress ||
+        req.socket.remoteAddress;
+
+      const vnpReturnurl = this.config.get<string>('redirect_url_payment');
+      let vnpUrl = this.config.get<string>('vnpay_url');
+      const vnpTmnCode = this.config.get<string>('vnpay_tmn_code');
+      const vnpHashSecret = this.config.get<string>('vnpay_hash_secret');
+      const orderId = order.id;
+      // const vnpIpAddr = this.config.get<string>('ipAddress');
+      const vnpAmount = Number(order.total_price) * 100;
+      const vnpOrderInfo = 'Thanh toán đơn hàng ' + order.id;
+      const vnpTxnRef = orderId;
+
+      const expireDate = new Date(new Date().getTime() + 15 * 60 * 1000);
+      const vnpExpireDate = moment(expireDate).format('YYYYMMDDHHmmss');
+      let vnp_Params = {};
+      vnp_Params['vnp_Version'] = '2.1.0';
+      vnp_Params['vnp_Command'] = 'pay';
+      vnp_Params['vnp_TmnCode'] = vnpTmnCode;
+      // vnp_Params['vnp_Merchant'] = ''
+      vnp_Params['vnp_Locale'] = 'vn';
+      vnp_Params['vnp_CurrCode'] = 'VND';
+      vnp_Params['vnp_TxnRef'] = vnpTxnRef;
+      vnp_Params['vnp_OrderInfo'] = vnpOrderInfo;
+      vnp_Params['vnp_Amount'] = vnpAmount;
+      vnp_Params['vnp_ReturnUrl'] = vnpReturnurl;
+      vnp_Params['vnp_IpAddr'] = vnpIpAddr;
+      vnp_Params['vnp_CreateDate'] = vnpCreateDate;
+      vnp_Params['vnp_OrderType'] = 'other';
+      vnp_Params['vnp_ExpireDate'] = vnpExpireDate;
+      vnp_Params = sortObject(vnp_Params);
+      const signData: string = qs.stringify(vnp_Params, { encode: false });
+      const hmac = crypto.createHmac('sha512', vnpHashSecret);
+      const signed: string = hmac
+        .update(Buffer.from(signData, 'utf-8'))
+        .digest('hex');
+      vnp_Params['vnp_SecureHash'] = signed;
+      vnpUrl += '?' + qs.stringify(vnp_Params, { encode: false });
+      return vnpUrl;
+    } catch (error) {
+      console.log(error);
+      throw new HttpException(error.message, 500);
+    }
+  }
+  async callbackWithVNPay(req: Request, res: Response) {
+    try {
+      let vnp_Params = req.query;
+      const secureHash = vnp_Params['vnp_SecureHash'];
+      const orderId = vnp_Params['vnp_TxnRef'];
+      const rspCode = vnp_Params['vnp_ResponseCode'];
+
+      delete vnp_Params['vnp_SecureHash'];
+      delete vnp_Params['vnp_SecureHashType'];
+
+      vnp_Params = sortObject(vnp_Params);
+      const vnpHashSecret = this.config.get<string>('vnpay_hash_secret');
+      const signData = qs.stringify(vnp_Params, { encode: false });
+      const hmac = crypto.createHmac('sha512', vnpHashSecret);
+      const signed = hmac.update(new Buffer(signData, 'utf-8')).digest('hex');
+
+      const paymentStatus = '0';
+      let checkOrderId = true;
+      const order = await this.prisma.orders.findUniqueOrThrow({
+        where: { id: orderId as string },
+      });
+      if (!order) {
+        checkOrderId = false;
+      }
+      const checkAmount =
+        Math.abs(
+          Number(order.total_price) - Number(vnp_Params['vnp_Amount']) / 100,
+        ) < 0.01;
+      if (secureHash === signed) {
+        console.log('Checksum success');
+        if (checkOrderId) {
+          console.log('Order found');
+          if (checkAmount) {
+            console.log('Amount valid');
+            if (paymentStatus == '0') {
+              console.log('Payment success');
+              if (rspCode == '00') {
+                console.log('Payment success');
+                const user = await this.prisma.users.findUnique({
+                  where: { id: order.user_id },
+                });
+                await this.prisma.orders.update({
+                  where: { id: orderId as string },
+                  data: {
+                    status: ORDER_STATUS.PROCESSING as OrderStatus,
+                    processing_at: convertToUTC7(new Date()),
+                  },
+                });
+                const newOrder = await this.prisma.orders.findUnique({
+                  where: { id: orderId as string },
+                  include: {
+                    OrderItems: {
+                      include: {
+                        book: true,
+                      },
+                    },
+                  },
+                });
+                await this.emailService.sendOrderProcessing({
+                  order: {
+                    ...newOrder,
+                    total_price: Number(newOrder.total_price),
+                    payment_method: PAYMENT_METHOD[newOrder.payment_method],
+                    OrderItems: newOrder.OrderItems.map((item) => ({
+                      ...item,
+                      Book: item.book,
+                      price: Number(item.price),
+                      total_price: Number(item.total_price),
+                    })),
+                  },
+                  user,
+                });
+                await sendSMS({
+                  to: user.phone,
+                  content: `Đơn hàng ${order.id} của bạn đã được thanh toán và đang được xử lý. Cảm ơn bạn đã mua hàng tại BookNow!`,
+                });
+
+                res.status(200).json({ RspCode: '00', Message: 'Success' });
+              } else {
+                res.status(200).json({ RspCode: '00', Message: 'Success' });
+              }
+            } else {
+              res.status(200).json({
+                RspCode: '02',
+                Message: 'This order has been updated to the payment status',
+              });
+            }
+          } else {
+            res.status(200).json({ RspCode: '04', Message: 'Amount invalid' });
+          }
+        } else {
+          res.status(200).json({ RspCode: '01', Message: 'Order not found' });
+        }
+      } else {
+        res.status(200).json({ RspCode: '97', Message: 'Checksum failed' });
+      }
+    } catch (error) {
+      console.log('Error:', error);
+      res.status(200).json({ RspCode: '97', Message: 'Checksum failed' });
+    }
+  }
+  async validatePaymentWithVNPay(query: any) {
+    try {
+      let vnp_Params = query;
+      const secureHash = vnp_Params['vnp_SecureHash'];
+      delete vnp_Params['vnp_SecureHash'];
+      delete vnp_Params['vnp_SecureHashType'];
+      vnp_Params = sortObject(vnp_Params);
+      const vnpHashSecret = this.config.get<string>('vnpHashSecret');
+      const signData = qs.stringify(vnp_Params, { encode: false });
+      const hmac = crypto.createHmac('sha512', vnpHashSecret);
+      const signed = hmac.update(new Buffer(signData, 'utf-8')).digest('hex');
+      if (secureHash === signed) {
+        return {
+          message: 'Success',
+          code: vnp_Params['vnp_ResponseCode'],
+        };
+      } else {
+        return { message: 'Pay fail', code: '97' };
+      }
+    } catch (error) {
+      console.log('Error:', error);
+      throw new BadRequestException('Failed to validate payment with VNPay');
+    }
+  }
 
   async createPaymentUrlWithZaloPay(
     body: CreatePaymentUrlDto,

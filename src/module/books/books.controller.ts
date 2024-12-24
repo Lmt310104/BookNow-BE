@@ -47,6 +47,7 @@ const {
     SEARCH_BY_CATEGORY,
     ACTIVE,
     INACTIVE,
+    NEW_SEARCH,
   },
 } = END_POINTS;
 
@@ -246,5 +247,16 @@ export class BooksController {
       'Disable book successfully',
       HttpStatusCode.OK,
     );
+  }
+  @Public()
+  @Get(NEW_SEARCH)
+  async newSearch(@Query() bookQuery: BookQuery) {
+    const { books, itemCount } =
+      await this.bookService.newSearchBook(bookQuery);
+    const meta = new PageResponseMetaDto({
+      pageOptionsDto: bookQuery,
+      itemCount: itemCount,
+    });
+    return new PageResponseDto(books, meta);
   }
 }
