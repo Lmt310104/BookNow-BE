@@ -61,6 +61,7 @@ export const END_POINTS = {
     SEARCH_BY_PRICE: '/search/price',
     SEARCH_BY_RATING: '/search/rating',
     SEARCH_BY_CATEGORY: '/search/:categoryId',
+    NEW_SEARCH: '/new-search',
   },
   AUTHORS: {
     BASE: '/authors',

@@ -5,7 +5,8 @@
 // Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
 
 generator client {
-  provider = "prisma-client-js"
+  provider        = "prisma-client-js"
+  previewFeatures = ["fullTextSearchPostgres"]
 }
 
 datasource db {
@@ -64,10 +65,13 @@ model Books {
   status             BookStatus   @default(ACTIVE)
   created_at         DateTime     @default(now())
   updated_at         DateTime     @updatedAt
+  unaccent           String?      @db.Text
   Category           Category     @relation(fields: [category_id], references: [id])
   OrderItems         OrderItems[]
   CartItems          CartItems[]
   Reviews            Reviews[]
+
+  @@index([title, author], map: "books_fulltext_idx")
 }
 
 model Category {
@@ -75,6 +79,8 @@ model Category {
   name       String  @unique
   is_disable Boolean @default(false)
   books      Books[]
+
+  @@index([name])
 }
 
 model Authors {
@@ -84,6 +90,7 @@ model Authors {
   description String
 
   @@unique([name, birthday, description])
+  @@index([name, description], map: "authors_fulltext_idx")
 }
 
 model Orders {
@@ -107,6 +114,8 @@ model Orders {
   payment_method PaymentMethod @default(COD)
   is_deleted     Boolean       @default(false)
   OrderItems     OrderItems[]
+
+  @@index([full_name, phone_number, address], map: "orders_fulltext_idx")
 }
 
 model OrderItems {
@@ -156,6 +165,8 @@ model Reviews {
   ReplyReviews    ReplyReviews?
   order_item_id   String        @unique
   OrderItem       OrderItems    @relation(fields: [order_item_id], references: [id])
+
+  @@index([title, description], map: "reviews_fulltext_idx")
 }
 
 model ReplyReviews {
@@ -173,6 +184,8 @@ model Address {
   phone_number String
   address      String
   Users        Users? @relation(fields: [user_id], references: [id])
+
+  @@index([full_name, address, phone_number], map: "address_fulltext_idx")
 }
 
 model Chats {

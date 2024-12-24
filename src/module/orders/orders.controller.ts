@@ -188,7 +188,6 @@ export class OrdersController {
 
   @Post(CREATE_PAYMENT_URL_WITH_VNPAY)
   async createPaymentUrlWithVNPay(
-    @UserSession() session: TUserSession,
     @Req() req: Request,
     @Body() dto: CreatePaymentUrlDto,
   ) {
