@@ -85,4 +85,58 @@ export class EmailService {
     };
     await this.transporter.sendMail(mailOptions);
   }
+  async sendOrderRejected({
+    order,
+    user,
+  }: {
+    order: OrderEmailTemplateDto;
+    user: Users;
+  }) {
+    const emailHtml = renderToStaticMarkup(
+      <OrderProcessing order={order} userName={user.full_name} />,
+    );
+    const mailOptions = {
+      from: this.configService.get<string>('smtp_user'),
+      to: user.email,
+      subject: 'Order Processing',
+      html: emailHtml,
+    };
+    await this.transporter.sendMail(mailOptions);
+  }
+  async sendOrderSuccess({
+    order,
+    user,
+  }: {
+    order: OrderEmailTemplateDto;
+    user: Users;
+  }) {
+    const emailHtml = renderToStaticMarkup(
+      <OrderProcessing order={order} userName={user.full_name} />,
+    );
+    const mailOptions = {
+      from: this.configService.get<string>('smtp_user'),
+      to: user.email,
+      subject: 'Order Processing',
+      html: emailHtml,
+    };
+    await this.transporter.sendMail(mailOptions);
+  }
+  async sendOrderDelivering({
+    order,
+    user,
+  }: {
+    order: OrderEmailTemplateDto;
+    user: Users;
+  }) {
+    const emailHtml = renderToStaticMarkup(
+      <OrderProcessing order={order} userName={user.full_name} />,
+    );
+    const mailOptions = {
+      from: this.configService.get<string>('smtp_user'),
+      to: user.email,
+      subject: 'Order Processing',
+      html: emailHtml,
+    };
+    await this.transporter.sendMail(mailOptions);
+  }
 }
