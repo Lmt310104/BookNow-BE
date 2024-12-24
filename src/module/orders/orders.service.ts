@@ -22,7 +22,7 @@ import { Request, Response } from 'express';
 import convertToUTC7 from 'src/utils/UTC7Transfer';
 import { EmailService } from '../email/email.service';
 import { sendSMS } from 'src/services/sms-gateway';
-import { formatDateToVnpCreateDate, sortObject } from 'src/utils/vnpay.utils';
+import { sortObject } from 'src/utils/vnpay.utils';
 @Injectable()
 export class OrderService {
   constructor(
@@ -594,31 +594,27 @@ export class OrderService {
       const order = await this.prisma.orders.findUniqueOrThrow({
         where: { id: dto.orderId },
       });
-      const vnpReturnurl = this.config.get<string>('vnpayReturnUrl');
-      let vnpUrl = this.config.get<string>('vnpayUrl');
-      const vnpTmnCode = this.config.get<string>('vnpTmnCode');
-      const vnpHashSecret = this.config.get<string>('vnpHashSecret');
-      const orderId = order.id;
-      const now = new Date();
-      const vnpCreateDate = formatDateToVnpCreateDate(now);
+      process.env.TZ = 'Asia/Ho_Chi_Minh';
+      const date = new Date();
+      const vnpCreateDate = moment(date).format('YYYYMMDDHHmmss');
       const vnpIpAddr =
         req.headers['x-forwarded-for'] ||
         req.connection.remoteAddress ||
+        req.socket.remoteAddress ||
         req.socket.remoteAddress;
+
+      const vnpReturnurl = this.config.get<string>('redirect_url_payment');
+      let vnpUrl = this.config.get<string>('vnpay_url');
+      const vnpTmnCode = this.config.get<string>('vnpay_tmn_code');
+      const vnpHashSecret = this.config.get<string>('vnpay_hash_secret');
+      const orderId = order.id;
       // const vnpIpAddr = this.config.get<string>('ipAddress');
-      const vnpAmount = order.total_price;
+      const vnpAmount = Number(order.total_price) * 100;
       const vnpOrderInfo = 'Thanh toán đơn hàng ' + order.id;
       const vnpTxnRef = orderId;
 
-      const gmt7Offset = 7 * 60;
-      const localOffset = now.getTimezoneOffset();
-      const gmt7Time = new Date(
-        now.getTime() + (gmt7Offset + localOffset) * 60 * 1000,
-      );
-
-      gmt7Time.setMinutes(gmt7Time.getMinutes() + 15);
-
-      const vnpExpireDate = formatDateToVnpCreateDate(gmt7Time);
+      const expireDate = new Date(new Date().getTime() + 15 * 60 * 1000);
+      const vnpExpireDate = moment(expireDate).format('YYYYMMDDHHmmss');
       let vnp_Params = {};
       vnp_Params['vnp_Version'] = '2.1.0';
       vnp_Params['vnp_Command'] = 'pay';
@@ -635,13 +631,13 @@ export class OrderService {
       vnp_Params['vnp_OrderType'] = 'other';
       vnp_Params['vnp_ExpireDate'] = vnpExpireDate;
       vnp_Params = sortObject(vnp_Params);
-      const signData: string = qs.stringify(vnp_Params);
+      const signData: string = qs.stringify(vnp_Params, { encode: false });
       const hmac = crypto.createHmac('sha512', vnpHashSecret);
       const signed: string = hmac
         .update(Buffer.from(signData, 'utf-8'))
         .digest('hex');
       vnp_Params['vnp_SecureHash'] = signed;
-      vnpUrl += '?' + qs.stringify(vnp_Params);
+      vnpUrl += '?' + qs.stringify(vnp_Params, { encode: false });
       return vnpUrl;
     } catch (error) {
       console.log(error);
@@ -659,7 +655,7 @@ export class OrderService {
       delete vnp_Params['vnp_SecureHashType'];
 
       vnp_Params = sortObject(vnp_Params);
-      const vnpHashSecret = this.config.get<string>('vnpHashSecret');
+      const vnpHashSecret = this.config.get<string>('vnpay_hash_secret');
       const signData = qs.stringify(vnp_Params, { encode: false });
       const hmac = crypto.createHmac('sha512', vnpHashSecret);
       const signed = hmac.update(new Buffer(signData, 'utf-8')).digest('hex');
@@ -668,39 +664,50 @@ export class OrderService {
       let checkOrderId = true;
       const order = await this.prisma.orders.findUniqueOrThrow({
         where: { id: orderId as string },
-        include: {
-          OrderItems: {
-            include: {
-              book: true,
-            },
-          },
-        },
       });
       if (!order) {
         checkOrderId = false;
       }
       const checkAmount =
-        Number(order.total_price) === Number(vnp_Params['vnp_Amout']) / 100
-          ? true
-          : false;
+        Math.abs(
+          Number(order.total_price) - Number(vnp_Params['vnp_Amount']) / 100,
+        ) < 0.01;
       if (secureHash === signed) {
+        console.log('Checksum success');
         if (checkOrderId) {
+          console.log('Order found');
           if (checkAmount) {
+            console.log('Amount valid');
             if (paymentStatus == '0') {
+              console.log('Payment success');
               if (rspCode == '00') {
+                console.log('Payment success');
                 const user = await this.prisma.users.findUnique({
                   where: { id: order.user_id },
                 });
                 await this.prisma.orders.update({
                   where: { id: orderId as string },
-                  data: { status: ORDER_STATUS.PROCESSING as OrderStatus },
+                  data: {
+                    status: ORDER_STATUS.PROCESSING as OrderStatus,
+                    processing_at: convertToUTC7(new Date()),
+                  },
+                });
+                const newOrder = await this.prisma.orders.findUnique({
+                  where: { id: orderId as string },
+                  include: {
+                    OrderItems: {
+                      include: {
+                        book: true,
+                      },
+                    },
+                  },
                 });
                 await this.emailService.sendOrderProcessing({
                   order: {
-                    ...order,
-                    total_price: Number(order.total_price),
-                    payment_method: PAYMENT_METHOD[order.payment_method],
-                    OrderItems: order.OrderItems.map((item) => ({
+                    ...newOrder,
+                    total_price: Number(newOrder.total_price),
+                    payment_method: PAYMENT_METHOD[newOrder.payment_method],
+                    OrderItems: newOrder.OrderItems.map((item) => ({
                       ...item,
                       Book: item.book,
                       price: Number(item.price),

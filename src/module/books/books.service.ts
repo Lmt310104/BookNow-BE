@@ -14,22 +14,47 @@ export class BooksService {
   constructor(private readonly prismaService: PrismaService) {}
 
   async getAllBooks(bookQuery: BookQuery) {
+    const condition1 =
+      bookQuery.search?.replace(/\s+/g, '&').trim() ??
+      bookQuery.title?.replace(/\s+/g, '&').trim();
     const books = await this.prismaService.books.findMany({
       where: {
-        title: {
-          contains: bookQuery.title,
-          mode: 'insensitive',
-        },
-        Category: {
-          name: {
-            contains: bookQuery.search ? bookQuery.search : undefined,
-            mode: 'insensitive',
-          },
-          ...('categoryStatus' in bookQuery && {
-            is_disable: bookQuery.categoryStatus,
-          }),
-          ...(bookQuery.categoryId && { id: bookQuery.categoryId }),
-        },
+        ...(condition1 !== undefined && {
+          OR: [
+            {
+              title: {
+                search: condition1,
+                mode: 'insensitive',
+              },
+            },
+            {
+              description: {
+                search: condition1,
+                mode: 'insensitive',
+              },
+            },
+            {
+              author: {
+                search: condition1,
+                mode: 'insensitive',
+              },
+            },
+            {
+              Category: {
+                name: {
+                  search: condition1,
+                  mode: 'insensitive',
+                },
+              },
+            },
+            {
+              unaccent: {
+                search: condition1,
+                mode: 'insensitive',
+              },
+            },
+          ],
+        }),
         ...(bookQuery.status ? { status: bookQuery.status } : {}),
         ...(bookQuery.min_price && { price: { gte: bookQuery.min_price } }),
         ...(bookQuery.max_price && { price: { lte: bookQuery.max_price } }),
@@ -39,28 +64,48 @@ export class BooksService {
       include: {
         Category: true,
       },
-      orderBy: {
-        [bookQuery.sortBy || 'created_at']: bookQuery.order || 'desc',
-      },
+      orderBy: bookQuery.search
+        ? {
+            _relevance: {
+              fields: ['title', 'description', 'author'],
+              search: condition1,
+              sort: 'desc',
+            },
+          }
+        : { [bookQuery.sortBy]: bookQuery.order },
       skip: bookQuery.skip,
       take: bookQuery.take,
     });
     const itemCount = await this.prismaService.books.count({
       where: {
-        title: {
-          contains: bookQuery.title,
-          mode: 'insensitive',
-        },
-        Category: {
-          name: {
-            contains: bookQuery.search ? bookQuery.search : undefined,
-            mode: 'insensitive',
+        OR: [
+          {
+            title: {
+              search: condition1,
+              mode: 'insensitive',
+            },
           },
-          ...('categoryStatus' in bookQuery && {
-            is_disable: bookQuery.categoryStatus,
-          }),
-          ...(bookQuery.categoryId && { id: bookQuery.categoryId }),
-        },
+          {
+            description: {
+              search: condition1,
+              mode: 'insensitive',
+            },
+          },
+          {
+            author: {
+              search: condition1,
+              mode: 'insensitive',
+            },
+          },
+          {
+            Category: {
+              name: {
+                search: condition1,
+                mode: 'insensitive',
+              },
+            },
+          },
+        ],
         ...(bookQuery.status ? { status: bookQuery.status } : {}),
         ...(bookQuery.min_price && { price: { gte: bookQuery.min_price } }),
         ...(bookQuery.max_price && { price: { lte: bookQuery.max_price } }),
@@ -304,5 +349,88 @@ export class BooksService {
       throw new BadRequestException('Book not found');
     }
     return existingBook;
+  }
+  async newSearchBook(bookQuery: BookQuery) {
+    try {
+      const books = await this.prismaService.books.findMany({
+        where: {
+          OR: [
+            {
+              title: {
+                search: bookQuery.search,
+                mode: 'insensitive',
+              },
+            },
+            {
+              description: {
+                search: bookQuery.search,
+                mode: 'insensitive',
+              },
+            },
+            {
+              author: {
+                search: bookQuery.search,
+                mode: 'insensitive',
+              },
+            },
+            {
+              Category: {
+                name: {
+                  search: bookQuery.search,
+                  mode: 'insensitive',
+                },
+              },
+            },
+          ],
+        },
+        orderBy: {
+          _relevance: {
+            fields: ['title'],
+            search: bookQuery.search,
+            sort: 'desc',
+          },
+        },
+        skip: bookQuery.skip,
+        take: bookQuery.take,
+      });
+      const itemCount = await this.prismaService.books.count({
+        where: {
+          OR: [
+            {
+              title: {
+                search: bookQuery.search,
+              },
+            },
+            {
+              description: {
+                search: bookQuery.search,
+              },
+            },
+            {
+              author: {
+                search: bookQuery.search,
+              },
+            },
+            {
+              Category: {
+                name: {
+                  search: bookQuery.search,
+                },
+              },
+            },
+          ],
+        },
+        orderBy: {
+          _relevance: {
+            fields: ['title'],
+            search: bookQuery.search,
+            sort: 'desc',
+          },
+        },
+      });
+      return { books, itemCount };
+    } catch (error) {
+      throw new BadRequestException(error.message);
+    }
   }
 }
