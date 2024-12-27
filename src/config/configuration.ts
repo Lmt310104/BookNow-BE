@@ -33,4 +33,6 @@ export default () => ({
   vnpay_url: process.env.VNPAY_URL,
   vnpay_tmn_code: process.env.VNPAY_TMN_CODE,
   vnpay_hash_secret: process.env.VNPAY_HASH_SECRET,
+  stream_api_key: process.env.STREAM_API_KEY,
+  stream_secret_key: process.env.STREAM_API_SECRET,
 });

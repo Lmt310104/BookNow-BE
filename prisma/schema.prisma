@@ -31,11 +31,14 @@ model Users {
   is_disable          Boolean         @default(false)
   created_at          DateTime        @default(now())
   updated_at          DateTime        @updatedAt
+  unaccent            String?         @db.Text
   Addresses           Address[]
   Orders              Orders[]
   Carts               Carts?
   Reviews             Reviews[]
   Messages            Messages[]
+
+  @@index([full_name, email, phone], map: "users_fulltext_idx")
 }
 
 model Vertifications {
@@ -79,6 +82,7 @@ model Category {
   name       String  @unique
   is_disable Boolean @default(false)
   books      Books[]
+  unaccent   String? @db.Text
 
   @@index([name])
 }
@@ -178,12 +182,13 @@ model ReplyReviews {
 }
 
 model Address {
-  id           Int    @id @default(autoincrement())
+  id           Int     @id @default(autoincrement())
   user_id      String
   full_name    String
   phone_number String
   address      String
-  Users        Users? @relation(fields: [user_id], references: [id])
+  unaccent     String? @db.Text
+  Users        Users?  @relation(fields: [user_id], references: [id])
 
   @@index([full_name, address, phone_number], map: "address_fulltext_idx")
 }
@@ -263,6 +268,6 @@ enum ReviewState {
 enum PaymentMethod {
   COD
   MOMO
-  ZALO
+  ZALOPAY
   VNPAY
 }

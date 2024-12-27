@@ -60,6 +60,9 @@ export class BooksService {
         ...(bookQuery.max_price && { price: { lte: bookQuery.max_price } }),
         ...(bookQuery.min_star && { avg_stars: { gte: bookQuery.min_star } }),
         ...(bookQuery.max_star && { avg_stars: { lte: bookQuery.max_star } }),
+        ...(bookQuery.categoryId && {
+          Category: { id: bookQuery.categoryId },
+        }),
       },
       include: {
         Category: true,

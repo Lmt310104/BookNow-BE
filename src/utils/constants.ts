@@ -175,6 +175,10 @@ export const END_POINTS = {
     GET_ONE: '/get-one/:id',
     CREATE: '/create',
   },
+  STREAM_CHAT: {
+    BASE: '/stream-chat',
+    GET_TOKEN: '/get-token',
+  }
 };
 
 export enum ROLE {
@@ -230,7 +234,7 @@ export const ORDER_STATUS = {
 export enum PAYMENT_METHOD {
   COD = 'COD',
   MOMO = 'MOMO',
-  ZALO = 'ZALO',
+  ZALOPAY = 'ZALOPAY',
   VNPAY = 'VNPAY',
 }
 
