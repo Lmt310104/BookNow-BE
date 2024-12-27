@@ -10,7 +10,6 @@ import { AuthenticationGuard } from './common/guards/authentication.guard';
 import InitFirebase from './services/firebase';
 import { ValidationPipe } from '@nestjs/common';
 import { LoggingInterceptor } from './common/interceptors/logging.interceptor';
-// import getStreamClient from './services/stream-chat';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
@@ -20,7 +19,6 @@ async function bootstrap() {
   const document = SwaggerModule.createDocument(app, documentation, {
     ignoreGlobalPrefix: true,
   });
-  // getStreamClient();
   app.enableCors({
     origin: true,
     credentials: true,

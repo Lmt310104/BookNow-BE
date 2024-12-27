@@ -175,6 +175,10 @@ export const END_POINTS = {
     GET_ONE: '/get-one/:id',
     CREATE: '/create',
   },
+  STREAM_CHAT: {
+    BASE: '/stream-chat',
+    GET_TOKEN: '/get-token',
+  }
 };
 
 export enum ROLE {

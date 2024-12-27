@@ -15,6 +15,7 @@ import { MessagesModule } from './messages/message.module';
 import { OrdersModule } from './orders/orders.module';
 import { ReviewsModule } from './reviews/reviews.module';
 import { StatisticModule } from './statistic/statistic.module';
+import { StreamChatModule } from './stream-chat/stream-chat.module';
 import { UsersModule } from './users/users.module';
 import { WebhookModule } from './webhook/webhook.module';
 const Modules = [
@@ -37,6 +38,7 @@ const Modules = [
   MessagesModule,
   WebhookModule,
   GeminiModule,
+  StreamChatModule,
 ];
 
 export default Modules;
