@@ -5,13 +5,11 @@ import { BooksModule } from './books/books.module';
 import { CartItemsModule } from './cart-items/cart-items.module';
 import { CartsModule } from './carts/carts.module';
 import { CategoriesModule } from './categories/categories.module';
-import { ChatModule } from './chats/chat.module';
 import { DashboardModule } from './dashboard/dashboard.module';
 import { EmailModule } from './email/email.module';
 import { EventsModule } from './events_gateway/event_gateway.module';
 import { GeminiModule } from './gemini/gemini.module';
 import { GoogleOauthModule } from './google-oauth/google-oauth.module';
-import { MessagesModule } from './messages/message.module';
 import { OrdersModule } from './orders/orders.module';
 import { ReviewsModule } from './reviews/reviews.module';
 import { StatisticModule } from './statistic/statistic.module';
@@ -34,8 +32,6 @@ const Modules = [
   AddressModule,
   StatisticModule,
   EventsModule,
-  ChatModule,
-  MessagesModule,
   WebhookModule,
   GeminiModule,
   StreamChatModule,

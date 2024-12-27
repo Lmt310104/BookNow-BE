@@ -93,7 +93,8 @@ export class CategoryService {
     pageOption: CategoryPageOptionsDto,
     disable: boolean,
   ) {
-    const condition1 = query?.replace(/\s+/g, '&').trim();
+    const condition1 = query?.split(/\s+/).filter(Boolean).join(' & ');
+    console.log(condition1);
     const categories = await this.prisma.category.findMany({
       where: {
         ...(condition1 !== undefined && {
@@ -124,7 +125,7 @@ export class CategoryService {
               sort: 'desc',
             },
           }
-        : { [query]: query },
+        : { [pageOption.sortBy]: pageOption.order },
     });
     const itemCount = await this.prisma.category.count({
       where: {
