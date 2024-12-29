@@ -32,6 +32,7 @@ model Users {
   created_at          DateTime        @default(now())
   updated_at          DateTime        @updatedAt
   unaccent            String?         @db.Text
+  type_email          TypeEmail       @default(NORMAL)
   Addresses           Address[]
   Orders              Orders[]
   Carts               Carts?
@@ -237,4 +238,9 @@ enum ReviewType {
   CONSTRUCTIVE
   SPAM
   TOXIC
+}
+
+enum TypeEmail {
+  NORMAL
+  GOOGLE
 }

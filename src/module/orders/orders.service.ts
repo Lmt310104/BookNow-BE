@@ -440,7 +440,6 @@ export class OrderService {
             description: dto.description,
             title: dto.title,
             order_item_id: orderDetailId,
-            type: reviewType.trim() as ReviewType,
           },
           include: {
             book: true,
