@@ -92,6 +92,7 @@ model Authors {
   name        String   @db.VarChar(255)
   birthday    DateTime
   description String
+  avatar_url  String
 
   @@unique([name, birthday, description])
   @@index([name, description], map: "authors_fulltext_idx")

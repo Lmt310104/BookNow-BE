@@ -1,12 +1,29 @@
-import { Body, Controller, Get, Patch, Post, Query } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Get,
+  Param,
+  ParseFilePipeBuilder,
+  Patch,
+  Post,
+  Query,
+  UploadedFile,
+  UseInterceptors,
+} from '@nestjs/common';
 import { ApiOperation, ApiTags } from '@nestjs/swagger';
-import { DOCUMENTATION, END_POINTS } from 'src/utils/constants';
+import {
+  DOCUMENTATION,
+  END_POINTS,
+  FILE_TYPES_REGEX,
+} from 'src/utils/constants';
 import { AuthorsSerivce } from './authors.service';
 import { CreateAuthorDto } from './dto/create-author.dto';
 import { AuthorPageOptionsDto } from './dto/find-all-author.dto';
 import { PageResponseDto } from 'src/utils/page-response.dto';
 import { Authors } from '@prisma/client';
 import { PageResponseMetaDto } from 'src/utils/page-response-meta.dto';
+import { FileInterceptor } from '@nestjs/platform-express';
+import { StandardResponse } from 'src/utils/response.dto';
 const {
   AUTHORS: { BASE, GET_ALL, CREATE, UPDATE, GET_ONE },
 } = END_POINTS;
@@ -35,8 +52,21 @@ export class AuthorsController {
     description: 'Allow admin',
   })
   @Post(CREATE)
-  async createAuthor(@Body() body: CreateAuthorDto) {
-    await this.authorsService.createAuthor(body);
+  @UseInterceptors(FileInterceptor('avatar'))
+  async createAuthor(
+    @Body() body: CreateAuthorDto,
+    @UploadedFile(
+      new ParseFilePipeBuilder()
+        .addFileTypeValidator({
+          fileType: FILE_TYPES_REGEX,
+        })
+        .build({
+          fileIsRequired: false,
+        }),
+    )
+    avatar?: Express.Multer.File,
+  ) {
+    await this.authorsService.createAuthor(body, avatar);
   }
   @ApiOperation({
     summary: 'Update an author',
@@ -49,5 +79,8 @@ export class AuthorsController {
     description: 'Allow admin/ customer',
   })
   @Get(GET_ONE)
-  async getAuthorById() {}
+  async getAuthorById(@Param('id') id: string) {
+    const result = await this.authorsService.getAuthorById(id);
+    return new StandardResponse(result, 'Get author successfully', 200);
+  }
 }
