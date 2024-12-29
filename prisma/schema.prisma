@@ -163,6 +163,7 @@ model Reviews {
   title           String
   rating          Decimal
   description     String
+  type            ReviewType
   state           ReviewState   @default(UNREVIEW)
   reply_review_id Int?
   created_at      DateTime      @default(now())
@@ -270,4 +271,12 @@ enum PaymentMethod {
   MOMO
   ZALOPAY
   VNPAY
+}
+
+enum ReviewType {
+  POSITIVE
+  NEGATIVE
+  CONSTRUCTIVE
+  SPAM
+  TOXIC
 }

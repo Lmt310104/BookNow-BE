@@ -29,11 +29,7 @@ export class GeminiService {
       if (!bookname) {
         throw new Error('Book name is required');
       }
-      const prompt = `Hãy viết một đoạn giới thiệu ngắn gọn và súc tích về cuốn sách "${bookname}" cùng tác giả ${bookauthor || ''}. Đoạn giới thiệu cần bao gồm:
-      1. Chủ đề chính của cuốn sách.
-      2. Tóm tắt nội dung nổi bật.
-      3. Những thông tin đáng chú ý về tiểu sử hoặc thành tựu của tác giả (nếu có). 
-      Hãy đảm bảo văn phong hấp dẫn, dễ tiếp cận và phù hợp với người đọc phổ thông.`;
+      const prompt = `Giới thiệu ngắn về sách "${bookname}" của ${bookauthor || 'tác giả'}: nêu chủ đề, nội dung nổi bật, và thông tin đặc biệt về tác giả (nếu có).`;
       const result = await this.model.generateContent(prompt);
       const response = await result.response.text();
 
@@ -41,6 +37,22 @@ export class GeminiService {
     } catch (error) {
       console.error('Error generating book summary:', error);
       throw new Error(`Failed to generate book summary: ${error.message}`);
+    }
+  }
+
+  async analyseComment(comment: string): Promise<string> {
+    try {
+      if (!comment) {
+        throw new Error('Comment is required');
+      }
+      const prompt = `Analyze the following comment: "${comment}" and classify it as exactly one of the following categories: POSITIVE, NEGATIVE, CONSTRUCTIVE, SPAM, or TOXIC.  
+Respond with only the category name, without any additional explanation:`;
+      const result = await this.model.generateContent(prompt);
+      const response = await result.response.text();
+      return response;
+    } catch (error) {
+      console.error('Error analysing comment:', error);
+      throw new Error(`Failed to analyse comment: ${error.message}`);
     }
   }
 }

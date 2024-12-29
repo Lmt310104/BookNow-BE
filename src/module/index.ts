@@ -10,6 +10,7 @@ import { EmailModule } from './email/email.module';
 import { EventsModule } from './events_gateway/event_gateway.module';
 import { GeminiModule } from './gemini/gemini.module';
 import { GoogleOauthModule } from './google-oauth/google-oauth.module';
+import { OpenAIModule } from './openai/openai.module';
 import { OrdersModule } from './orders/orders.module';
 import { ReviewsModule } from './reviews/reviews.module';
 import { StatisticModule } from './statistic/statistic.module';
@@ -35,6 +36,7 @@ const Modules = [
   WebhookModule,
   GeminiModule,
   StreamChatModule,
+  OpenAIModule,
 ];
 
 export default Modules;

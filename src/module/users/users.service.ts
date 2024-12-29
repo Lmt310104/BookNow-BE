@@ -144,7 +144,7 @@ export class UsersService {
     return updatedUser;
   }
   async searchUser(keyword: string, query: GetAllUserDto, disable: boolean) {
-    const condition1 = keyword?.replace(/\s+/g, '&').trim();
+    const condition1 = keyword?.split(/\s+/).filter(Boolean).join(' & ');
     const users = await this.prisma.users.findMany({
       where: {
         ...(condition1 !== undefined && {

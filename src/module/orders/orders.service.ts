@@ -11,7 +11,7 @@ import { CreateOrderDto } from './dto/create-order.dto';
 import { CreateReviewDto } from './dto/create-review.dto';
 import { ORDER_STATUS, PAYMENT_METHOD, ReviewState } from 'src/utils/constants';
 import { UpdateOrderStatusDto } from './dto/update-order-status.dto';
-import { OrderStatus } from '@prisma/client';
+import { OrderStatus, ReviewType } from '@prisma/client';
 import { ConfigService } from '@nestjs/config';
 import * as crypto from 'crypto';
 import * as axios from 'axios';
@@ -23,12 +23,14 @@ import convertToUTC7 from 'src/utils/UTC7Transfer';
 import { EmailService } from '../email/email.service';
 import { sendSMS } from 'src/services/sms-gateway';
 import { sortObject } from 'src/utils/vnpay.utils';
+import { GeminiService } from '../gemini/gemini.service';
 @Injectable()
 export class OrderService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly config: ConfigService,
     private readonly emailService: EmailService,
+    private readonly geminiService: GeminiService,
   ) {}
   async createOrder(session: TUserSession, dto: CreateOrderDto) {
     const user = await this.prisma.users.findUnique({
@@ -418,6 +420,12 @@ export class OrderService {
         const newAvgStars =
           (Number(book.avg_stars) * book.total_reviews + dto.star) /
           newTotalReviews;
+        const reviewType = await this.geminiService.analyseComment(
+          `${dto.title} ${dto.description}`,
+        );
+        if (reviewType === ReviewType.TOXIC) {
+          throw new BadRequestException('Comment is toxic, please try again');
+        }
         const review = await tx.reviews.create({
           data: {
             user_id: session.id,
@@ -426,6 +434,7 @@ export class OrderService {
             description: dto.description,
             title: dto.title,
             order_item_id: orderDetailId,
+            type: ReviewType.POSITIVE,
           },
           include: {
             book: true,
