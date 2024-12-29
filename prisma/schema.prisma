@@ -113,6 +113,9 @@ model Orders {
   cancelled_at   DateTime?
   success_at     DateTime?
   reject_at      DateTime?
+  note           String?       @db.Text
+  is_paid        Boolean       @default(false)
+  payment_url    String?
   created_at     DateTime      @default(now())
   updated_at     DateTime      @updatedAt
   payment_method PaymentMethod @default(COD)
