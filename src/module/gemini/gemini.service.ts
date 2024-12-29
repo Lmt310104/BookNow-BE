@@ -5,10 +5,10 @@ import { GoogleGenerativeAI } from '@google/generative-ai';
 
 @Injectable()
 export class GeminiService {
-  private genAI: GoogleGenerativeAI;
-  private model: any;
+  private readonly genAI: GoogleGenerativeAI;
+  private readonly model: any;
 
-  constructor(private configService: ConfigService) {
+  constructor(private readonly configService: ConfigService) {
     const gemini_api_key = this.configService.get<string>('gemini_api_key');
 
     if (!gemini_api_key) {

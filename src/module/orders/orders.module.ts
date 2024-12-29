@@ -7,9 +7,9 @@ import { EmailModule } from '../email/email.module';
 import { GeminiModule } from '../gemini/gemini.module';
 
 @Module({
+  imports: [PrismaModule, ConfigModule, GeminiModule, EmailModule],
   providers: [OrderService],
   controllers: [OrdersController],
-  imports: [PrismaModule, ConfigModule, EmailModule, GeminiModule],
   exports: [OrderService],
 })
 export class OrdersModule {}
