@@ -21,6 +21,7 @@ const Modules = [
   AuthorsModule,
   EmailModule,
   UsersModule,
+  GeminiModule,
   BooksModule,
   AuthModule,
   CategoriesModule,
@@ -34,7 +35,6 @@ const Modules = [
   StatisticModule,
   EventsModule,
   WebhookModule,
-  GeminiModule,
   StreamChatModule,
   OpenAIModule,
 ];
