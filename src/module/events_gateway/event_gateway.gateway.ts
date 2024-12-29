@@ -38,47 +38,4 @@ export class EventsGateway implements OnModuleInit {
       });
     });
   }
-  @SubscribeMessage('sendMessage')
-  async onSendMessage(
-    @MessageBody() body: CreateMessageSocketDto,
-    @ConnectedSocket() socket: any,
-  ) {
-    try {
-      console.log('body: ', body);
-      const now = new Date();
-      const utc7Date = new Date(now.getTime() + 7 * 60 * 60 * 1000);
-      const chatId = socket.handshake.query.chatId;
-      const senderId = socket.handshake.query.userId;
-      const result = await this.prisma.$transaction(async (tx) => {
-        const newMessage = await tx.messages.create({
-          data: {
-            content: body.content,
-            chat_id: chatId,
-            sender_id: senderId,
-            created_at: utc7Date,
-            updated_at: utc7Date,
-            ...(body.attachmentId && { attachment_id: body.attachmentId }),
-          },
-        });
-        await tx.chats.update({
-          where: {
-            id: chatId,
-          },
-          data: {
-            latest_message_id: newMessage.id,
-            updated_at: utc7Date,
-          },
-        });
-        return newMessage;
-      });
-      if (result) {
-        this.server.to(chatId).emit('onMessage', {
-          message: 'new message',
-          data: result,
-        });
-      }
-    } catch (err) {
-      console.log(err);
-    }
-  }
 }

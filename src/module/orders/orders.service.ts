@@ -24,6 +24,7 @@ import { EmailService } from '../email/email.service';
 import { sendSMS } from 'src/services/sms-gateway';
 import { sortObject } from 'src/utils/vnpay.utils';
 import { GeminiService } from '../gemini/gemini.service';
+// import { AnonymousBuyDto } from './dto/anonymous-buy.dto';
 @Injectable()
 export class OrderService {
   constructor(
@@ -423,7 +424,12 @@ export class OrderService {
         const reviewType = await this.geminiService.analyseComment(
           `${dto.title} ${dto.description}`,
         );
-        if (reviewType === ReviewType.TOXIC) {
+        console.log(
+          reviewType,
+          typeof reviewType,
+          reviewType === ReviewType.TOXIC.toString(),
+        );
+        if (reviewType.trim() === ReviewType.TOXIC.toString()) {
           throw new BadRequestException('Comment is toxic, please try again');
         }
         const review = await tx.reviews.create({
@@ -434,7 +440,6 @@ export class OrderService {
             description: dto.description,
             title: dto.title,
             order_item_id: orderDetailId,
-            type: ReviewType.POSITIVE,
           },
           include: {
             book: true,
@@ -472,7 +477,7 @@ export class OrderService {
     } catch (error) {
       console.log('Error:', error);
       throw new BadRequestException({
-        message: 'Failed to add rating review',
+        message: error.message,
       });
     }
   }
@@ -1092,4 +1097,7 @@ export class OrderService {
       throw new BadRequestException('Failed to get payment status');
     }
   }
+
+  // async anonymousBuy(dto: AnonymousBuyDto) {
+  // }
 }
