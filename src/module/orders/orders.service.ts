@@ -568,7 +568,7 @@ export class OrderService {
       const redirectUrl = this.config.get<string>('redirect_url_payment');
       const ipnUrl = this.config.get<string>('ipn_url_momo');
       const requestId = partnerCodeMomo + new Date().getTime();
-      const orderId = requestId;
+      const orderId = dto.orderId;
       const amount = Number(order.total_price);
       const requestType = 'captureWallet';
       const extraData = 'bookstore';
