@@ -178,7 +178,7 @@ export const END_POINTS = {
   STREAM_CHAT: {
     BASE: '/stream-chat',
     GET_TOKEN: '/get-token',
-  }
+  },
 };
 
 export enum ROLE {
@@ -211,6 +211,14 @@ export enum ReviewState {
   UNREVIEW = 'UNREVIEW',
   REVIEWED = 'REVIEWED',
   REPLIED = 'REPLIED',
+}
+
+export enum ReviewType {
+  POSITIVE = 'POSITIVE',
+  NEGATIVE = 'NEGATIVE',
+  CONSTRUCTIVE = 'CONSTRUCTIVE',
+  SPAM = 'SPAM',
+  TOXIC = 'TOXIC',
 }
 
 export enum ORDER_STATUS_ENUM {

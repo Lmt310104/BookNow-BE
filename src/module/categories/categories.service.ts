@@ -94,7 +94,6 @@ export class CategoryService {
     disable: boolean,
   ) {
     const condition1 = query?.split(/\s+/).filter(Boolean).join(' & ');
-    console.log(condition1);
     const categories = await this.prisma.category.findMany({
       where: {
         ...(condition1 !== undefined && {
