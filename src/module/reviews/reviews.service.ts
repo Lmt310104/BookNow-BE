@@ -14,6 +14,7 @@ export class ReviewsService {
         ...(dto.rating && { rating: { in: dto.rating } }),
         ...(dto.date && { created_at: { equals: new Date(dto.date) } }),
         ...(dto.state && { state: dto.state }),
+        ...(dto.isHidden && { is_hidden: Boolean(dto.isHidden) }),
       },
       include: {
         book: true,
@@ -195,5 +196,35 @@ export class ReviewsService {
       },
     });
     return { reviews, itemCount };
+  }
+  async hideReview(id: number) {
+    try {
+      return await this.prisma.reviews.update({
+        where: {
+          id: id,
+        },
+        data: {
+          is_hidden: true,
+        },
+      });
+    } catch (error) {
+      console.log(error);
+      throw new BadRequestException(error.messages);
+    }
+  }
+  async showReview(id: number) {
+    try {
+      return await this.prisma.reviews.update({
+        where: {
+          id: id,
+        },
+        data: {
+          is_hidden: false,
+        },
+      });
+    } catch (error) {
+      console.log(error);
+      throw new BadRequestException(error.messages);
+    }
   }
 }

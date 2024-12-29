@@ -137,6 +137,8 @@ export const END_POINTS = {
     REPLY: '/:id/reply',
     GET_REVIEW_BY_ORDER_ID: '/get-review-by-order-id/:orderId',
     GET_REVIEW_BY_BOOK_ID: '/get-review-by-book-id/:bookId',
+    HIDE_REVIEW: '/hide-review/:id',
+    SHOW_REVIEW: '/show-review/:id',
   },
   GOOGLE_OAUTH: {
     BASE: '/auth/google',

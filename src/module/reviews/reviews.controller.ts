@@ -26,6 +26,8 @@ const {
     REPLY,
     GET_REVIEW_BY_BOOK_ID,
     GET_REVIEW_BY_ORDER_ID,
+    HIDE_REVIEW,
+    SHOW_REVIEW,
   },
 } = END_POINTS;
 
@@ -90,5 +92,23 @@ export class ReviewsController {
       itemCount: itemCount,
     });
     return new PageResponseDto(reviews, pageResponseMetaDto);
+  }
+  @Post(HIDE_REVIEW)
+  async hideReview(@Param('id', ParseIntPipe) id: number) {
+    await this.reviewService.hideReview(id);
+    return new StandardResponse(
+      null,
+      'Hide review successfully',
+      HttpStatusCode.NO_CONTENT,
+    );
+  }
+  @Post(SHOW_REVIEW)
+  async showReview(@Param('id', ParseIntPipe) id: number) {
+    await this.reviewService.showReview(id);
+    return new StandardResponse(
+      null,
+      'Show review successfully',
+      HttpStatusCode.NO_CONTENT,
+    );
   }
 }

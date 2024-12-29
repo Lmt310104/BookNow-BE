@@ -36,7 +36,6 @@ model Users {
   Orders              Orders[]
   Carts               Carts?
   Reviews             Reviews[]
-  Messages            Messages[]
 
   @@index([full_name, email, phone], map: "users_fulltext_idx")
 }
@@ -162,8 +161,9 @@ model Reviews {
   book            Books         @relation(fields: [book_id], references: [id])
   title           String
   rating          Decimal
+  is_hidden       Boolean       @default(false)
   description     String
-  type            ReviewType
+  is_disable      Boolean       @default(false)
   state           ReviewState   @default(UNREVIEW)
   reply_review_id Int?
   created_at      DateTime      @default(now())
@@ -192,48 +192,6 @@ model Address {
   Users        Users?  @relation(fields: [user_id], references: [id])
 
   @@index([full_name, address, phone_number], map: "address_fulltext_idx")
-}
-
-model Chats {
-  id                String     @id @default(uuid())
-  user_id           String
-  latest_message_id String?    @unique
-  LatestMessage     Messages?  @relation("ChatLatest", fields: [latest_message_id], references: [id])
-  created_at        DateTime   @default(now())
-  updated_at        DateTime   @updatedAt
-  is_deleted        Boolean    @default(false)
-  Messages          Messages[] @relation("ChatRelation")
-}
-
-model Messages {
-  id             String       @id @default(uuid())
-  chat_id        String
-  chat_latest_id String?      @unique
-  sender_id      String
-  Sender         Users        @relation(fields: [sender_id], references: [id])
-  content        String
-  timestamp      DateTime     @default(now())
-  is_read        Boolean      @default(false)
-  attachment_id  String?      @unique
-  Attachment     Attachments? @relation(fields: [attachment_id], references: [id])
-  created_at     DateTime     @default(now())
-  updated_at     DateTime     @updatedAt
-  is_deleted     Boolean      @default(false)
-  Chat           Chats        @relation("ChatRelation", fields: [chat_id], references: [id])
-  ChatLatest     Chats?       @relation("ChatLatest")
-}
-
-model Attachments {
-  id           String    @id @default(uuid())
-  file_name    String
-  content_type String
-  length       Int
-  chunk_size   Int
-  upload_date  DateTime
-  created_at   DateTime  @default(now())
-  updated_at   DateTime  @updatedAt
-  is_deleted   Boolean   @default(false)
-  Messages     Messages?
 }
 
 enum Role {
