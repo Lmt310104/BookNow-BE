@@ -49,6 +49,7 @@ const {
     CREATE_PAYMENT_URL_WITH_VNPAY,
     CALLBACK_WITH_VNPAY,
     GET_PAYMENT_STATUS_WITH_VNPAY,
+    ANONYMOUS_CHECKOUT,
   },
 } = END_POINTS;
 
@@ -220,5 +221,13 @@ export class OrdersController {
     const order = await this.orderService.cancelOrder(id, session);
     const message = 'Order cancelled successfully';
     return new StandardResponse(order, message, HttpStatusCode.OK);
+  }
+
+  @Public()
+  @Post(ANONYMOUS_CHECKOUT)
+  async anonymousCheckout(@Body() dto: CreateOrderDto) {
+    const order = await this.orderService.anonymousCheckout(dto);
+    const message = 'Order created successfully';
+    return new StandardResponse(order, message, HttpStatusCode.CREATED);
   }
 }

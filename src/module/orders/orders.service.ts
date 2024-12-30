@@ -11,7 +11,7 @@ import { CreateOrderDto } from './dto/create-order.dto';
 import { CreateReviewDto } from './dto/create-review.dto';
 import { ORDER_STATUS, PAYMENT_METHOD, ReviewState } from 'src/utils/constants';
 import { UpdateOrderStatusDto } from './dto/update-order-status.dto';
-import { OrderStatus } from '@prisma/client';
+import { OrderStatus, Role, TypeUser } from '@prisma/client';
 import { ConfigService } from '@nestjs/config';
 import * as crypto from 'crypto';
 import * as axios from 'axios';
@@ -23,8 +23,6 @@ import convertToUTC7 from 'src/utils/UTC7Transfer';
 import { EmailService } from '../email/email.service';
 import { sendSMS } from 'src/services/sms-gateway';
 import { sortObject } from 'src/utils/vnpay.utils';
-import { GeminiService } from '../gemini/gemini.service';
-// import { AnonymousBuyDto } from './dto/anonymous-buy.dto';
 @Injectable()
 export class OrderService {
   constructor(
@@ -623,7 +621,6 @@ export class OrderService {
       const ipnUrl = this.config.get<string>('ipn_url_momo');
       const requestId = partnerCodeMomo + new Date().getTime();
       const orderId = dto.orderId;
-      const expireDate = new Date().getTime() + 600000;
       const amount = Number(order.total_price);
       const requestType = 'captureWallet';
       const extraData = 'bookstore';
@@ -673,10 +670,18 @@ export class OrderService {
           'Content-Length': Buffer.byteLength(requestBody, 'utf8'),
         },
         method: 'POST',
-        url: 'https://test-payment.momo.vn/v2/gateway/api/create', // Dùng URL đầy đủ
+        url: 'https://test-payment.momo.vn/v2/gateway/api/create',
         data: requestBody,
       };
       const response = await axios.default(options);
+      await this.prisma.orders.update({
+        where: {
+          id: dto.orderId,
+        },
+        data: {
+          payment_url: response.data.payUrl,
+        },
+      });
       return response.data;
     } catch (error) {
       console.log('Error:', error);
@@ -694,6 +699,7 @@ export class OrderService {
           data: {
             status: ORDER_STATUS.PROCESSING as OrderStatus,
             processing_at: convertToUTC7(new Date()),
+            is_paid: true,
           },
         });
         const order = await this.prisma.orders.findUnique({
@@ -884,6 +890,7 @@ export class OrderService {
                   data: {
                     status: ORDER_STATUS.PROCESSING as OrderStatus,
                     processing_at: convertToUTC7(new Date()),
+                    is_paid: true,
                   },
                 });
                 const newOrder = await this.prisma.orders.findUnique({
@@ -1027,6 +1034,10 @@ export class OrderService {
       const response = await axios.default.post(config.endpoint, null, {
         params: orderData,
       });
+      await this.prisma.orders.update({
+        where: { id: order.id },
+        data: { payment_url: response.data.order_url },
+      });
       return response.data;
     } catch (error) {
       console.log('Error:', error);
@@ -1066,6 +1077,7 @@ export class OrderService {
           data: {
             status: ORDER_STATUS.PROCESSING as OrderStatus,
             processing_at: convertToUTC7(new Date()),
+            is_paid: true,
           },
         });
         const newOrder = await this.prisma.orders.findUnique({
@@ -1148,6 +1160,123 @@ export class OrderService {
     }
   }
 
-  // async anonymousBuy(dto: AnonymousBuyDto) {
-  // }
+  async anonymousCheckout(dto: CreateOrderDto) {
+    try {
+      const newUser = await this.prisma.users.create({
+        data: {
+          full_name: dto.fullName,
+          phone: dto.phoneNumber,
+          type_user: TypeUser.POTENTIAL_CUSTOMER,
+          role: Role.CUSTOMER,
+          password: '123456',
+        },
+      });
+      const bookIds = dto.items.map((item) => item.bookId);
+      const books = await this.prisma.books.findMany({
+        where: { id: { in: bookIds } },
+      });
+      if (books.length !== bookIds.length) {
+        throw new NotFoundException('Some books are not found');
+      }
+      const bookPriceMap = new Map(
+        books.map((book) => [
+          book.id,
+          { price: book.price, finalPrice: book.final_price ?? book.price },
+        ]),
+      );
+      try {
+        return await this.prisma.$transaction(async (tx) => {
+          let order = null;
+          if (dto.paymentMethod === PAYMENT_METHOD.COD) {
+            const orderTemp = await tx.orders.create({
+              data: {
+                user: { connect: { id: newUser.id } },
+                full_name: dto.fullName,
+                phone_number: dto.phoneNumber,
+                payment_method: dto.paymentMethod,
+                address: dto.address,
+                pending_at: convertToUTC7(new Date()),
+                status: ORDER_STATUS.PROCESSING as OrderStatus,
+                processing_at: convertToUTC7(new Date()),
+              },
+            });
+            order = await tx.orders.findFirst({
+              where: { id: orderTemp.id },
+              include: {
+                OrderItems: {
+                  include: {
+                    book: true,
+                  },
+                },
+              },
+            });
+            if (newUser.email) {
+              await this.emailService.sendOrderProcessing({
+                user: newUser,
+                order,
+              });
+            }
+          } else {
+            const orderTemp = await tx.orders.create({
+              data: {
+                user: { connect: { id: newUser.id } },
+                full_name: dto.fullName,
+                phone_number: dto.phoneNumber,
+                payment_method: dto.paymentMethod,
+                address: dto.address,
+                pending_at: convertToUTC7(new Date()),
+              },
+            });
+            order = orderTemp;
+          }
+          const orderItems = dto.items.map((item) => {
+            const { price, finalPrice } = bookPriceMap.get(item.bookId);
+            const totalPrice = Number(finalPrice) * item.quantity;
+            return {
+              order_id: order.id,
+              book_id: item.bookId,
+              quantity: item.quantity,
+              price,
+              total_price: totalPrice,
+            };
+          });
+          await tx.orderItems.createMany({ data: orderItems });
+          await Promise.all(
+            orderItems.map((item) =>
+              tx.books.update({
+                where: { id: item.book_id },
+                data: {
+                  stock_quantity: { decrement: item.quantity },
+                  sold_quantity: { increment: item.quantity },
+                },
+              }),
+            ),
+          );
+          const totalPrice = orderItems.reduce(
+            (acc, item) => acc + item.total_price,
+            0,
+          );
+          const updatedOrder = await tx.orders.update({
+            where: { id: order.id },
+            data: {
+              total_price: totalPrice,
+            },
+            include: {
+              OrderItems: {
+                include: {
+                  book: true,
+                },
+              },
+            },
+          });
+          return updatedOrder;
+        });
+      } catch (error) {
+        console.log('Error:', error);
+        throw new Error('Failed to create order');
+      }
+    } catch (error) {
+      throw new HttpException(error.message, 500);
+    }
+  }
 }

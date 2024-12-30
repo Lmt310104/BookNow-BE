@@ -116,6 +116,7 @@ export const END_POINTS = {
     CREATE_PAYMENT_URL_WITH_VNPAY: '/create-payment-url-vnpay',
     CALLBACK_WITH_VNPAY: '/vnpay/ipn-callback',
     GET_PAYMENT_STATUS_WITH_VNPAY: '/get-payment-status-vnpay',
+    ANONYMOUS_CHECKOUT: '/anonymous-checkout',
   },
   ORDER_DETAILS: {
     BASE: '/order-details',
@@ -143,6 +144,7 @@ export const END_POINTS = {
   GOOGLE_OAUTH: {
     BASE: '/auth/google',
     REDIRECT: '/oauth2/redirect/code',
+    SIGN_UP_WITH_GOOGLE: '/sign-up-with-google',
   },
   ADDRESS: {
     BASE: '/address',
@@ -198,6 +200,8 @@ export const END_POINTS = {
     GET_ONE: '/get-one/:id',
     ACTIVE: '/active/:id',
     INACTIVE: '/inactive/:id',
+    CREATE_INVENTORY_ADDRESS: '/create-inventory-address',
+    GET_ALL_INVENTORY_ADDRESS: '/get-all-inventory-address',
   },
 };
 
