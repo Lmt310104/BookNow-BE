@@ -1,3 +1,4 @@
+import { TypeEmail } from '@prisma/client';
 import { PrismaService } from 'src/module/prisma/prisma.service';
 
 export const checkIsExistEmail = async (
@@ -7,6 +8,7 @@ export const checkIsExistEmail = async (
   const user = await prisma.users.findUnique({
     where: {
       email: email,
+      type_email: TypeEmail.GOOGLE,
     },
   });
   return !!user;

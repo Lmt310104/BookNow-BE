@@ -4,6 +4,7 @@ import { PrismaService } from '../prisma/prisma.service';
 import { AuthorPageOptionsDto } from './dto/find-all-author.dto';
 import { DEFAULT_AUTHOR_AVATAR, EUploadFolder } from 'src/utils/constants';
 import { uploadFilesFromFirebase } from 'src/services/files/upload';
+import { UpdateAuthorDto } from './dto/update-author.dto';
 
 @Injectable()
 export class AuthorsSerivce {
@@ -20,7 +21,7 @@ export class AuthorsSerivce {
   async createAuthor(body: CreateAuthorDto, avatar: Express.Multer.File) {
     const { name, birthday, description } = body;
     const existAuthor = await this.prisma.authors.findFirst({
-      where: { name, birthday, description },
+      where: { name, birthday },
     });
     if (existAuthor) {
       throw new BadRequestException('Author already existed');
@@ -52,7 +53,46 @@ export class AuthorsSerivce {
       });
     }
   }
-  async updateAuthor() {}
+  async updateAuthor(dto: UpdateAuthorDto, avatar?: Express.Multer.File) {
+    try {
+      const { id } = dto;
+      const author = await this.prisma.authors.findFirstOrThrow({
+        where: { id },
+      });
+      if (!author) {
+        throw new BadRequestException('Author not found');
+      }
+      let imageUrls = [];
+      try {
+        if (avatar && avatar.buffer.byteLength > 0) {
+          const uploadImagesData = await uploadFilesFromFirebase(
+            [avatar],
+            EUploadFolder.author,
+          );
+          if (!uploadImagesData.success) {
+            throw new Error('Failed to upload images!');
+          }
+          imageUrls = uploadImagesData.urls;
+        }
+      } catch (error) {
+        throw new BadRequestException('Failed to upload images', {
+          cause: error,
+        });
+      }
+      const updatedAuthor = await this.prisma.authors.update({
+        where: { id },
+        data: {
+          ...dto,
+          avatar_url: imageUrls[0] ?? author.avatar_url,
+        },
+      });
+      return updatedAuthor;
+    } catch (error) {
+      throw new BadRequestException('Failed to update author', {
+        cause: error,
+      });
+    }
+  }
   async getAuthorById(id: string) {
     const author = await this.prisma.authors.findUnique({
       where: { id },
@@ -68,5 +108,84 @@ export class AuthorsSerivce {
       throw new BadRequestException('Author not found');
     }
     return author;
+  }
+  async searchAuthor(query: AuthorPageOptionsDto, key: string) {
+    try {
+      const condition1 = key?.split(/\s+/).filter(Boolean).join(' & ');
+      const authors = await this.prisma.authors.findMany({
+        where: {
+          OR: [
+            {
+              name: {
+                contains: key,
+                mode: 'insensitive',
+              },
+            },
+            {
+              name: {
+                search: condition1,
+                mode: 'insensitive',
+              },
+            },
+            {
+              description: {
+                search: condition1,
+                mode: 'insensitive',
+              },
+            },
+            {
+              description: {
+                contains: key,
+                mode: 'insensitive',
+              },
+            },
+            {
+              unaccent: {
+                search: condition1,
+                mode: 'insensitive',
+              },
+            },
+          ],
+        },
+        skip: query.skip,
+        take: query.take,
+        orderBy: { [query.sortBy]: query.order },
+      });
+      const itemCount = await this.prisma.authors
+        .findMany({
+          where: {
+            OR: [
+              {
+                name: {
+                  contains: key,
+                  mode: 'insensitive',
+                },
+              },
+              {
+                name: {
+                  search: condition1,
+                  mode: 'insensitive',
+                },
+              },
+              {
+                description: {
+                  search: condition1,
+                  mode: 'insensitive',
+                },
+              },
+              {
+                description: {
+                  contains: key,
+                  mode: 'insensitive',
+                },
+              },
+            ],
+          },
+        })
+        .then((res) => res.length);
+      return { authors, itemCount };
+    } catch (error) {
+      throw new BadRequestException(error.messages);
+    }
   }
 }

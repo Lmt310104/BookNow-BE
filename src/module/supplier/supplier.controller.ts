@@ -17,9 +17,19 @@ import { PageResponseDto } from 'src/utils/page-response.dto';
 import { PageResponseMetaDto } from 'src/utils/page-response-meta.dto';
 import { StandardResponse } from 'src/utils/response.dto';
 import { UpdateSupplierDto } from './dto/update-supplier.dto';
+import { PageOptionsDto } from 'src/utils/page-options-dto';
 
 const {
-  SUPPLIERS: { BASE, GET_ALL, CREATE, UPDATE, GET_ONE, ACTIVE, INACTIVE },
+  SUPPLIERS: {
+    BASE,
+    GET_ALL,
+    CREATE,
+    UPDATE,
+    GET_ONE,
+    ACTIVE,
+    INACTIVE,
+    SEARCH,
+  },
 } = END_POINTS;
 @Controller(BASE)
 export class SuppliersController {
@@ -67,5 +77,22 @@ export class SuppliersController {
       'Supplier inactivated successfully',
       200,
     );
+  }
+  @Get(SEARCH)
+  async searchSupplier(
+    @Query() query: PageOptionsDto,
+    @Query('active', ParseBoolPipe) active: boolean,
+    @Query('keyword') keyword: string,
+  ) {
+    const { suppliers, itemCount } = await this.supplierService.searchSupplier(
+      query,
+      active,
+      keyword,
+    );
+    const meta = new PageResponseMetaDto({
+      pageOptionsDto: query,
+      itemCount,
+    });
+    return new PageResponseDto(suppliers, meta);
   }
 }

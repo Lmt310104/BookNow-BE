@@ -4,6 +4,7 @@ import { CreateSupplierDto } from './dto/create-supplier.dto';
 import HttpStatusCode from 'src/utils/HttpStatusCode';
 import { SupplierPageOptionsDto } from './dto/get-all-supplier.dto';
 import { UpdateSupplierDto } from './dto/update-supplier.dto';
+import { PageOptionsDto } from 'src/utils/page-options-dto';
 
 @Injectable()
 export class SuppliersService {
@@ -116,6 +117,138 @@ export class SuppliersService {
         },
       });
       return updatedSupplier;
+    } catch (error) {
+      throw new HttpException(error.message, HttpStatusCode.BAD_REQUEST);
+    }
+  }
+  async searchSupplier(query: PageOptionsDto, active: boolean, key: string) {
+    try {
+      const condition = key?.split(/\s+/).filter(Boolean).join(' & ');
+      const where = active !== undefined ? { active: active } : {};
+      const suppliers = await this.prisma.supplier.findMany({
+        where: {
+          ...where,
+          OR: [
+            {
+              name: {
+                contains: key,
+                mode: 'insensitive',
+              },
+            },
+            {
+              name: {
+                search: condition,
+                mode: 'insensitive',
+              },
+            },
+            {
+              address: {
+                contains: key,
+                mode: 'insensitive',
+              },
+            },
+            {
+              address: {
+                search: condition,
+                mode: 'insensitive',
+              },
+            },
+            {
+              email: {
+                contains: key,
+                mode: 'insensitive',
+              },
+            },
+            {
+              email: {
+                search: condition,
+                mode: 'insensitive',
+              },
+            },
+            {
+              phone: {
+                contains: key,
+                mode: 'insensitive',
+              },
+            },
+            {
+              phone: {
+                search: condition,
+                mode: 'insensitive',
+              },
+            },
+          ],
+        },
+        take: query.take,
+        skip: query.skip,
+        orderBy: key
+          ? {
+              _relevance: {
+                fields: ['name', 'address', 'email', 'phone'],
+                search: condition,
+                sort: 'desc',
+              },
+            }
+          : { [query.sortBy]: query.order },
+      });
+      const itemCount = await this.prisma.supplier
+        .findMany({
+          where: {
+            ...where,
+            OR: [
+              {
+                name: {
+                  contains: key,
+                  mode: 'insensitive',
+                },
+              },
+              {
+                name: {
+                  search: condition,
+                  mode: 'insensitive',
+                },
+              },
+              {
+                address: {
+                  contains: key,
+                  mode: 'insensitive',
+                },
+              },
+              {
+                address: {
+                  search: condition,
+                  mode: 'insensitive',
+                },
+              },
+              {
+                email: {
+                  contains: key,
+                  mode: 'insensitive',
+                },
+              },
+              {
+                email: {
+                  search: condition,
+                  mode: 'insensitive',
+                },
+              },
+              {
+                phone: {
+                  contains: key,
+                  mode: 'insensitive',
+                },
+              },
+              {
+                phone: {
+                  search: condition,
+                  mode: 'insensitive',
+                },
+              },
+            ],
+          },
+        })
+        .then((data) => data.length);
+      return { suppliers, itemCount };
     } catch (error) {
       throw new HttpException(error.message, HttpStatusCode.BAD_REQUEST);
     }

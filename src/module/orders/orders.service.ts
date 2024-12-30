@@ -21,8 +21,8 @@ import { CreatePaymentUrlDto } from './dto/create-payment-url.dto';
 import { Request, Response } from 'express';
 import convertToUTC7 from 'src/utils/UTC7Transfer';
 import { EmailService } from '../email/email.service';
-import { sendSMS } from 'src/services/sms-gateway';
 import { sortObject } from 'src/utils/vnpay.utils';
+import sendSMS from 'src/services/sms-gateway';
 @Injectable()
 export class OrderService {
   constructor(

@@ -69,6 +69,7 @@ export const END_POINTS = {
     CREATE: '/create',
     UPDATE: '/update',
     GET_ONE: 'get-one/:id',
+    SEARCH: '/search',
   },
   CATEGORIES: {
     BASE: '/categories',
@@ -191,6 +192,7 @@ export const END_POINTS = {
     GET_ONE: '/get-one/:id',
     ACTIVE: '/active/:id',
     INACTIVE: '/inactive/:id',
+    SEARCH: '/search',
   },
   INVENTORY: {
     BASE: '/inventory',
