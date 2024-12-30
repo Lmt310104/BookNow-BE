@@ -139,4 +139,22 @@ export class EmailService {
     };
     await this.transporter.sendMail(mailOptions);
   }
+  async sendFailedOrder({
+    order,
+    user,
+  }: {
+    order: OrderEmailTemplateDto;
+    user: Users;
+  }) {
+    const emailHtml = renderToStaticMarkup(
+      <OrderProcessing order={order} userName={user.full_name} />,
+    );
+    const mailOptions = {
+      from: this.configService.get<string>('smtp_user'),
+      to: user.email,
+      subject: 'Order Failed to deliver',
+      html: emailHtml,
+    };
+    await this.transporter.sendMail(mailOptions);
+  }
 }

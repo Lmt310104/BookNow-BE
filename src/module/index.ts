@@ -10,11 +10,13 @@ import { EmailModule } from './email/email.module';
 import { EventsModule } from './events_gateway/event_gateway.module';
 import { GeminiModule } from './gemini/gemini.module';
 import { GoogleOauthModule } from './google-oauth/google-oauth.module';
+import { InventoryModule } from './inventory/inventory.module';
 import { OpenAIModule } from './openai/openai.module';
 import { OrdersModule } from './orders/orders.module';
 import { ReviewsModule } from './reviews/reviews.module';
 import { StatisticModule } from './statistic/statistic.module';
 import { StreamChatModule } from './stream-chat/stream-chat.module';
+import { SupplierModule } from './supplier/supplier.module';
 import { UsersModule } from './users/users.module';
 import { WebhookModule } from './webhook/webhook.module';
 const Modules = [
@@ -37,6 +39,8 @@ const Modules = [
   WebhookModule,
   StreamChatModule,
   OpenAIModule,
+  SupplierModule,
+  InventoryModule,
 ];
 
 export default Modules;

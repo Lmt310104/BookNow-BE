@@ -11,7 +11,7 @@ import { CreateOrderDto } from './dto/create-order.dto';
 import { CreateReviewDto } from './dto/create-review.dto';
 import { ORDER_STATUS, PAYMENT_METHOD, ReviewState } from 'src/utils/constants';
 import { UpdateOrderStatusDto } from './dto/update-order-status.dto';
-import { OrderStatus, ReviewType } from '@prisma/client';
+import { OrderStatus } from '@prisma/client';
 import { ConfigService } from '@nestjs/config';
 import * as crypto from 'crypto';
 import * as axios from 'axios';
@@ -31,7 +31,6 @@ export class OrderService {
     private readonly prisma: PrismaService,
     private readonly config: ConfigService,
     private readonly emailService: EmailService,
-    private readonly geminiService: GeminiService,
   ) {}
   async createOrder(session: TUserSession, dto: CreateOrderDto) {
     const user = await this.prisma.users.findUnique({
@@ -249,7 +248,11 @@ export class OrderService {
         return await this.prisma.$transaction(async (tx) => {
           await tx.orders.update({
             where: { id },
-            data: { status: dto.status, reject_at: convertToUTC7(new Date()) },
+            data: {
+              status: dto.status,
+              reject_at: convertToUTC7(new Date()),
+              note: 'Bị hủy bởi người bán',
+            },
           });
           const updatedOrder = await tx.orders.findUnique({
             where: { id },
@@ -339,6 +342,59 @@ export class OrderService {
         console.log(error);
         throw new BadRequestException('Failed to update order status');
       }
+    } else if (
+      dto.status === ORDER_STATUS.REJECT &&
+      order.status === ORDER_STATUS.DELIVERED
+    ) {
+      try {
+        return await this.prisma.$transaction(async (tx) => {
+          await tx.orders.update({
+            where: { id },
+            data: {
+              status: dto.status,
+              reject_at: convertToUTC7(new Date()),
+              note: 'Đơn hàng giao hàng không thành công',
+            },
+          });
+          const updatedOrder = await tx.orders.findUnique({
+            where: { id },
+            include: {
+              OrderItems: {
+                include: {
+                  book: true,
+                },
+              },
+              user: true,
+            },
+          });
+          if (updatedOrder.user.email) {
+            await this.emailService.sendFailedOrder({
+              order: {
+                ...updatedOrder,
+                total_price: Number(updatedOrder.total_price),
+                payment_method: PAYMENT_METHOD[updatedOrder.payment_method],
+                OrderItems: updatedOrder.OrderItems.map((item) => ({
+                  ...item,
+                  Book: item.book,
+                  price: Number(item.price),
+                  total_price: Number(item.total_price),
+                })),
+              },
+              user: updatedOrder.user,
+            });
+          }
+          if (updatedOrder.user.phone) {
+            await sendSMS({
+              to: updatedOrder.user.phone,
+              content: `Đơn hàng ${updatedOrder.id} của bạn đã giao không thành công do có sự cố hoặc vì lý do gì khác, vui lòng tra cứu kỹ hơn tại website của BookNow!`,
+            });
+          }
+          return updatedOrder;
+        });
+      } catch (error) {
+        console.log(error);
+        throw new BadRequestException(error.message);
+      }
     } else if (dto.status === ORDER_STATUS.SUCCESS) {
       try {
         return await this.prisma.$transaction(async (tx) => {
@@ -421,17 +477,6 @@ export class OrderService {
         const newAvgStars =
           (Number(book.avg_stars) * book.total_reviews + dto.star) /
           newTotalReviews;
-        const reviewType = await this.geminiService.analyseComment(
-          `${dto.title} ${dto.description}`,
-        );
-        console.log(
-          reviewType,
-          typeof reviewType,
-          reviewType === ReviewType.TOXIC.toString(),
-        );
-        if (reviewType.trim() === ReviewType.TOXIC.toString()) {
-          throw new BadRequestException('Comment is toxic, please try again');
-        }
         const review = await tx.reviews.create({
           data: {
             user_id: session.id,
@@ -501,7 +546,11 @@ export class OrderService {
       return await this.prisma.$transaction(async (tx) => {
         await tx.orders.update({
           where: { id },
-          data: { status: ORDER_STATUS.CANCELLED as OrderStatus },
+          data: {
+            status: ORDER_STATUS.CANCELLED as OrderStatus,
+            cancelled_at: convertToUTC7(new Date()),
+            note: 'Hủy bởi người mua',
+          },
         });
         bookIds.forEach(async (item) => {
           await tx.books.update({
@@ -574,6 +623,7 @@ export class OrderService {
       const ipnUrl = this.config.get<string>('ipn_url_momo');
       const requestId = partnerCodeMomo + new Date().getTime();
       const orderId = dto.orderId;
+      const expireDate = new Date().getTime() + 600000;
       const amount = Number(order.total_price);
       const requestType = 'captureWallet';
       const extraData = 'bookstore';
