@@ -21,11 +21,11 @@ model Users {
   password            String
   full_name           String
   phone               String?         @unique @db.VarChar(20)
-  birthday            DateTime
-  gender              Gender
+  birthday            DateTime?
+  gender              Gender?
   role                Role
   verification        Vertifications?
-  avatar_url          String
+  avatar_url          String?
   code_reset_password String?         @db.VarChar(6)
   refresh_token       String?         @db.VarChar(255)
   is_disable          Boolean         @default(false)
@@ -33,6 +33,7 @@ model Users {
   updated_at          DateTime        @updatedAt
   unaccent            String?         @db.Text
   type_email          TypeEmail       @default(NORMAL)
+  type_user           TypeUser        @default(SYSTEM_CUSTOMER)
   Addresses           Address[]
   Orders              Orders[]
   Carts               Carts?
@@ -50,34 +51,35 @@ model Vertifications {
 }
 
 model Books {
-  id                 String       @id @default(uuid())
-  title              String       @db.VarChar(255)
-  author             String
-  category_id        String
-  price              Decimal
-  stock_quantity     Int
-  description        String       @db.Text
-  entry_price        Decimal
-  final_price        Decimal?
-  discountPercentage Int?
-  discountDate       DateTime?
-  avg_stars          Decimal      @default(0)
-  total_reviews      Int          @default(0)
-  sold_quantity      Int          @default(0)
-  image_url          String[]     @default([])
-  status             BookStatus   @default(ACTIVE)
-  created_at         DateTime     @default(now())
-  updated_at         DateTime     @updatedAt
-  unaccent           String?      @db.Text
-  supplier_id        String?
-  sku                String?      @unique @default(cuid())
-  Supplier           Supplier?    @relation(fields: [supplier_id], references: [id])
-  Category           Category     @relation(fields: [category_id], references: [id])
-  OrderItems         OrderItems[]
-  CartItems          CartItems[]
-  Reviews            Reviews[]
-  BookAuthor         BookAuthor[]
-  Inventory          Inventory[]
+  id                  String                @id @default(uuid())
+  title               String                @db.VarChar(255)
+  author              String
+  category_id         String
+  price               Decimal
+  stock_quantity      Int
+  description         String                @db.Text
+  entry_price         Decimal
+  final_price         Decimal?
+  discountPercentage  Int?
+  discountDate        DateTime?
+  avg_stars           Decimal               @default(0)
+  total_reviews       Int                   @default(0)
+  sold_quantity       Int                   @default(0)
+  image_url           String[]              @default([])
+  status              BookStatus            @default(ACTIVE)
+  created_at          DateTime              @default(now())
+  updated_at          DateTime              @updatedAt
+  unaccent            String?               @db.Text
+  supplier_id         String?
+  sku                 String?               @unique @default(cuid())
+  Supplier            Supplier?             @relation(fields: [supplier_id], references: [id])
+  Category            Category              @relation(fields: [category_id], references: [id])
+  OrderItems          OrderItems[]
+  CartItems           CartItems[]
+  Reviews             Reviews[]
+  BookAuthor          BookAuthor[]
+  InventoryFormItem   InventoryFormItem[]
+  AdjustStockFormItem AdjustStockFormItem[]
 
   @@index([title, author], map: "books_fulltext_idx")
 }
@@ -226,15 +228,55 @@ model Supplier {
   Books    Books[]
 }
 
-model Inventory {
-  id            String   @id @default(uuid())
-  book_id       String
-  book          Books    @relation(fields: [book_id], references: [id])
-  stock         Int
-  entry_price   Decimal
-  selling_price Decimal
-  created_at    DateTime @default(now())
-  updated_at    DateTime @updatedAt
+model InventoryForm {
+  id                String              @id @default(uuid())
+  type              InventoryFormType
+  state             InventoryFormState  @default(PENDING)
+  note              String?
+  expected_date     DateTime
+  created_at        DateTime            @default(now())
+  updated_at        DateTime            @updatedAt
+  InventoryFormItem InventoryFormItem[]
+}
+
+model InventoryFormItem {
+  id                String        @id @default(uuid())
+  inventory_form_id String
+  inventory_form    InventoryForm @relation(fields: [inventory_form_id], references: [id])
+  sku               String
+  book_id           String
+  book              Books         @relation(fields: [book_id], references: [id])
+  expected_quantity Int
+  entry_price       Decimal
+  quantity          Int
+  selling_price     Decimal
+}
+
+model AdjustStockForm {
+  id                  String                @id @default(uuid())
+  type                InventoryType
+  state               InventoryFormState    @default(PENDING)
+  note                String?
+  created_at          DateTime              @default(now())
+  updated_at          DateTime              @updatedAt
+  AdjustStockFormItem AdjustStockFormItem[]
+}
+
+model AdjustStockFormItem {
+  id                   String          @id @default(uuid())
+  adjust_stock_form_id String
+  adjust_stock_form    AdjustStockForm @relation(fields: [adjust_stock_form_id], references: [id])
+  sku                  String
+  book_id              String?
+  book                 Books?          @relation(fields: [book_id], references: [id])
+}
+
+model InventoryAddress {
+  id      String        @id @default(uuid())
+  name    String
+  address String
+  note    String?
+  type    InventoryType
 }
 
 enum Role {
@@ -285,4 +327,25 @@ enum ReviewType {
 enum TypeEmail {
   NORMAL
   GOOGLE
+}
+
+enum TypeUser {
+  POTENTIAL_CUSTOMER
+  SYSTEM_CUSTOMER
+}
+
+enum InventoryType {
+  NORMAL
+  DEFECTIVE
+}
+
+enum InventoryFormType {
+  PURCHASE
+  RESTOCK
+}
+
+enum InventoryFormState {
+  PENDING
+  DONE
+  CANCELLED
 }
