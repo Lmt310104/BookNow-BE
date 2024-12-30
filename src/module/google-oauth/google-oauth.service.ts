@@ -21,7 +21,7 @@ export class GoogleOauthService {
     const email = emails[0].value;
     const avatar_url = photos[0].value;
     const full_name = displayName;
-    const user = await this.prismaService.users.findUnique({
+    const user = await this.prismaService.users.findFirst({
       where: { email, type_email: TypeEmail.GOOGLE },
     });
     if (!user) {
