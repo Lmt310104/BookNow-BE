@@ -36,4 +36,5 @@ export default () => ({
   stream_api_key: process.env.STREAM_API_KEY,
   stream_secret_key: process.env.STREAM_API_SECRET,
   openai_key: process.env.OPENAI_KEY,
+  register_page_url: process.env.REGISTER_PAGE_URL,
 });

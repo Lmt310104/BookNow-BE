@@ -67,5 +67,4 @@ export class InventoryController {
   //   const result = await this.inventoryService.adjustStockInInventory(data);
   //   return new StandardResponse(result, 'Inventory updated successfully');
   // }
-
 }

@@ -22,36 +22,15 @@ export class GoogleOauthService {
     const email = emails[0].value;
     const avatar_url = photos[0].value;
     const full_name = displayName;
-    let user = await this.prismaService.users.findUnique({
+    const user = await this.prismaService.users.findUnique({
       where: { email, type_email: TypeEmail.GOOGLE },
     });
     if (!user) {
-      const hash_password = await hashPassword(
-        this.configSerivce.get<string>('default_password') + email,
-      );
-      user = await this.prismaService.users.create({
-        data: {
-          email,
-          full_name,
-          avatar_url,
-          role,
-          birthday: new Date(Date.now()),
-          password: hash_password,
-          gender: Gender.MALE,
-          type_email: TypeEmail.GOOGLE,
-          verification: {
-            create: {
-              verified_code: hash_password,
-              is_active: true,
-            },
-          },
-        },
-      });
-      await this.prismaService.carts.create({
-        data: {
-          user_id: user.id,
-        },
-      });
+      res.cookie('email', email);
+      res.cookie('avatar_url', avatar_url);
+      res.cookie('full_name', full_name);
+      res.cookie('role', role);
+      res.redirect(this.configSerivce.get<string>('register_page'));
     }
     const { id } = user;
     const { access_token, refresh_token } = await this.generateToken({
@@ -85,41 +64,5 @@ export class GoogleOauthService {
       expiresIn: '10d',
     });
     return { access_token, refresh_token };
-  }
-  async signUpWithGoogle(
-    userPayload: { userData: any; role: Role },
-    res: Response<any, Record<string, any>>,
-  ) {
-    const { userData, role } = userPayload;
-    const { emails, photos, displayName } = userData.profile;
-    const email = emails[0].value;
-    const avatar_url = photos[0].value;
-    const full_name = displayName;
-    let user = await this.prismaService.users.findUnique({
-      where: { email, type_email: TypeEmail.GOOGLE },
-    });
-    if (!user) {
-      const hash_password = await hashPassword(
-        this.configSerivce.get<string>('default_password') + email,
-      );
-      user = await this.prismaService.users.create({
-        data: {
-          email,
-          full_name,
-          avatar_url,
-          role,
-          birthday: new Date(Date.now()),
-          password: hash_password,
-          gender: Gender.MALE,
-          type_email: TypeEmail.GOOGLE,
-          verification: {
-            create: {
-              verified_code: hash_password,
-              is_active: true,
-            },
-          },
-        },
-      });
-    }
   }
 }

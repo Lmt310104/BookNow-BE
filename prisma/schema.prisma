@@ -269,6 +269,7 @@ model AdjustStockFormItem {
   sku                  String
   book_id              String?
   book                 Books?          @relation(fields: [book_id], references: [id])
+  quantity             Int
 }
 
 model InventoryAddress {
