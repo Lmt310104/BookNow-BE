@@ -67,4 +67,12 @@ export class CreateBookDto {
   @IsArray()
   @IsNotEmpty()
   authors: string[];
+
+  @IsString()
+  @IsNotEmpty()
+  supplierId: string;
+
+  @IsString()
+  @IsNotEmpty()
+  sku: string;
 }

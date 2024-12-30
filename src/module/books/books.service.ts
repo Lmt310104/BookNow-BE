@@ -34,12 +34,6 @@ export class BooksService {
               },
             },
             {
-              author: {
-                search: condition1,
-                mode: 'insensitive',
-              },
-            },
-            {
               Category: {
                 name: {
                   search: condition1,
@@ -127,12 +121,19 @@ export class BooksService {
       price,
       stockQuantity,
       description,
+      supplierId,
     } = body;
     const category = await this.prismaService.category.findFirst({
       where: { id: categoryId },
     });
     if (!category) {
       throw new BadRequestException('Category not found');
+    }
+    const supplier = await this.prismaService.supplier.findFirst({
+      where: { id: supplierId },
+    });
+    if (!supplier) {
+      throw new BadRequestException('Supplier not found');
     }
     let imageUrls = [];
     try {
@@ -151,6 +152,7 @@ export class BooksService {
           title: title,
           author: author,
           Category: { connect: { id: categoryId } },
+          Supplier: { connect: { id: supplierId } },
           entry_price: entryPrice,
           price,
           stock_quantity: parseInt(stockQuantity, 10),

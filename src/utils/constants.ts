@@ -181,6 +181,24 @@ export const END_POINTS = {
     BASE: '/stream-chat',
     GET_TOKEN: '/get-token',
   },
+  SUPPLIERS: {
+    BASE: '/suppliers',
+    GET_ALL: '/get-all',
+    CREATE: '/create',
+    UPDATE: '/update',
+    GET_ONE: '/get-one/:id',
+    ACTIVE: '/active/:id',
+    INACTIVE: '/inactive/:id',
+  },
+  INVENTORY: {
+    BASE: '/inventory',
+    GET_ALL: '/get-all',
+    CREATE: '/create',
+    UPDATE: '/update',
+    GET_ONE: '/get-one/:id',
+    ACTIVE: '/active/:id',
+    INACTIVE: '/inactive/:id',
+  },
 };
 
 export enum ROLE {
