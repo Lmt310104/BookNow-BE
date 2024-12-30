@@ -158,7 +158,26 @@ export class BooksService {
           image_url: imageUrls,
         },
       });
-      return newBook;
+      for (let i = 0; i < body.authors.length; i++) {
+        await this.prismaService.bookAuthor.create({
+          data: {
+            book_id: newBook.id,
+            author_id: body.authors[i],
+          },
+        });
+      }
+      const book = await this.prismaService.books.findFirst({
+        where: { id: newBook.id },
+        include: {
+          Category: true,
+          BookAuthor: {
+            select: {
+              author: true,
+            },
+          },
+        },
+      });
+      return book;
     } catch (error) {
       console.log('Error:', error.message);
       if (images.length && !imageUrls.length)

@@ -56,6 +56,13 @@ export class AuthorsSerivce {
   async getAuthorById(id: string) {
     const author = await this.prisma.authors.findUnique({
       where: { id },
+      include: {
+        BookAuthor: {
+          select: {
+            book: true,
+          },
+        },
+      },
     });
     if (!author) {
       throw new BadRequestException('Author not found');

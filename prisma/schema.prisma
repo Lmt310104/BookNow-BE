@@ -73,6 +73,7 @@ model Books {
   OrderItems         OrderItems[]
   CartItems          CartItems[]
   Reviews            Reviews[]
+  BookAuthor         BookAuthor[]
 
   @@index([title, author], map: "books_fulltext_idx")
 }
@@ -88,14 +89,25 @@ model Category {
 }
 
 model Authors {
-  id          String   @id @default(uuid())
-  name        String   @db.VarChar(255)
+  id          String       @id @default(uuid())
+  name        String       @db.VarChar(255)
   birthday    DateTime
   description String
   avatar_url  String
+  BookAuthor  BookAuthor[]
 
   @@unique([name, birthday, description])
   @@index([name, description], map: "authors_fulltext_idx")
+}
+
+model BookAuthor {
+  id        String  @id @default(uuid())
+  book_id   String
+  author_id String
+  book      Books   @relation(fields: [book_id], references: [id])
+  author    Authors @relation(fields: [author_id], references: [id])
+
+  @@unique([book_id, author_id])
 }
 
 model Orders {
