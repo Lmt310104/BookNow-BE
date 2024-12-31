@@ -9,14 +9,92 @@ import { UpdateAuthorDto } from './dto/update-author.dto';
 @Injectable()
 export class AuthorsSerivce {
   constructor(private readonly prisma: PrismaService) {}
-  async getAllAuthors(dto: AuthorPageOptionsDto) {
-    const { take, skip, order, sortBy } = dto;
-    const authors = await this.prisma.authors.findMany({
-      skip: skip,
-      take: take,
-      orderBy: { [sortBy]: order },
-    });
-    return authors;
+  async getAllAuthors(dto: AuthorPageOptionsDto, key: string) {
+    try {
+      const condition1 = key?.split(/\s+/).filter(Boolean).join(' & ');
+      const authors = await this.prisma.authors.findMany({
+        where: {
+          OR: [
+            {
+              name: {
+                contains: key,
+                mode: 'insensitive',
+              },
+            },
+            {
+              name: {
+                search: condition1,
+                mode: 'insensitive',
+              },
+            },
+            {
+              description: {
+                search: condition1,
+                mode: 'insensitive',
+              },
+            },
+            {
+              description: {
+                contains: key,
+                mode: 'insensitive',
+              },
+            },
+            {
+              unaccent: {
+                search: condition1,
+                mode: 'insensitive',
+              },
+            },
+          ],
+        },
+        skip: dto.skip,
+        take: dto.take,
+        orderBy: condition1
+          ? {
+              _relevance: {
+                search: condition1,
+                fields: ['name', 'description'],
+                sort: 'desc',
+              },
+            }
+          : { [dto.sortBy]: dto.order },
+      });
+      const itemCount = await this.prisma.authors
+        .findMany({
+          where: {
+            OR: [
+              {
+                name: {
+                  contains: key,
+                  mode: 'insensitive',
+                },
+              },
+              {
+                name: {
+                  search: condition1,
+                  mode: 'insensitive',
+                },
+              },
+              {
+                description: {
+                  search: condition1,
+                  mode: 'insensitive',
+                },
+              },
+              {
+                description: {
+                  contains: key,
+                  mode: 'insensitive',
+                },
+              },
+            ],
+          },
+        })
+        .then((res) => res.length);
+      return { authors, itemCount };
+    } catch (error) {
+      throw new BadRequestException(error.messages);
+    }
   }
   async createAuthor(body: CreateAuthorDto, avatar: Express.Multer.File) {
     const { name, birthday, description } = body;
