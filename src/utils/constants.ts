@@ -68,7 +68,8 @@ export const END_POINTS = {
     GET_ALL: '/get-all',
     CREATE: '/create',
     UPDATE: '/update',
-    GET_ONE: '/:id',
+    GET_ONE: 'get-one/:id',
+    SEARCH: '/search',
   },
   CATEGORIES: {
     BASE: '/categories',
@@ -116,6 +117,7 @@ export const END_POINTS = {
     CREATE_PAYMENT_URL_WITH_VNPAY: '/create-payment-url-vnpay',
     CALLBACK_WITH_VNPAY: '/vnpay/ipn-callback',
     GET_PAYMENT_STATUS_WITH_VNPAY: '/get-payment-status-vnpay',
+    ANONYMOUS_CHECKOUT: '/anonymous-checkout',
   },
   ORDER_DETAILS: {
     BASE: '/order-details',
@@ -137,10 +139,13 @@ export const END_POINTS = {
     REPLY: '/:id/reply',
     GET_REVIEW_BY_ORDER_ID: '/get-review-by-order-id/:orderId',
     GET_REVIEW_BY_BOOK_ID: '/get-review-by-book-id/:bookId',
+    HIDE_REVIEW: '/hide-review/:id',
+    SHOW_REVIEW: '/show-review/:id',
   },
   GOOGLE_OAUTH: {
     BASE: '/auth/google',
     REDIRECT: '/oauth2/redirect/code',
+    SIGN_UP_WITH_GOOGLE: '/sign-up-with-google',
   },
   ADDRESS: {
     BASE: '/address',
@@ -174,6 +179,31 @@ export const END_POINTS = {
     GET_ALL_BY_ADMIN: '/get-all-chats',
     GET_ONE: '/get-one/:id',
     CREATE: '/create',
+  },
+  STREAM_CHAT: {
+    BASE: '/stream-chat',
+    GET_TOKEN: '/get-token',
+  },
+  SUPPLIERS: {
+    BASE: '/suppliers',
+    GET_ALL: '/get-all',
+    CREATE: '/create',
+    UPDATE: '/update',
+    GET_ONE: '/get-one/:id',
+    ACTIVE: '/active/:id',
+    INACTIVE: '/inactive/:id',
+    SEARCH: '/search',
+  },
+  INVENTORY: {
+    BASE: '/inventory',
+    GET_ALL: '/get-all',
+    CREATE: '/create',
+    UPDATE: '/update',
+    GET_ONE: '/get-one/:id',
+    ACTIVE: '/active/:id',
+    INACTIVE: '/inactive/:id',
+    CREATE_INVENTORY_ADDRESS: '/create-inventory-address',
+    GET_ALL_INVENTORY_ADDRESS: '/get-all-inventory-address',
   },
 };
 
@@ -209,6 +239,14 @@ export enum ReviewState {
   REPLIED = 'REPLIED',
 }
 
+export enum ReviewType {
+  POSITIVE = 'POSITIVE',
+  NEGATIVE = 'NEGATIVE',
+  CONSTRUCTIVE = 'CONSTRUCTIVE',
+  SPAM = 'SPAM',
+  TOXIC = 'TOXIC',
+}
+
 export enum ORDER_STATUS_ENUM {
   PENDING = 'PENDING',
   PROCESSING = 'PROCESSING',
@@ -230,7 +268,7 @@ export const ORDER_STATUS = {
 export enum PAYMENT_METHOD {
   COD = 'COD',
   MOMO = 'MOMO',
-  ZALO = 'ZALO',
+  ZALOPAY = 'ZALOPAY',
   VNPAY = 'VNPAY',
 }
 
@@ -242,3 +280,6 @@ export const GOOGLE_STRATEGY = 'google';
 
 export const USER_IMAGE_URL =
   'https://firebasestorage.googleapis.com/v0/b/booknow-22cff.appspot.com/o/book%2F1729848448797-default-user.jpeg?alt=media&token=c10f8393-cf17-4aa8-8b5f-a793a7058456';
+
+export const DEFAULT_AUTHOR_AVATAR =
+  'https://firebasestorage.googleapis.com/v0/b/booknow-22cff.appspot.com/o/author%2Fu_200x266-e183445fd1a1b5cc7075bb1cf7043306.png?alt=media&token=e2b5e2f3-1541-4d0f-948b-83652398f413';

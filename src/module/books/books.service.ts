@@ -28,8 +28,20 @@ export class BooksService {
               },
             },
             {
+              title: {
+                contains: bookQuery.search,
+                mode: 'insensitive',
+              },
+            },
+            {
               description: {
                 search: condition1,
+                mode: 'insensitive',
+              },
+            },
+            {
+              description: {
+                contains: bookQuery.search,
                 mode: 'insensitive',
               },
             },
@@ -37,6 +49,108 @@ export class BooksService {
               author: {
                 search: condition1,
                 mode: 'insensitive',
+              },
+            },
+            {
+              author: {
+                contains: bookQuery.search,
+                mode: 'insensitive',
+              },
+            },
+            {
+              Category: {
+                name: {
+                  contains: bookQuery.search,
+                  mode: 'insensitive',
+                },
+              },
+            },
+            {
+              Category: {
+                name: {
+                  search: condition1,
+                  mode: 'insensitive',
+                },
+              },
+            },
+            {
+              unaccent: {
+                search: condition1,
+                mode: 'insensitive',
+              },
+            },
+          ],
+        }),
+        ...(bookQuery.status ? { status: bookQuery.status } : {}),
+        ...(bookQuery.min_price && { price: { gte: bookQuery.min_price } }),
+        ...(bookQuery.max_price && { price: { lte: bookQuery.max_price } }),
+        ...(bookQuery.min_star && { avg_stars: { gte: bookQuery.min_star } }),
+        ...(bookQuery.max_star && { avg_stars: { lte: bookQuery.max_star } }),
+        ...(bookQuery.categoryId && {
+          Category: { id: bookQuery.categoryId },
+        }),
+      },
+      include: {
+        Category: true,
+      },
+      orderBy: bookQuery.search
+        ? {
+            _relevance: {
+              fields: ['title', 'description', 'author'],
+              search: condition1,
+              sort: 'desc',
+            },
+          }
+        : { [bookQuery.sortBy]: bookQuery.order },
+      skip: bookQuery.skip,
+      take: bookQuery.take,
+    });
+    const itemCount = await this.prismaService.books.count({
+      where: {
+        ...(condition1 !== undefined && {
+          OR: [
+            {
+              title: {
+                search: condition1,
+                mode: 'insensitive',
+              },
+            },
+            {
+              title: {
+                contains: bookQuery.search,
+                mode: 'insensitive',
+              },
+            },
+            {
+              description: {
+                search: condition1,
+                mode: 'insensitive',
+              },
+            },
+            {
+              description: {
+                contains: bookQuery.search,
+                mode: 'insensitive',
+              },
+            },
+            {
+              author: {
+                search: condition1,
+                mode: 'insensitive',
+              },
+            },
+            {
+              author: {
+                contains: bookQuery.search,
+                mode: 'insensitive',
+              },
+            },
+            {
+              Category: {
+                name: {
+                  contains: bookQuery.search,
+                  mode: 'insensitive',
+                },
               },
             },
             {
@@ -61,75 +175,30 @@ export class BooksService {
         ...(bookQuery.min_star && { avg_stars: { gte: bookQuery.min_star } }),
         ...(bookQuery.max_star && { avg_stars: { lte: bookQuery.max_star } }),
       },
-      include: {
-        Category: true,
-      },
-      orderBy: bookQuery.search
-        ? {
-            _relevance: {
-              fields: ['title', 'description', 'author'],
-              search: condition1,
-              sort: 'desc',
-            },
-          }
-        : { [bookQuery.sortBy]: bookQuery.order },
-      skip: bookQuery.skip,
-      take: bookQuery.take,
-    });
-    const itemCount = await this.prismaService.books.count({
-      where: {
-        OR: [
-          {
-            title: {
-              search: condition1,
-              mode: 'insensitive',
-            },
-          },
-          {
-            description: {
-              search: condition1,
-              mode: 'insensitive',
-            },
-          },
-          {
-            author: {
-              search: condition1,
-              mode: 'insensitive',
-            },
-          },
-          {
-            Category: {
-              name: {
-                search: condition1,
-                mode: 'insensitive',
-              },
-            },
-          },
-        ],
-        ...(bookQuery.status ? { status: bookQuery.status } : {}),
-        ...(bookQuery.min_price && { price: { gte: bookQuery.min_price } }),
-        ...(bookQuery.max_price && { price: { lte: bookQuery.max_price } }),
-        ...(bookQuery.min_star && { avg_stars: { gte: bookQuery.min_star } }),
-        ...(bookQuery.max_star && { avg_stars: { lte: bookQuery.max_star } }),
-      },
     });
     return { books, itemCount };
   }
   async createBook(body: CreateBookDto, images?: Array<Express.Multer.File>) {
     const {
       title,
-      author,
       categoryId,
       entryPrice,
       price,
       stockQuantity,
       description,
+      supplierId,
     } = body;
     const category = await this.prismaService.category.findFirst({
       where: { id: categoryId },
     });
     if (!category) {
       throw new BadRequestException('Category not found');
+    }
+    const supplier = await this.prismaService.supplier.findFirst({
+      where: { id: supplierId },
+    });
+    if (!supplier) {
+      throw new BadRequestException('Supplier not found');
     }
     let imageUrls = [];
     try {
@@ -143,11 +212,22 @@ export class BooksService {
         }
         imageUrls = uploadImagesData.urls;
       }
+      let authorName = '';
+      for (let i = 0; i < body.authors.length; i++) {
+        const author = await this.prismaService.authors.findFirst({
+          where: { id: body.authors[i] },
+        });
+        if (!author) {
+          throw new BadRequestException('Author not found');
+        }
+        authorName += author.name + ' ';
+      }
       const newBook = await this.prismaService.books.create({
         data: {
           title: title,
-          author: author,
+          author: authorName,
           Category: { connect: { id: categoryId } },
+          Supplier: { connect: { id: supplierId } },
           entry_price: entryPrice,
           price,
           stock_quantity: parseInt(stockQuantity, 10),
@@ -155,7 +235,26 @@ export class BooksService {
           image_url: imageUrls,
         },
       });
-      return newBook;
+      for (let i = 0; i < body.authors.length; i++) {
+        await this.prismaService.bookAuthor.create({
+          data: {
+            book_id: newBook.id,
+            author_id: body.authors[i],
+          },
+        });
+      }
+      const book = await this.prismaService.books.findFirst({
+        where: { id: newBook.id },
+        include: {
+          Category: true,
+          BookAuthor: {
+            select: {
+              author: true,
+            },
+          },
+        },
+      });
+      return book;
     } catch (error) {
       console.log('Error:', error.message);
       if (images.length && !imageUrls.length)

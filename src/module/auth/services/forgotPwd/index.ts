@@ -15,7 +15,7 @@ class ForgotPwdService {
   ) {}
   async sendCode(body: SendCodeDto) {
     const { email } = body;
-    const user = await this.prisma.users.findUnique({
+    const user = await this.prisma.users.findFirst({
       where: {
         email,
         is_disable: false,
@@ -29,7 +29,7 @@ class ForgotPwdService {
     const code = Math.floor(100000 + Math.random() * 900000);
     await this.prisma.users.update({
       where: {
-        email: email,
+        id: user.id,
       },
       data: {
         code_reset_password: code.toString(),
@@ -58,6 +58,7 @@ class ForgotPwdService {
         email: email,
       },
       select: {
+        id: true,
         code_reset_password: true,
       },
     });
@@ -74,7 +75,7 @@ class ForgotPwdService {
     const hashedPassword = await this.hashPassword(newPassword);
     await this.prisma.users.update({
       where: {
-        email: email,
+        id: user.id,
       },
       data: {
         password: hashedPassword,

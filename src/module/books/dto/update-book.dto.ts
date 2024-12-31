@@ -9,4 +9,15 @@ export class UpdateBookDto extends PartialType(CreateBookDto) {
   @IsString()
   @IsOptional()
   categoryId?: string;
+  @IsArray()
+  @IsOptional()
+  authors: string[];
+
+  @IsString()
+  @IsOptional()
+  supplierId: string;
+
+  @IsString()
+  @IsOptional()
+  sku: string;
 }

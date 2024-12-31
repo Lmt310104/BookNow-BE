@@ -11,7 +11,7 @@ import { CreateOrderDto } from './dto/create-order.dto';
 import { CreateReviewDto } from './dto/create-review.dto';
 import { ORDER_STATUS, PAYMENT_METHOD, ReviewState } from 'src/utils/constants';
 import { UpdateOrderStatusDto } from './dto/update-order-status.dto';
-import { OrderStatus } from '@prisma/client';
+import { OrderStatus, Role, TypeUser } from '@prisma/client';
 import { ConfigService } from '@nestjs/config';
 import * as crypto from 'crypto';
 import * as axios from 'axios';
@@ -21,8 +21,8 @@ import { CreatePaymentUrlDto } from './dto/create-payment-url.dto';
 import { Request, Response } from 'express';
 import convertToUTC7 from 'src/utils/UTC7Transfer';
 import { EmailService } from '../email/email.service';
-import { sendSMS } from 'src/services/sms-gateway';
 import { sortObject } from 'src/utils/vnpay.utils';
+import sendSMS from 'src/services/sms-gateway';
 @Injectable()
 export class OrderService {
   constructor(
@@ -244,10 +244,198 @@ export class OrderService {
     if (dto.status === ORDER_STATUS.REJECT) {
       try {
         return await this.prisma.$transaction(async (tx) => {
-          const updatedOrder = await tx.orders.update({
+          await tx.orders.update({
             where: { id },
-            data: { status: dto.status },
+            data: {
+              status: dto.status,
+              reject_at: convertToUTC7(new Date()),
+              note: 'Bị hủy bởi người bán',
+            },
           });
+          const updatedOrder = await tx.orders.findUnique({
+            where: { id },
+            include: {
+              OrderItems: {
+                include: {
+                  book: true,
+                },
+              },
+              user: true,
+            },
+          });
+          if (updatedOrder.user.email) {
+            await this.emailService.sendOrderRejected({
+              order: {
+                ...updatedOrder,
+                total_price: Number(updatedOrder.total_price),
+                payment_method: PAYMENT_METHOD[updatedOrder.payment_method],
+                OrderItems: updatedOrder.OrderItems.map((item) => ({
+                  ...item,
+                  Book: item.book,
+                  price: Number(item.price),
+                  total_price: Number(item.total_price),
+                })),
+              },
+              user: updatedOrder.user,
+            });
+          }
+          if (updatedOrder.user.phone) {
+            await sendSMS({
+              to: updatedOrder.user.phone,
+              content: `Đơn hàng ${updatedOrder.id} của bạn đã bị từ chối. Vui lòng kiểm tra lại thông tin đơn hàng hoặc liên hệ với chúng tôi để được hỗ trợ!`,
+            });
+          }
+          return updatedOrder;
+        });
+      } catch (error) {
+        console.log(error);
+        throw new BadRequestException('Failed to update order status');
+      }
+    } else if (dto.status === ORDER_STATUS.DELIVERED) {
+      try {
+        return await this.prisma.$transaction(async (tx) => {
+          await tx.orders.update({
+            where: { id },
+            data: {
+              status: dto.status,
+              delivered_at: convertToUTC7(new Date()),
+            },
+          });
+          const updatedOrder = await tx.orders.findUnique({
+            where: { id },
+            include: {
+              OrderItems: {
+                include: {
+                  book: true,
+                },
+              },
+              user: true,
+            },
+          });
+          if (updatedOrder.user.email) {
+            await this.emailService.sendOrderDelivering({
+              order: {
+                ...updatedOrder,
+                total_price: Number(updatedOrder.total_price),
+                payment_method: PAYMENT_METHOD[updatedOrder.payment_method],
+                OrderItems: updatedOrder.OrderItems.map((item) => ({
+                  ...item,
+                  Book: item.book,
+                  price: Number(item.price),
+                  total_price: Number(item.total_price),
+                })),
+              },
+              user: updatedOrder.user,
+            });
+          }
+          if (updatedOrder.user.phone) {
+            await sendSMS({
+              to: updatedOrder.user.phone,
+              content: `Đơn hàng ${updatedOrder.id} của bạn đã được giao cho đơn vị vận chuyển, dự kiến giao hàng trong 2 - 4 ngày tới, cảm ơn bạn đã đồng hành cùng BookNow!`,
+            });
+          }
+          return updatedOrder;
+        });
+      } catch (error) {
+        console.log(error);
+        throw new BadRequestException('Failed to update order status');
+      }
+    } else if (
+      dto.status === ORDER_STATUS.REJECT &&
+      order.status === ORDER_STATUS.DELIVERED
+    ) {
+      try {
+        return await this.prisma.$transaction(async (tx) => {
+          await tx.orders.update({
+            where: { id },
+            data: {
+              status: dto.status,
+              reject_at: convertToUTC7(new Date()),
+              note: 'Đơn hàng giao hàng không thành công',
+            },
+          });
+          const updatedOrder = await tx.orders.findUnique({
+            where: { id },
+            include: {
+              OrderItems: {
+                include: {
+                  book: true,
+                },
+              },
+              user: true,
+            },
+          });
+          if (updatedOrder.user.email) {
+            await this.emailService.sendFailedOrder({
+              order: {
+                ...updatedOrder,
+                total_price: Number(updatedOrder.total_price),
+                payment_method: PAYMENT_METHOD[updatedOrder.payment_method],
+                OrderItems: updatedOrder.OrderItems.map((item) => ({
+                  ...item,
+                  Book: item.book,
+                  price: Number(item.price),
+                  total_price: Number(item.total_price),
+                })),
+              },
+              user: updatedOrder.user,
+            });
+          }
+          if (updatedOrder.user.phone) {
+            await sendSMS({
+              to: updatedOrder.user.phone,
+              content: `Đơn hàng ${updatedOrder.id} của bạn đã giao không thành công do có sự cố hoặc vì lý do gì khác, vui lòng tra cứu kỹ hơn tại website của BookNow!`,
+            });
+          }
+          return updatedOrder;
+        });
+      } catch (error) {
+        console.log(error);
+        throw new BadRequestException(error.message);
+      }
+    } else if (dto.status === ORDER_STATUS.SUCCESS) {
+      try {
+        return await this.prisma.$transaction(async (tx) => {
+          await tx.orders.update({
+            where: { id },
+            data: {
+              status: dto.status,
+              success_at: convertToUTC7(new Date()),
+            },
+          });
+          const updatedOrder = await tx.orders.findUnique({
+            where: { id },
+            include: {
+              OrderItems: {
+                include: {
+                  book: true,
+                },
+              },
+              user: true,
+            },
+          });
+          if (updatedOrder.user.email) {
+            await this.emailService.sendOrderSuccess({
+              order: {
+                ...updatedOrder,
+                total_price: Number(updatedOrder.total_price),
+                payment_method: PAYMENT_METHOD[updatedOrder.payment_method],
+                OrderItems: updatedOrder.OrderItems.map((item) => ({
+                  ...item,
+                  Book: item.book,
+                  price: Number(item.price),
+                  total_price: Number(item.total_price),
+                })),
+              },
+              user: updatedOrder.user,
+            });
+          }
+          if (updatedOrder.user.phone) {
+            await sendSMS({
+              to: updatedOrder.user.phone,
+              content: `Đơn hàng ${updatedOrder.id} của bạn đã được giao thành công. Cảm ơn bạn đã mua hàng tại BookNow!`,
+            });
+          }
           return updatedOrder;
         });
       } catch (error) {
@@ -255,10 +443,6 @@ export class OrderService {
         throw new BadRequestException('Failed to update order status');
       }
     }
-    return await this.prisma.orders.update({
-      where: { id },
-      data: { status: dto.status },
-    });
   }
   async createReview(
     session: TUserSession,
@@ -336,7 +520,7 @@ export class OrderService {
     } catch (error) {
       console.log('Error:', error);
       throw new BadRequestException({
-        message: 'Failed to add rating review',
+        message: error.message,
       });
     }
   }
@@ -360,7 +544,11 @@ export class OrderService {
       return await this.prisma.$transaction(async (tx) => {
         await tx.orders.update({
           where: { id },
-          data: { status: ORDER_STATUS.CANCELLED as OrderStatus },
+          data: {
+            status: ORDER_STATUS.CANCELLED as OrderStatus,
+            cancelled_at: convertToUTC7(new Date()),
+            note: 'Hủy bởi người mua',
+          },
         });
         bookIds.forEach(async (item) => {
           await tx.books.update({
@@ -432,7 +620,7 @@ export class OrderService {
       const redirectUrl = this.config.get<string>('redirect_url_payment');
       const ipnUrl = this.config.get<string>('ipn_url_momo');
       const requestId = partnerCodeMomo + new Date().getTime();
-      const orderId = requestId;
+      const orderId = dto.orderId;
       const amount = Number(order.total_price);
       const requestType = 'captureWallet';
       const extraData = 'bookstore';
@@ -482,10 +670,18 @@ export class OrderService {
           'Content-Length': Buffer.byteLength(requestBody, 'utf8'),
         },
         method: 'POST',
-        url: 'https://test-payment.momo.vn/v2/gateway/api/create', // Dùng URL đầy đủ
+        url: 'https://test-payment.momo.vn/v2/gateway/api/create',
         data: requestBody,
       };
       const response = await axios.default(options);
+      await this.prisma.orders.update({
+        where: {
+          id: dto.orderId,
+        },
+        data: {
+          payment_url: response.data.payUrl,
+        },
+      });
       return response.data;
     } catch (error) {
       console.log('Error:', error);
@@ -500,7 +696,11 @@ export class OrderService {
       if (resultCode === 0) {
         await this.prisma.orders.update({
           where: { id: orderId as string },
-          data: { status: ORDER_STATUS.PROCESSING as OrderStatus },
+          data: {
+            status: ORDER_STATUS.PROCESSING as OrderStatus,
+            processing_at: convertToUTC7(new Date()),
+            is_paid: true,
+          },
         });
         const order = await this.prisma.orders.findUnique({
           where: { id: orderId },
@@ -690,6 +890,7 @@ export class OrderService {
                   data: {
                     status: ORDER_STATUS.PROCESSING as OrderStatus,
                     processing_at: convertToUTC7(new Date()),
+                    is_paid: true,
                   },
                 });
                 const newOrder = await this.prisma.orders.findUnique({
@@ -795,6 +996,7 @@ export class OrderService {
           itemquantity: 1,
         },
       ];
+      const callback_url = this.config.get<string>('ipn_url_zalopay');
       const transID = Math.floor(Math.random() * 1000000);
 
       const orderData = {
@@ -806,7 +1008,7 @@ export class OrderService {
         item: JSON.stringify(items),
         embed_data: JSON.stringify(embed_data),
         amount: Number(order.total_price),
-        callback_url: this.config.get<string>('ipn_url_zalopay'),
+        callback_url: callback_url,
         description: 'Thanh toán đơn hàng',
         mac: '',
       };
@@ -831,6 +1033,10 @@ export class OrderService {
       console.log(orderData);
       const response = await axios.default.post(config.endpoint, null, {
         params: orderData,
+      });
+      await this.prisma.orders.update({
+        where: { id: order.id },
+        data: { payment_url: response.data.order_url },
       });
       return response.data;
     } catch (error) {
@@ -861,6 +1067,50 @@ export class OrderService {
           "update order's status = success where app_trans_id =",
           dataJson['app_trans_id'],
         );
+        const items = JSON.parse(dataJson['item']);
+        const orderId = items[0].itemid;
+        const order = await this.prisma.orders.findUnique({
+          where: { id: orderId as string },
+        });
+        await this.prisma.orders.update({
+          where: { id: orderId as string },
+          data: {
+            status: ORDER_STATUS.PROCESSING as OrderStatus,
+            processing_at: convertToUTC7(new Date()),
+            is_paid: true,
+          },
+        });
+        const newOrder = await this.prisma.orders.findUnique({
+          where: { id: orderId as string },
+          include: {
+            OrderItems: {
+              include: {
+                book: true,
+              },
+            },
+          },
+        });
+        const user = await this.prisma.users.findUnique({
+          where: { id: order.user_id },
+        });
+        await this.emailService.sendOrderProcessing({
+          order: {
+            ...newOrder,
+            total_price: Number(newOrder.total_price),
+            payment_method: PAYMENT_METHOD[newOrder.payment_method],
+            OrderItems: newOrder.OrderItems.map((item) => ({
+              ...item,
+              Book: item.book,
+              price: Number(item.price),
+              total_price: Number(item.total_price),
+            })),
+          },
+          user,
+        });
+        await sendSMS({
+          to: user.phone,
+          content: `Đơn hàng ${order.id} của bạn đã được thanh toán và đang được xử lý. Cảm ơn bạn đã mua hàng tại BookNow!`,
+        });
         result.return_code = 1;
         result.return_message = 'Success';
       }
@@ -907,6 +1157,126 @@ export class OrderService {
     } catch (error) {
       console.log('Error:', error);
       throw new BadRequestException('Failed to get payment status');
+    }
+  }
+
+  async anonymousCheckout(dto: CreateOrderDto) {
+    try {
+      const newUser = await this.prisma.users.create({
+        data: {
+          full_name: dto.fullName,
+          phone: dto.phoneNumber,
+          type_user: TypeUser.POTENTIAL_CUSTOMER,
+          role: Role.CUSTOMER,
+          password: '123456',
+        },
+      });
+      const bookIds = dto.items.map((item) => item.bookId);
+      const books = await this.prisma.books.findMany({
+        where: { id: { in: bookIds } },
+      });
+      if (books.length !== bookIds.length) {
+        throw new NotFoundException('Some books are not found');
+      }
+      const bookPriceMap = new Map(
+        books.map((book) => [
+          book.id,
+          { price: book.price, finalPrice: book.final_price ?? book.price },
+        ]),
+      );
+      try {
+        return await this.prisma.$transaction(async (tx) => {
+          let order = null;
+          if (dto.paymentMethod === PAYMENT_METHOD.COD) {
+            const orderTemp = await tx.orders.create({
+              data: {
+                user: { connect: { id: newUser.id } },
+                full_name: dto.fullName,
+                phone_number: dto.phoneNumber,
+                payment_method: dto.paymentMethod,
+                address: dto.address,
+                pending_at: convertToUTC7(new Date()),
+                status: ORDER_STATUS.PROCESSING as OrderStatus,
+                processing_at: convertToUTC7(new Date()),
+              },
+            });
+            order = await tx.orders.findFirst({
+              where: { id: orderTemp.id },
+              include: {
+                OrderItems: {
+                  include: {
+                    book: true,
+                  },
+                },
+              },
+            });
+            if (newUser.email) {
+              await this.emailService.sendOrderProcessing({
+                user: newUser,
+                order,
+              });
+            }
+          } else {
+            const orderTemp = await tx.orders.create({
+              data: {
+                user: { connect: { id: newUser.id } },
+                full_name: dto.fullName,
+                phone_number: dto.phoneNumber,
+                payment_method: dto.paymentMethod,
+                address: dto.address,
+                pending_at: convertToUTC7(new Date()),
+              },
+            });
+            order = orderTemp;
+          }
+          const orderItems = dto.items.map((item) => {
+            const { price, finalPrice } = bookPriceMap.get(item.bookId);
+            const totalPrice = Number(finalPrice) * item.quantity;
+            return {
+              order_id: order.id,
+              book_id: item.bookId,
+              quantity: item.quantity,
+              price,
+              total_price: totalPrice,
+            };
+          });
+          await tx.orderItems.createMany({ data: orderItems });
+          await Promise.all(
+            orderItems.map((item) =>
+              tx.books.update({
+                where: { id: item.book_id },
+                data: {
+                  stock_quantity: { decrement: item.quantity },
+                  sold_quantity: { increment: item.quantity },
+                },
+              }),
+            ),
+          );
+          const totalPrice = orderItems.reduce(
+            (acc, item) => acc + item.total_price,
+            0,
+          );
+          const updatedOrder = await tx.orders.update({
+            where: { id: order.id },
+            data: {
+              total_price: totalPrice,
+            },
+            include: {
+              OrderItems: {
+                include: {
+                  book: true,
+                },
+              },
+            },
+          });
+          return updatedOrder;
+        });
+      } catch (error) {
+        console.log('Error:', error);
+        throw new Error('Failed to create order');
+      }
+    } catch (error) {
+      throw new HttpException(error.message, 500);
     }
   }
 }

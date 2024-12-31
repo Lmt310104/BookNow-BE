@@ -3,7 +3,6 @@ import { PrismaService } from '../prisma/prisma.service';
 import { Request } from 'express';
 import { ConfigService } from '@nestjs/config';
 import { OrderStatus } from '@prisma/client';
-import { GoogleGenerativeAI } from '@google/generative-ai';
 import { GeminiService } from '../gemini/gemini.service';
 @Injectable()
 export class WebhookService {
@@ -18,6 +17,10 @@ export class WebhookService {
       const { parameters } = sessionInfo;
       const { bookname, bookauthor, bookcategory } = parameters;
       console.log(bookname, bookauthor);
+      const condition =
+        bookname?.split(/\s+/).filter(Boolean).join(' & ') +
+        bookauthor?.split(/\s+/).filter(Boolean).join(' & ') +
+        bookcategory?.split(/\s+/).filter(Boolean).join(' & ');
       const books = await this.prisma.books.findMany({
         where: {
           ...(bookname && {
@@ -40,7 +43,52 @@ export class WebhookService {
               },
             },
           }),
+          ...(condition && {
+            OR: [
+              {
+                title: {
+                  search: condition,
+                  mode: 'insensitive',
+                },
+              },
+              {
+                author: {
+                  search: condition,
+                  mode: 'insensitive',
+                },
+              },
+              {
+                Category: {
+                  name: {
+                    search: condition,
+                    mode: 'insensitive',
+                  },
+                },
+              },
+              {
+                description: {
+                  search: condition,
+                  mode: 'insensitive',
+                },
+              },
+              {
+                unaccent: {
+                  search: condition,
+                  mode: 'insensitive',
+                },
+              },
+            ],
+          }),
         },
+        orderBy: condition
+          ? {
+              _relevance: {
+                fields: ['title', 'author', 'description'],
+                search: condition,
+                sort: 'desc',
+              },
+            }
+          : { stock_quantity: 'desc' },
       });
       const response = {
         fulfillmentResponse: {

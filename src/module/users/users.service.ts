@@ -144,18 +144,41 @@ export class UsersService {
     return updatedUser;
   }
   async searchUser(keyword: string, query: GetAllUserDto, disable: boolean) {
+    const condition1 = keyword?.split(/\s+/).filter(Boolean).join(' & ');
     const users = await this.prisma.users.findMany({
       where: {
-        full_name: {
-          contains: keyword,
-          mode: 'insensitive',
-        },
+        ...(condition1 !== undefined && {
+          full_name: {
+            search: condition1,
+            mode: 'insensitive',
+          },
+          phone: {
+            search: condition1,
+            mode: 'insensitive',
+          },
+          email: {
+            search: condition1,
+            mode: 'insensitive',
+          },
+          unaccent: {
+            search: condition1,
+            mode: 'insensitive',
+          },
+        }),
         ...(query.role && { role: query.role }),
         ...(disable !== undefined && { is_disable: disable }),
       },
       skip: query.skip,
       take: query.take,
-      orderBy: { [query.sortBy]: query.order },
+      orderBy: keyword
+        ? {
+            _relevance: {
+              fields: ['full_name', 'phone', 'email', 'unaccent'],
+              search: condition1,
+              sort: 'desc',
+            },
+          }
+        : { [query.sortBy]: query.order },
     });
     const itemCount = await this.prisma.users.count({
       where: {
