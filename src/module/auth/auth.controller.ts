@@ -11,7 +11,12 @@ import {
 import { ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { DOCUMENTATION, END_POINTS } from 'src/utils/constants';
 import { SignInService, VerificationEmailService } from './services';
-import { SignInByEmailDto, SignInByPhoneDto, SignUpByEmailDto, SignUpByPhoneDto } from './dto';
+import {
+  SignInByEmailDto,
+  SignInByPhoneDto,
+  SignUpByEmailDto,
+  SignUpByPhoneDto,
+} from './dto';
 import { Response } from 'express';
 import SignUpService from './services/signup';
 import { VerificationEmailDto } from './dto/verification-email.dto';
