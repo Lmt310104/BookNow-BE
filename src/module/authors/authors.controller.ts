@@ -40,11 +40,15 @@ export class AuthorsController {
   @Get(GET_ALL)
   async getAllAuthors(
     @Query() dto: AuthorPageOptionsDto,
+    @Query('key') key?: string,
   ): Promise<PageResponseDto<Authors>> {
-    const authors = await this.authorsService.getAllAuthors(dto);
+    const { authors, itemCount } = await this.authorsService.getAllAuthors(
+      dto,
+      key,
+    );
     const meta = new PageResponseMetaDto({
       pageOptionsDto: dto,
-      itemCount: authors.length,
+      itemCount: itemCount,
     });
     return new PageResponseDto(authors, meta);
   }
