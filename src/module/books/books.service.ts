@@ -107,34 +107,68 @@ export class BooksService {
     });
     const itemCount = await this.prismaService.books.count({
       where: {
-        OR: [
-          {
-            title: {
-              search: condition1,
-              mode: 'insensitive',
-            },
-          },
-          {
-            description: {
-              search: condition1,
-              mode: 'insensitive',
-            },
-          },
-          {
-            author: {
-              search: condition1,
-              mode: 'insensitive',
-            },
-          },
-          {
-            Category: {
-              name: {
+        ...(condition1 !== undefined && {
+          OR: [
+            {
+              title: {
                 search: condition1,
                 mode: 'insensitive',
               },
             },
-          },
-        ],
+            {
+              title: {
+                contains: bookQuery.search,
+                mode: 'insensitive',
+              },
+            },
+            {
+              description: {
+                search: condition1,
+                mode: 'insensitive',
+              },
+            },
+            {
+              description: {
+                contains: bookQuery.search,
+                mode: 'insensitive',
+              },
+            },
+            {
+              author: {
+                search: condition1,
+                mode: 'insensitive',
+              },
+            },
+            {
+              author: {
+                contains: bookQuery.search,
+                mode: 'insensitive',
+              },
+            },
+            {
+              Category: {
+                name: {
+                  contains: bookQuery.search,
+                  mode: 'insensitive',
+                },
+              },
+            },
+            {
+              Category: {
+                name: {
+                  search: condition1,
+                  mode: 'insensitive',
+                },
+              },
+            },
+            {
+              unaccent: {
+                search: condition1,
+                mode: 'insensitive',
+              },
+            },
+          ],
+        }),
         ...(bookQuery.status ? { status: bookQuery.status } : {}),
         ...(bookQuery.min_price && { price: { gte: bookQuery.min_price } }),
         ...(bookQuery.max_price && { price: { lte: bookQuery.max_price } }),
