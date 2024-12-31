@@ -13,7 +13,7 @@ export class SuppliersService {
     try {
       const { name, address, email, phone } = dto;
       const existSupplier = await this.prisma.supplier.findFirst({
-        where: { name, address, email, phone },
+        where: { name },
       });
       if (existSupplier) {
         throw new HttpException(

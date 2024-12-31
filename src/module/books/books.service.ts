@@ -28,9 +28,41 @@ export class BooksService {
               },
             },
             {
+              title: {
+                contains: bookQuery.search,
+                mode: 'insensitive',
+              },
+            },
+            {
               description: {
                 search: condition1,
                 mode: 'insensitive',
+              },
+            },
+            {
+              description: {
+                contains: bookQuery.search,
+                mode: 'insensitive',
+              },
+            },
+            {
+              author: {
+                search: condition1,
+                mode: 'insensitive',
+              },
+            },
+            {
+              author: {
+                contains: bookQuery.search,
+                mode: 'insensitive',
+              },
+            },
+            {
+              Category: {
+                name: {
+                  contains: bookQuery.search,
+                  mode: 'insensitive',
+                },
               },
             },
             {
@@ -115,7 +147,6 @@ export class BooksService {
   async createBook(body: CreateBookDto, images?: Array<Express.Multer.File>) {
     const {
       title,
-      author,
       categoryId,
       entryPrice,
       price,
@@ -147,10 +178,20 @@ export class BooksService {
         }
         imageUrls = uploadImagesData.urls;
       }
+      let authorName = '';
+      for (let i = 0; i < body.authors.length; i++) {
+        const author = await this.prismaService.authors.findFirst({
+          where: { id: body.authors[i] },
+        });
+        if (!author) {
+          throw new BadRequestException('Author not found');
+        }
+        authorName += author.name + ' ';
+      }
       const newBook = await this.prismaService.books.create({
         data: {
           title: title,
-          author: author,
+          author: authorName,
           Category: { connect: { id: categoryId } },
           Supplier: { connect: { id: supplierId } },
           entry_price: entryPrice,
