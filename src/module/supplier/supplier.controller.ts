@@ -47,7 +47,7 @@ export class SuppliersController {
   @Get(GET_ALL)
   async getAllSuppliers(
     @Query() query: SupplierPageOptionsDto,
-    @Query('active', ParseBoolPipe) active: boolean,
+    @Query('active') active?: boolean,
   ) {
     const { suppliers, itemCount } = await this.supplierService.getAllSuppliers(
       query,
@@ -81,8 +81,8 @@ export class SuppliersController {
   @Get(SEARCH)
   async searchSupplier(
     @Query() query: PageOptionsDto,
-    @Query('active', ParseBoolPipe) active: boolean,
-    @Query('keyword') keyword: string,
+    @Query('active') active?: boolean,
+    @Query('keyword') keyword?: string,
   ) {
     const { suppliers, itemCount } = await this.supplierService.searchSupplier(
       query,

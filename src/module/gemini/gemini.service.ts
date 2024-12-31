@@ -30,18 +30,19 @@ export class GeminiService {
     bookname: string,
     bookauthor?: string,
   ): Promise<string> {
-    try {
-      if (!bookname) {
-        throw new Error('Book name is required');
-      }
-      const prompt = `Giới thiệu ngắn về sách "${bookname}" {bookauthor ? của ${bookauthor} : ""}: nêu chủ đề, nội dung nổi bật, và thông tin đặc biệt về tác giả (nếu có).`;
-      const result = await this.model.generateContent([prompt]);
-      const response = await result.response.text();
+    if (!bookname?.trim()) {
+      throw new Error('Book name is required');
+    }
 
-      return response;
+    const authorText = bookauthor?.trim() ? ` của ${bookauthor}` : '';
+    const prompt = `Giới thiệu ngắn về sách "${bookname}"${authorText}: nêu chủ đề, nội dung nổi bật, và thông tin đặc biệt về tác giả (nếu có).`;
+
+    try {
+      const result = await this.model.generateContent([prompt]);
+      return result.response.text();
     } catch (error) {
-      console.error('Error generating book summary:', error);
-      throw new Error(`Failed to generate book summary: ${error.message}`);
+      const message = error instanceof Error ? error.message : 'Unknown error';
+      throw new Error(`Failed to generate book summary: ${message}`);
     }
   }
 

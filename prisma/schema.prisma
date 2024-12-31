@@ -228,6 +228,8 @@ model Supplier {
   active   Boolean @default(true)
   unaccent String? @db.Text
   Books    Books[]
+
+  @@index([name, email, phone])
 }
 
 model InventoryForm {
