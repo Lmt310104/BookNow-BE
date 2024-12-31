@@ -46,4 +46,5 @@ export default () => ({
   gemini_api_key_8: process.env.GEMINI_API_KEY_8,
   gemini_api_key_9: process.env.GEMINI_API_KEY_9,
   gemini_api_key_10: process.env.GEMINI_API_KEY_10,
+  https_proxy: process.env.HTTPS_PROXY,
 });
