@@ -28,9 +28,41 @@ export class BooksService {
               },
             },
             {
+              title: {
+                contains: bookQuery.search,
+                mode: 'insensitive',
+              },
+            },
+            {
               description: {
                 search: condition1,
                 mode: 'insensitive',
+              },
+            },
+            {
+              description: {
+                contains: bookQuery.search,
+                mode: 'insensitive',
+              },
+            },
+            {
+              author: {
+                search: condition1,
+                mode: 'insensitive',
+              },
+            },
+            {
+              author: {
+                contains: bookQuery.search,
+                mode: 'insensitive',
+              },
+            },
+            {
+              Category: {
+                name: {
+                  contains: bookQuery.search,
+                  mode: 'insensitive',
+                },
               },
             },
             {
@@ -75,34 +107,68 @@ export class BooksService {
     });
     const itemCount = await this.prismaService.books.count({
       where: {
-        OR: [
-          {
-            title: {
-              search: condition1,
-              mode: 'insensitive',
-            },
-          },
-          {
-            description: {
-              search: condition1,
-              mode: 'insensitive',
-            },
-          },
-          {
-            author: {
-              search: condition1,
-              mode: 'insensitive',
-            },
-          },
-          {
-            Category: {
-              name: {
+        ...(condition1 !== undefined && {
+          OR: [
+            {
+              title: {
                 search: condition1,
                 mode: 'insensitive',
               },
             },
-          },
-        ],
+            {
+              title: {
+                contains: bookQuery.search,
+                mode: 'insensitive',
+              },
+            },
+            {
+              description: {
+                search: condition1,
+                mode: 'insensitive',
+              },
+            },
+            {
+              description: {
+                contains: bookQuery.search,
+                mode: 'insensitive',
+              },
+            },
+            {
+              author: {
+                search: condition1,
+                mode: 'insensitive',
+              },
+            },
+            {
+              author: {
+                contains: bookQuery.search,
+                mode: 'insensitive',
+              },
+            },
+            {
+              Category: {
+                name: {
+                  contains: bookQuery.search,
+                  mode: 'insensitive',
+                },
+              },
+            },
+            {
+              Category: {
+                name: {
+                  search: condition1,
+                  mode: 'insensitive',
+                },
+              },
+            },
+            {
+              unaccent: {
+                search: condition1,
+                mode: 'insensitive',
+              },
+            },
+          ],
+        }),
         ...(bookQuery.status ? { status: bookQuery.status } : {}),
         ...(bookQuery.min_price && { price: { gte: bookQuery.min_price } }),
         ...(bookQuery.max_price && { price: { lte: bookQuery.max_price } }),
@@ -115,7 +181,6 @@ export class BooksService {
   async createBook(body: CreateBookDto, images?: Array<Express.Multer.File>) {
     const {
       title,
-      author,
       categoryId,
       entryPrice,
       price,
@@ -147,10 +212,20 @@ export class BooksService {
         }
         imageUrls = uploadImagesData.urls;
       }
+      let authorName = '';
+      for (let i = 0; i < body.authors.length; i++) {
+        const author = await this.prismaService.authors.findFirst({
+          where: { id: body.authors[i] },
+        });
+        if (!author) {
+          throw new BadRequestException('Author not found');
+        }
+        authorName += author.name + ' ';
+      }
       const newBook = await this.prismaService.books.create({
         data: {
           title: title,
-          author: author,
+          author: authorName,
           Category: { connect: { id: categoryId } },
           Supplier: { connect: { id: supplierId } },
           entry_price: entryPrice,

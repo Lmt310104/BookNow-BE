@@ -11,7 +11,7 @@ import {
 import { ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { DOCUMENTATION, END_POINTS } from 'src/utils/constants';
 import { SignInService, VerificationEmailService } from './services';
-import { SignInByEmailDto, SignInByPhoneDto, SignUpByEmailDto } from './dto';
+import { SignInByEmailDto, SignInByPhoneDto, SignUpByEmailDto, SignUpByPhoneDto } from './dto';
 import { Response } from 'express';
 import SignUpService from './services/signup';
 import { VerificationEmailDto } from './dto/verification-email.dto';
@@ -75,6 +75,12 @@ export class AuthController {
     @Res({ passthrough: true }) res: Response,
   ) {
     return this.signInService.SignInByPhone(body, res);
+  }
+  @Public()
+  @Post(`${SIGN_UP.BASE_SIGN_UP}${SIGN_UP.PHONE}`)
+  @ApiOperation({ summary: 'Sign up by phone number' })
+  async signUpByPhone(@Body() body: SignUpByPhoneDto) {
+    return await this.signUpService.signUpWithPhone(body);
   }
   @ApiOperation({ summary: 'Sign up by email' })
   @ApiResponse({

@@ -7,7 +7,7 @@ import { END_POINTS, ROLE } from 'src/utils/constants';
 import { GoogleOauthService } from './google-oauth.service';
 
 const {
-  GOOGLE_OAUTH: { BASE, REDIRECT, SIGN_UP_WITH_GOOGLE },
+  GOOGLE_OAUTH: { BASE, REDIRECT },
 } = END_POINTS;
 @Controller(BASE)
 export class GoogleOauthController {
@@ -23,19 +23,6 @@ export class GoogleOauthController {
   @Public()
   @UseGuards(GoogleOauthGuard)
   async googleAuthRedirect(
-    @Req() req: Request,
-    @Res({ passthrough: true }) res: Response,
-  ) {
-    return await this.googleOauthService.googleOauth(
-      { userData: req.user, role: ROLE.CUSTOMER },
-      res,
-    );
-  }
-
-  @Get(SIGN_UP_WITH_GOOGLE)
-  @Public()
-  @UseGuards(GoogleOauthGuard)
-  async signInWithGoogle(
     @Req() req: Request,
     @Res({ passthrough: true }) res: Response,
   ) {

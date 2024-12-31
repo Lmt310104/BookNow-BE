@@ -1,9 +1,8 @@
 import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { Gender, Role, TypeEmail } from '@prisma/client';
+import { Role, TypeEmail } from '@prisma/client';
 import { Response } from 'express';
 import { PrismaService } from '../prisma/prisma.service';
-import { hashPassword } from 'prisma/seed';
 import { JwtService } from '@nestjs/jwt';
 
 @Injectable()
@@ -22,36 +21,16 @@ export class GoogleOauthService {
     const email = emails[0].value;
     const avatar_url = photos[0].value;
     const full_name = displayName;
-    let user = await this.prismaService.users.findUnique({
+    const user = await this.prismaService.users.findFirst({
       where: { email, type_email: TypeEmail.GOOGLE },
     });
     if (!user) {
-      const hash_password = await hashPassword(
-        this.configSerivce.get<string>('default_password') + email,
-      );
-      user = await this.prismaService.users.create({
-        data: {
-          email,
-          full_name,
-          avatar_url,
-          role,
-          birthday: new Date(Date.now()),
-          password: hash_password,
-          gender: Gender.MALE,
-          type_email: TypeEmail.GOOGLE,
-          verification: {
-            create: {
-              verified_code: hash_password,
-              is_active: true,
-            },
-          },
-        },
-      });
-      await this.prismaService.carts.create({
-        data: {
-          user_id: user.id,
-        },
-      });
+      res.cookie('email', encodeURIComponent(email));
+      res.cookie('avatar_url', encodeURIComponent(avatar_url));
+      res.cookie('full_name', encodeURIComponent(full_name));
+      res.cookie('role', role);
+      res.redirect(this.configSerivce.get<string>('register_page_url'));
+      return;
     }
     const { id } = user;
     const { access_token, refresh_token } = await this.generateToken({
@@ -85,41 +64,5 @@ export class GoogleOauthService {
       expiresIn: '10d',
     });
     return { access_token, refresh_token };
-  }
-  async signUpWithGoogle(
-    userPayload: { userData: any; role: Role },
-    res: Response<any, Record<string, any>>,
-  ) {
-    const { userData, role } = userPayload;
-    const { emails, photos, displayName } = userData.profile;
-    const email = emails[0].value;
-    const avatar_url = photos[0].value;
-    const full_name = displayName;
-    let user = await this.prismaService.users.findUnique({
-      where: { email, type_email: TypeEmail.GOOGLE },
-    });
-    if (!user) {
-      const hash_password = await hashPassword(
-        this.configSerivce.get<string>('default_password') + email,
-      );
-      user = await this.prismaService.users.create({
-        data: {
-          email,
-          full_name,
-          avatar_url,
-          role,
-          birthday: new Date(Date.now()),
-          password: hash_password,
-          gender: Gender.MALE,
-          type_email: TypeEmail.GOOGLE,
-          verification: {
-            create: {
-              verified_code: hash_password,
-              is_active: true,
-            },
-          },
-        },
-      });
-    }
   }
 }

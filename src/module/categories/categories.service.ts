@@ -108,6 +108,12 @@ export class CategoryService {
                 mode: 'insensitive',
               },
             },
+            {
+              name: {
+                contains: query,
+                mode: 'insensitive',
+              },
+            },
           ],
         }),
         ...(disable !== undefined && {
@@ -137,6 +143,12 @@ export class CategoryService {
               },
               unaccent: {
                 search: condition1,
+                mode: 'insensitive',
+              },
+            },
+            {
+              name: {
+                contains: query,
                 mode: 'insensitive',
               },
             },
