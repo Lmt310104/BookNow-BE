@@ -313,6 +313,13 @@ export class BooksService {
   async getBookDetailsById(id: string) {
     const book = await this.prismaService.books.findFirst({
       where: { id },
+      include: {
+        BookAuthor: {
+          include: {
+            author: true,
+          },
+        },
+      },
     });
     if (!book) {
       throw new BadRequestException('Book not found');
