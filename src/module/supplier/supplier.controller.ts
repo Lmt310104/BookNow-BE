@@ -49,7 +49,6 @@ export class SuppliersController {
     @Query() query: SupplierPageOptionsDto,
     @Query('active') active?: boolean,
   ) {
-    console.log(typeof active);
     const { suppliers, itemCount } = await this.supplierService.getAllSuppliers(
       query,
       active,
