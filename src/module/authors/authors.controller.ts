@@ -81,7 +81,7 @@ export class AuthorsController {
   @Patch(UPDATE)
   @UseInterceptors(FileInterceptor('avatar'))
   async updateAuthor(
-    dto: UpdateAuthorDto,
+    @Body() dto: UpdateAuthorDto,
     @UploadedFile(
       new ParseFilePipeBuilder()
         .addFileTypeValidator({
@@ -110,7 +110,11 @@ export class AuthorsController {
     @Query() query: AuthorPageOptionsDto,
     @Query('key') key: string,
   ) {
-    const result = await this.authorsService.searchAuthor(query, key);
-    return new StandardResponse(result, 'Search author successfully', 200);
+    const { authors, itemCount } = await this.authorsService.searchAuthor(
+      query,
+      key,
+    );
+    const meta = new PageResponseMetaDto({ pageOptionsDto: query, itemCount });
+    return new PageResponseDto(authors, meta);
   }
 }

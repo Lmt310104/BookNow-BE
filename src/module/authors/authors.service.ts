@@ -161,9 +161,31 @@ export class AuthorsSerivce {
           imageUrls = uploadImagesData.urls;
         }
       } catch (error) {
-        throw new BadRequestException('Failed to upload images', {
-          cause: error,
+        throw new BadRequestException(error.message);
+      }
+      if (dto.name) {
+        const bookAuthors = await this.prisma.bookAuthor.findMany({
+          where: {
+            author_id: id,
+          },
         });
+        await Promise.all(
+          bookAuthors.map(async (bookAuthors) => {
+            const book = await this.prisma.books.findUnique({
+              where: {
+                id: bookAuthors.book_id,
+              },
+            });
+            const regex = new RegExp(author.name, 'g');
+            const newAuthor = book.author.replace(regex, dto.name);
+            return this.prisma.books.update({
+              where: { id: bookAuthors.book_id },
+              data: {
+                author: newAuthor,
+              },
+            });
+          }),
+        );
       }
       const updatedAuthor = await this.prisma.authors.update({
         where: { id },
@@ -174,9 +196,7 @@ export class AuthorsSerivce {
       });
       return updatedAuthor;
     } catch (error) {
-      throw new BadRequestException('Failed to update author', {
-        cause: error,
-      });
+      throw new BadRequestException(error.message);
     }
   }
   async getAuthorById(id: string) {
