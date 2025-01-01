@@ -190,6 +190,7 @@ model Reviews {
   description     String
   is_disable      Boolean       @default(false)
   state           ReviewState   @default(UNREVIEW)
+  type            ReviewType
   reply_review_id Int?
   created_at      DateTime      @default(now())
   ReplyReviews    ReplyReviews?
