@@ -14,54 +14,7 @@ export class AuthorsSerivce {
       const condition1 = key?.split(/\s+/).filter(Boolean).join(' & ');
       const authors = await this.prisma.authors.findMany({
         where: {
-          OR: [
-            {
-              name: {
-                contains: key,
-                mode: 'insensitive',
-              },
-            },
-            {
-              name: {
-                search: condition1,
-                mode: 'insensitive',
-              },
-            },
-            {
-              description: {
-                search: condition1,
-                mode: 'insensitive',
-              },
-            },
-            {
-              description: {
-                contains: key,
-                mode: 'insensitive',
-              },
-            },
-            {
-              unaccent: {
-                search: condition1,
-                mode: 'insensitive',
-              },
-            },
-          ],
-        },
-        skip: dto.skip,
-        take: dto.take,
-        orderBy: condition1
-          ? {
-              _relevance: {
-                search: condition1,
-                fields: ['name', 'description'],
-                sort: 'desc',
-              },
-            }
-          : { [dto.sortBy]: dto.order },
-      });
-      const itemCount = await this.prisma.authors
-        .findMany({
-          where: {
+          ...(condition1 && {
             OR: [
               {
                 name: {
@@ -87,7 +40,64 @@ export class AuthorsSerivce {
                   mode: 'insensitive',
                 },
               },
+              {
+                unaccent: {
+                  search: condition1,
+                  mode: 'insensitive',
+                },
+              },
             ],
+          }),
+        },
+        skip: dto.skip,
+        take: dto.take,
+        orderBy: condition1
+          ? {
+              _relevance: {
+                search: condition1,
+                fields: ['name', 'description'],
+                sort: 'desc',
+              },
+            }
+          : { [dto.sortBy]: dto.order },
+      });
+      const itemCount = await this.prisma.authors
+        .findMany({
+          where: {
+            ...(condition1 && {
+              OR: [
+                {
+                  name: {
+                    contains: key,
+                    mode: 'insensitive',
+                  },
+                },
+                {
+                  name: {
+                    search: condition1,
+                    mode: 'insensitive',
+                  },
+                },
+                {
+                  description: {
+                    search: condition1,
+                    mode: 'insensitive',
+                  },
+                },
+                {
+                  description: {
+                    contains: key,
+                    mode: 'insensitive',
+                  },
+                },
+                {
+                  unaccent: {
+                    search: condition1,
+                    mode: 'insensitive',
+                  },
+                },
+              ],
+            }),
           },
         })
         .then((res) => res.length);
