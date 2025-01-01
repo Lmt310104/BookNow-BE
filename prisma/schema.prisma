@@ -20,7 +20,7 @@ model Users {
   email               String?         @db.VarChar(100)
   password            String
   full_name           String
-  phone               String?         @unique @db.VarChar(20)
+  phone               String?         @db.VarChar(20)
   birthday            DateTime?
   gender              Gender?
   role                Role
@@ -40,7 +40,7 @@ model Users {
   Reviews             Reviews[]
 
   @@unique([email, type_email])
-  @@index([full_name, email, phone], map: "users_fulltext_idx")
+  @@index([full_name, email, phone, type_email], map: "users_fulltext_idx")
 }
 
 model Vertifications {
@@ -190,6 +190,7 @@ model Reviews {
   description     String
   is_disable      Boolean       @default(false)
   state           ReviewState   @default(UNREVIEW)
+  type            ReviewType
   reply_review_id Int?
   created_at      DateTime      @default(now())
   ReplyReviews    ReplyReviews?

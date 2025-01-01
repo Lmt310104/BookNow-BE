@@ -99,7 +99,7 @@ export class AuthorsSerivce {
   async createAuthor(body: CreateAuthorDto, avatar: Express.Multer.File) {
     const { name, birthday, description } = body;
     const existAuthor = await this.prisma.authors.findFirst({
-      where: { name, birthday },
+      where: { name, birthday: new Date(birthday) },
     });
     if (existAuthor) {
       throw new BadRequestException('Author already existed');
@@ -119,16 +119,14 @@ export class AuthorsSerivce {
       const newAuthor = await this.prisma.authors.create({
         data: {
           name,
-          birthday,
+          birthday: new Date(birthday),
           description,
           avatar_url: imageUrls[0] ?? DEFAULT_AUTHOR_AVATAR,
         },
       });
       return newAuthor;
     } catch (error) {
-      throw new BadRequestException('Failed to upload images', {
-        cause: error,
-      });
+      throw new BadRequestException(error.message);
     }
   }
   async updateAuthor(dto: UpdateAuthorDto, avatar?: Express.Multer.File) {

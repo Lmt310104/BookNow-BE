@@ -1,12 +1,18 @@
-import { BadRequestException, Injectable } from '@nestjs/common';
+import { BadRequestException, HttpException, Injectable } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { GetReviewsDto } from './dto/find-all-rating-reviews.dto';
 import { AdminReplyReviewDto } from './dto/reply-rating-reviews.dto';
 import { ReviewState } from 'src/utils/constants';
+import { GeminiService } from '../gemini/gemini.service';
+import { ReviewType } from '@prisma/client';
+import HttpStatusCode from 'src/utils/HttpStatusCode';
 
 @Injectable()
 export class ReviewsService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly geminiService: GeminiService,
+  ) {}
   async getAllReviews(dto: GetReviewsDto) {
     const reviews = await this.prisma.reviews.findMany({
       where: {
@@ -50,6 +56,13 @@ export class ReviewsService {
     return reviewDetail;
   }
   async createAdminReply(id: number, dto: AdminReplyReviewDto) {
+    const type = await this.geminiService.analyseComment(dto.reply);
+    if (type.trim() === ReviewType.TOXIC) {
+      throw new HttpException(
+        'Your comment is toxic, please try again',
+        HttpStatusCode.BAD_REQUEST,
+      );
+    }
     const review = await this.prisma.reviews.findUnique({
       where: {
         id: id,

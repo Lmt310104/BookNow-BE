@@ -114,6 +114,12 @@ export class CategoryService {
                 mode: 'insensitive',
               },
             },
+            {
+              unaccent: {
+                contains: query,
+                mode: 'insensitive',
+              },
+            },
           ],
         }),
         ...(disable !== undefined && {
