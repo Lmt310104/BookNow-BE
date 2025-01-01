@@ -25,6 +25,7 @@ import { sortObject } from 'src/utils/vnpay.utils';
 import sendSMS from 'src/services/sms-gateway';
 import { GeminiService } from '../gemini/gemini.service';
 import HttpStatusCode from 'src/utils/HttpStatusCode';
+import { use } from 'passport';
 @Injectable()
 export class OrderService {
   constructor(
@@ -618,13 +619,10 @@ export class OrderService {
     });
     return { orders, itemCount };
   }
-  async createPaymentUrlWithMomo(
-    session: TUserSession,
-    dto: CreatePaymentUrlDto,
-  ) {
+  async createPaymentUrlWithMomo(dto: CreatePaymentUrlDto) {
     try {
       const order = await this.prisma.orders.findUniqueOrThrow({
-        where: { id: dto.orderId, user_id: session.id },
+        where: { id: dto.orderId },
       });
       const partnerCodeMomo = this.config.get<string>('partner_code_momo');
       const accessKeyMomo = this.config.get<string>('access_key_momo');
@@ -729,24 +727,28 @@ export class OrderService {
           where: { id: order.user_id },
         });
         // send email, sms
-        await this.emailService.sendOrderProcessing({
-          order: {
-            ...order,
-            total_price: Number(order.total_price),
-            payment_method: PAYMENT_METHOD[order.payment_method],
-            OrderItems: order.OrderItems.map((item) => ({
-              ...item,
-              Book: item.book,
-              price: Number(item.price),
-              total_price: Number(item.total_price),
-            })),
-          },
-          user,
-        });
-        await sendSMS({
-          to: user.phone,
-          content: `Đơn hàng ${order.id} của bạn đã được thanh toán và đang được xử lý. Cảm ơn bạn đã mua hàng tại BookNow!`,
-        });
+        if (user.email) {
+          await this.emailService.sendOrderProcessing({
+            order: {
+              ...order,
+              total_price: Number(order.total_price),
+              payment_method: PAYMENT_METHOD[order.payment_method],
+              OrderItems: order.OrderItems.map((item) => ({
+                ...item,
+                Book: item.book,
+                price: Number(item.price),
+                total_price: Number(item.total_price),
+              })),
+            },
+            user,
+          });
+        }
+        if (user.phone) {
+          await sendSMS({
+            to: user.phone,
+            content: `Đơn hàng ${order.id} của bạn đã được thanh toán và đang được xử lý. Cảm ơn bạn đã mua hàng tại BookNow!`,
+          });
+        }
         return res.status(204).json({
           resultCode: 0,
           message: 'Success',
@@ -984,13 +986,13 @@ export class OrderService {
     }
   }
 
-  async createPaymentUrlWithZaloPay(
-    body: CreatePaymentUrlDto,
-    user: TUserSession,
-  ) {
+  async createPaymentUrlWithZaloPay(body: CreatePaymentUrlDto) {
     try {
       const order = await this.prisma.orders.findUniqueOrThrow({
-        where: { id: body.orderId, user_id: user.id },
+        where: { id: body.orderId },
+        include: {
+          user: true,
+        },
       });
       const config = {
         app_id: this.config.get<string>('app_id_zalopay'),
@@ -1015,7 +1017,7 @@ export class OrderService {
       const orderData = {
         app_id: config.app_id,
         app_trans_id: `${moment().format('YYMMDD')}_${transID}`,
-        app_user: user.id,
+        app_user: order.user.id,
         app_time: Date.now(),
         bank_code: '',
         item: JSON.stringify(items),
@@ -1175,15 +1177,24 @@ export class OrderService {
 
   async anonymousCheckout(dto: CreateOrderDto) {
     try {
-      const newUser = await this.prisma.users.create({
-        data: {
-          full_name: dto.fullName,
+      let userPotential = null;
+      userPotential = await this.prisma.users.findFirst({
+        where: {
           phone: dto.phoneNumber,
           type_user: TypeUser.POTENTIAL_CUSTOMER,
-          role: Role.CUSTOMER,
-          password: '123456',
         },
       });
+      if (!userPotential) {
+        userPotential = await this.prisma.users.create({
+          data: {
+            full_name: dto.fullName,
+            phone: dto.phoneNumber,
+            type_user: TypeUser.POTENTIAL_CUSTOMER,
+            role: Role.CUSTOMER,
+            password: '123456',
+          },
+        });
+      }
       const bookIds = dto.items.map((item) => item.bookId);
       const books = await this.prisma.books.findMany({
         where: { id: { in: bookIds } },
@@ -1203,7 +1214,7 @@ export class OrderService {
           if (dto.paymentMethod === PAYMENT_METHOD.COD) {
             const orderTemp = await tx.orders.create({
               data: {
-                user: { connect: { id: newUser.id } },
+                user: { connect: { id: userPotential.id } },
                 full_name: dto.fullName,
                 phone_number: dto.phoneNumber,
                 payment_method: dto.paymentMethod,
@@ -1223,16 +1234,22 @@ export class OrderService {
                 },
               },
             });
-            if (newUser.email) {
+            if (userPotential.email) {
               await this.emailService.sendOrderProcessing({
-                user: newUser,
+                user: userPotential,
                 order,
+              });
+            }
+            if (userPotential.phone) {
+              await sendSMS({
+                to: userPotential.phone,
+                content: `Cảm ơn bạn đã đặt hàng tại BookNow, xin chân thành cảm ơn, mã đơn đặt hàng của bạn là ${order.id}. Bạn có thể tra cứu qua website của chúng tôi`,
               });
             }
           } else {
             const orderTemp = await tx.orders.create({
               data: {
-                user: { connect: { id: newUser.id } },
+                user: { connect: { id: userPotential.id } },
                 full_name: dto.fullName,
                 phone_number: dto.phoneNumber,
                 payment_method: dto.paymentMethod,

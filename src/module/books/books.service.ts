@@ -212,14 +212,12 @@ export class BooksService {
         }
         imageUrls = uploadImagesData.urls;
       }
+      console.log(body.authors);
       let authorName = '';
       for (let i = 0; i < body.authors.length; i++) {
-        const author = await this.prismaService.authors.findFirst({
-          where: { id: body.authors[i] },
+        const author = await this.prismaService.authors.findFirstOrThrow({
+          where: { id: body.authors[i].toString() },
         });
-        if (!author) {
-          throw new BadRequestException('Author not found');
-        }
         authorName += author.name + ' ';
       }
       const newBook = await this.prismaService.books.create({

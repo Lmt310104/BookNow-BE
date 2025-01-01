@@ -32,13 +32,13 @@ async function bootstrap() {
   // app.useGlobalFilters(new HttpExceptionFilter());
   InitFirebase();
   SwaggerModule.setup('docs', app, document);
-  if (process.env.HTTPS_PROXY) {
-    console.log('Using proxy agent');
-    const dispatcher = new ProxyAgent({
-      uri: new URL(process.env.HTTPS_PROXY).toString(),
-    });
-    setGlobalDispatcher(dispatcher);
-  }
+  // if (process.env.HTTPS_PROXY) {
+  //   console.log('Using proxy agent');
+  //   const dispatcher = new ProxyAgent({
+  //     uri: new URL(process.env.HTTPS_PROXY).toString(),
+  //   });
+  //   setGlobalDispatcher(dispatcher);
+  // }
   await app.listen(port || 8080);
   console.log(`Server running on http://localhost:${port || 8080}/docs`);
 }

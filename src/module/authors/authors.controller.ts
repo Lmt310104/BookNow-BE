@@ -71,7 +71,8 @@ export class AuthorsController {
     )
     avatar?: Express.Multer.File,
   ) {
-    await this.authorsService.createAuthor(body, avatar);
+    const result = await this.authorsService.createAuthor(body, avatar);
+    return new StandardResponse(result, 'Create author successfully', 201);
   }
   @ApiOperation({
     summary: 'Update an author',

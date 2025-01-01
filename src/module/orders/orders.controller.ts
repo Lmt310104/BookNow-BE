@@ -140,10 +140,7 @@ export class OrdersController {
     @UserSession() session: TUserSession,
     @Body() dto: CreatePaymentUrlDto,
   ) {
-    const paymentUrl = await this.orderService.createPaymentUrlWithMomo(
-      session,
-      dto,
-    );
+    const paymentUrl = await this.orderService.createPaymentUrlWithMomo(dto);
     const message = 'Payment url created successfully';
     return new StandardResponse(paymentUrl, message, HttpStatusCode.CREATED);
   }
@@ -154,15 +151,10 @@ export class OrdersController {
     await this.orderService.callbackWithMomo(req, res);
   }
 
+  @Public()
   @Post(CREATE_PAYMENT_URL_WITH_ZALO)
-  async createPaymentUrlWithZalo(
-    @UserSession() session: TUserSession,
-    @Body() dto: CreatePaymentUrlDto,
-  ) {
-    const paymentUrl = await this.orderService.createPaymentUrlWithZaloPay(
-      dto,
-      session,
-    );
+  async createPaymentUrlWithZalo(@Body() dto: CreatePaymentUrlDto) {
+    const paymentUrl = await this.orderService.createPaymentUrlWithZaloPay(dto);
     const message = 'Payment url created successfully';
     return new StandardResponse(paymentUrl, message, HttpStatusCode.CREATED);
   }
@@ -187,6 +179,7 @@ export class OrdersController {
     return result;
   }
 
+  @Public()
   @Post(CREATE_PAYMENT_URL_WITH_VNPAY)
   async createPaymentUrlWithVNPay(
     @Req() req: Request,
