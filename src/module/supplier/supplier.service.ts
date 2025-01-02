@@ -177,6 +177,18 @@ export class SuppliersService {
                 mode: 'insensitive',
               },
             },
+            {
+              unaccent: {
+                search: condition,
+                mode: 'insensitive',
+              },
+            },
+            {
+              unaccent: {
+                contains: key,
+                mode: 'insensitive',
+              },
+            },
           ],
         },
         take: query.take,
@@ -184,7 +196,7 @@ export class SuppliersService {
         orderBy: key
           ? {
               _relevance: {
-                fields: ['name', 'address', 'email', 'phone'],
+                fields: ['name', 'unaccent', 'address', 'email', 'phone'],
                 search: condition,
                 sort: 'desc',
               },
@@ -241,6 +253,18 @@ export class SuppliersService {
               {
                 phone: {
                   search: condition,
+                  mode: 'insensitive',
+                },
+              },
+              {
+                unaccent: {
+                  search: condition,
+                  mode: 'insensitive',
+                },
+              },
+              {
+                unaccent: {
+                  contains: key,
                   mode: 'insensitive',
                 },
               },

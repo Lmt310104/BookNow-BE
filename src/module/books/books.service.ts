@@ -105,6 +105,12 @@ export class BooksService {
                 mode: 'insensitive',
               },
             },
+            {
+              unaccent: {
+                contains: condition1,
+                mode: 'insensitive',
+              },
+            },
           ],
         }),
         ...(bookQuery.status ? { status: bookQuery.status } : {}),
@@ -184,6 +190,12 @@ export class BooksService {
             {
               unaccent: {
                 search: condition1,
+                mode: 'insensitive',
+              },
+            },
+            {
+              unaccent: {
+                contains: condition1,
                 mode: 'insensitive',
               },
             },
