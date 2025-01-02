@@ -8,6 +8,8 @@ import {
   Patch,
   Post,
   Query,
+  Res,
+  UploadedFile,
   UploadedFiles,
   UseInterceptors,
   UsePipes,
@@ -29,10 +31,11 @@ import { PageResponseMetaDto } from 'src/utils/page-response-meta.dto';
 import { PageOptionsDto } from 'src/utils/page-options-dto';
 import { BookQuery } from './query/book.query';
 import { UpdateBookDto } from './dto/update-book.dto';
-import { FilesInterceptor } from '@nestjs/platform-express';
+import { FileInterceptor, FilesInterceptor } from '@nestjs/platform-express';
 import { PriceFilterDto } from './dto/filter-by-price.dto';
 import { RatingFilterDto } from './dto/filter-by-rating.dto';
 import { Public } from 'src/common/decorators/public.decorator';
+import { Response } from 'express';
 
 const {
   BOOKS: {
@@ -48,6 +51,8 @@ const {
     ACTIVE,
     INACTIVE,
     NEW_SEARCH,
+    EXPORT_EXCEL,
+    IMPORT_EXCEL,
   },
 } = END_POINTS;
 
@@ -258,5 +263,34 @@ export class BooksController {
       itemCount: itemCount,
     });
     return new PageResponseDto(books, meta);
+  }
+  @Public()
+  @Get(EXPORT_EXCEL)
+  async exportExcel(@Res() res: Response, @Body() body: { books: string[] }) {
+    const buffer = await this.bookService.generateExcel(body.books);
+    const now = new Date();
+    const year = now.getFullYear();
+    const month = String(now.getMonth() + 1).padStart(2, '0');
+    const day = String(now.getDate()).padStart(2, '0');
+    const hours = String(now.getHours()).padStart(2, '0');
+    const minutes = String(now.getMinutes()).padStart(2, '0');
+
+    const fileName = `Cập nhật tồn kho ban đầu_${year}${month}${day}_${hours}${minutes}.xlsx`;
+    res.setHeader(
+      'Content-Disposition',
+      `attachment; filename*=UTF-8''${encodeURIComponent(fileName)}`,
+    );
+
+    res.type(
+      'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    );
+    res.send(buffer);
+  }
+
+  @Post(IMPORT_EXCEL)
+  @UseInterceptors(FileInterceptor('file'))
+  async uploadFile(@UploadedFile() file: Express.Multer.File) {
+    const data = await this.bookService.readInventoryExcel(file?.buffer);
+    return { message: 'File processed successfully', data };
   }
 }
