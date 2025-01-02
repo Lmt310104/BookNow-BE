@@ -72,7 +72,7 @@ model Books {
   updated_at          DateTime              @updatedAt
   unaccent            String?               @db.Text
   supplier_id         String?
-  sku                 String?               @unique @default(cuid())
+  sku                 String?               @unique
   Supplier            Supplier?             @relation(fields: [supplier_id], references: [id])
   Category            Category              @relation(fields: [category_id], references: [id])
   OrderItems          OrderItems[]

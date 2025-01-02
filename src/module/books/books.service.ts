@@ -14,6 +14,32 @@ export class BooksService {
   constructor(private readonly prismaService: PrismaService) {}
 
   async getAllBooks(bookQuery: BookQuery) {
+    const AND = [
+      {
+        price: {
+          ...(bookQuery.min_price && { gte: bookQuery.min_price }),
+          ...(bookQuery.max_price && { lte: bookQuery.max_price }),
+        },
+      },
+      {
+        avg_stars: {
+          ...(bookQuery.min_star && { gte: bookQuery.min_star }),
+          ...(bookQuery.max_star && { lte: bookQuery.max_star }),
+        },
+      },
+      ...(bookQuery.categoryId
+        ? [
+            {
+              Category: { id: bookQuery.categoryId },
+            },
+          ]
+        : []),
+    ].filter(
+      (condition) =>
+        Object.keys(condition).length > 0 &&
+        Object.keys(Object.values(condition)[0]).length > 0,
+    );
+
     const condition1 =
       bookQuery.search?.replace(/\s+/g, '&').trim() ??
       bookQuery.title?.replace(/\s+/g, '&').trim();
@@ -82,13 +108,7 @@ export class BooksService {
           ],
         }),
         ...(bookQuery.status ? { status: bookQuery.status } : {}),
-        ...(bookQuery.min_price && { price: { gte: bookQuery.min_price } }),
-        ...(bookQuery.max_price && { price: { lte: bookQuery.max_price } }),
-        ...(bookQuery.min_star && { avg_stars: { gte: bookQuery.min_star } }),
-        ...(bookQuery.max_star && { avg_stars: { lte: bookQuery.max_star } }),
-        ...(bookQuery.categoryId && {
-          Category: { id: bookQuery.categoryId },
-        }),
+        AND: AND,
       },
       include: {
         Category: true,
@@ -170,10 +190,7 @@ export class BooksService {
           ],
         }),
         ...(bookQuery.status ? { status: bookQuery.status } : {}),
-        ...(bookQuery.min_price && { price: { gte: bookQuery.min_price } }),
-        ...(bookQuery.max_price && { price: { lte: bookQuery.max_price } }),
-        ...(bookQuery.min_star && { avg_stars: { gte: bookQuery.min_star } }),
-        ...(bookQuery.max_star && { avg_stars: { lte: bookQuery.max_star } }),
+        AND: AND,
       },
     });
     return { books, itemCount };
@@ -187,6 +204,7 @@ export class BooksService {
       stockQuantity,
       description,
       supplierId,
+      sku,
     } = body;
     const category = await this.prismaService.category.findFirst({
       where: { id: categoryId },
@@ -200,6 +218,12 @@ export class BooksService {
     if (!supplier) {
       throw new BadRequestException('Supplier not found');
     }
+    const existingBook = await this.prismaService.books.findUnique({
+      where: { sku },
+    });
+    if (existingBook) {
+      throw new BadRequestException('Book already exists with this SKU');
+    }
     let imageUrls = [];
     try {
       if (images.length > 0) {
@@ -212,7 +236,6 @@ export class BooksService {
         }
         imageUrls = uploadImagesData.urls;
       }
-      console.log(body.authors);
       let authorName = '';
       for (let i = 0; i < body.authors.length; i++) {
         const author = await this.prismaService.authors.findFirstOrThrow({
@@ -231,6 +254,7 @@ export class BooksService {
           stock_quantity: parseInt(stockQuantity, 10),
           description,
           image_url: imageUrls,
+          sku,
         },
       });
       for (let i = 0; i < body.authors.length; i++) {

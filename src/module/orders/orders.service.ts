@@ -491,6 +491,7 @@ export class OrderService {
             HttpStatusCode.BAD_REQUEST,
           );
         }
+        const is_hidden = type.trim() === ReviewType.NEGATIVE;
         const review = await tx.reviews.create({
           data: {
             user_id: session.id,
@@ -500,6 +501,7 @@ export class OrderService {
             title: dto.title,
             order_item_id: orderDetailId,
             type: type.trim() as ReviewType,
+            is_hidden: is_hidden,
           },
           include: {
             book: true,
