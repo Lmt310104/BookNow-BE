@@ -245,7 +245,10 @@ export class OrderService {
     ) {
       throw new BadRequestException('Order already cancelled or rejected');
     }
-    if (dto.status === ORDER_STATUS.REJECT) {
+    if (
+      dto.status === ORDER_STATUS.REJECT &&
+      order.status === ORDER_STATUS.PROCESSING
+    ) {
       try {
         return await this.prisma.$transaction(async (tx) => {
           await tx.orders.update({
@@ -496,7 +499,7 @@ export class OrderService {
             description: dto.description,
             title: dto.title,
             order_item_id: orderDetailId,
-            type: type as ReviewType,
+            type: type.trim() as ReviewType,
           },
           include: {
             book: true,
