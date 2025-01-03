@@ -188,7 +188,6 @@ model Reviews {
   rating          Decimal
   is_hidden       Boolean       @default(false)
   description     String
-  is_disable      Boolean       @default(false)
   state           ReviewState   @default(UNREVIEW)
   type            ReviewType
   reply_review_id Int?
