@@ -1,3 +1,4 @@
+/* eslint-disable prettier/prettier */
 import { BadRequestException, HttpException, Injectable } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateBookDto } from './dto/create-book.dto';
@@ -10,6 +11,7 @@ import { PriceFilterDto } from './dto/filter-by-price.dto';
 import { RatingFilterDto } from './dto/filter-by-rating.dto';
 import * as ExcelJS from 'exceljs';
 import { Buffer } from 'buffer';
+import { TUserSession } from 'src/common/decorators/user-session.decorator';
 
 @Injectable()
 export class BooksService {
@@ -252,10 +254,10 @@ export class BooksService {
       }
       let authorName = '';
       for (let i = 0; i < body.authors.length; i++) {
-        const author = await this.prismaService.authors.findFirstOrThrow({
+        const author = await this.prismaService.authors.findFirst({
           where: { id: body.authors[i].toString() },
         });
-        authorName += author.name + ' ';
+        authorName +=  author ? author.name + ' ': '';
       }
       const newBook = await this.prismaService.books.create({
         data: {
@@ -272,12 +274,17 @@ export class BooksService {
         },
       });
       for (let i = 0; i < body.authors.length; i++) {
-        await this.prismaService.bookAuthor.create({
-          data: {
-            book_id: newBook.id,
-            author_id: body.authors[i],
-          },
+        const author = await this.prismaService.authors.findFirst({
+          where: { id: body.authors[i].toString() },
         });
+        if (author) {
+          await this.prismaService.bookAuthor.create({
+            data: {
+              book_id: newBook.id,
+              author_id: body.authors[i],
+            },
+          });
+        }
       }
       const book = await this.prismaService.books.findFirst({
         where: { id: newBook.id },
@@ -664,7 +671,6 @@ export class BooksService {
     const buffer = await workbook.xlsx.writeBuffer();
     return Buffer.from(buffer);
   }
-
   private setupMergedCells(worksheet: ExcelJS.Worksheet) {
     // Merge cells for instructions
     worksheet.mergeCells('A1:D1');
@@ -923,6 +929,223 @@ export class BooksService {
       return data;
     } catch (error) {
       throw new HttpException(error.message, 400);
+    }
+  }
+  async getRecommendBooksByCategory(query: BookQuery, bookId: string) {
+    try{
+      const book = await this.prismaService.books.findFirst({
+        where: { id: bookId },
+      });
+      const books = await this.prismaService.books.findMany({
+        where: {
+          Category: {
+            id: book.category_id,
+          },
+          id: {
+            not: book.id,
+          },
+        },
+        take: query.take,
+        skip: query.skip,
+        orderBy: { [query.sortBy]: query.order },
+      });
+      const itemCount = await this.prismaService.books.count({
+        where: {
+          Category: {
+            id: book.category_id,
+          },
+          id: {
+            not: book.id,
+          },
+        },
+      });
+      return {books, itemCount};
+    } 
+    catch(error){
+      throw new BadRequestException(error.message);
+    }
+  }
+  async getAllBookByAuthor(query: BookQuery, bookId: string) {
+    try {
+      const bookAuthors = await this.prismaService.bookAuthor.findMany({
+        where: {
+          book_id: bookId,
+        },
+      });
+      const authorsId = bookAuthors.map((author) => author.author_id);
+      const authors = await this.prismaService.authors.findMany({
+        where: {
+          id: {
+            in: authorsId,
+          },
+        },
+      });
+      console.log(authors)
+      
+
+      const searchCondition = authors
+      .map((author) => author.name.trim().split(/\s+/).filter(Boolean).join('&')) 
+      .join(' | ');
+    
+     console.log('searchCondition', searchCondition);  
+      const books = await this.prismaService.books.findMany({
+        where: {
+          OR: [
+            {
+              author : {
+                search: searchCondition,
+                mode: 'insensitive',
+              }
+            },
+            {
+              description: {
+                search: searchCondition,
+                mode: 'insensitive',
+              }
+            },
+            {
+              title: {
+                search: searchCondition,
+                mode: 'insensitive',
+              }
+            }
+          ],
+        },
+        take: query.take,
+        skip: query.skip,
+        orderBy: {
+          _relevance: {
+            fields: ['author', 'description', 'title'],
+            search: searchCondition,
+            sort: 'desc',
+          },
+        },
+      });
+      
+      const itemCount = await this.prismaService.books.count({
+        where: {
+          OR: [
+            {
+              author : {
+                search: searchCondition,
+                mode: 'insensitive',
+              }
+            },
+            {
+              description: {
+                search: searchCondition,
+                mode: 'insensitive',
+              }
+            },
+            {
+              title: {
+                search: searchCondition,
+                mode: 'insensitive',
+              }
+            }
+          ],
+        },
+      });
+      return { books, itemCount };
+    }
+    catch(error){
+      console.log('Error:', error.message);
+      throw new BadRequestException(error.message);
+    }
+  }
+  async getRecommendBooksByCart(user: TUserSession, query: BookQuery) {
+    try {
+      const cart = await this.prismaService.carts.findFirst({
+        where: {
+          user_id: user.id,
+        },
+        include: {
+          CartItems: {
+            select:  {
+              book_id: true,
+            }
+          },
+        }
+      });
+      const bookAuthors = await this.prismaService.bookAuthor.findMany({
+        where: {
+          book_id: {
+            in: cart.CartItems.map((book) => book.book_id),
+          },
+        },
+      });
+      const authorsId = bookAuthors.map((author) => author.author_id);
+      const authors = await this.prismaService.authors.findMany({
+        where: {
+          id: {
+            in: authorsId,
+          },
+        },
+      });
+      const searchCondition = authors
+      .map((author) => author.name.trim().split(/\s+/).filter(Boolean).join('&')) 
+      .join(' | '); 
+      const books = await this.prismaService.books.findMany({
+        where: {
+          OR: [
+            {
+              author : {
+                search: searchCondition,
+                mode: 'insensitive',
+              }
+            },
+            {
+              description: {
+                search: searchCondition,
+                mode: 'insensitive',
+              }
+            },
+            {
+              title: {
+                search: searchCondition,
+                mode: 'insensitive',
+              }
+            }
+          ],
+        },
+        take: query.take,
+        skip: query.skip,
+        orderBy: {
+          _relevance: {
+            fields: ['author', 'description', 'title'],
+            search: searchCondition,
+            sort: 'desc',
+          },
+        },
+      });
+      const itemCount = await this.prismaService.books.count({
+        where: {
+          OR: [
+            {
+              author : {
+                search: searchCondition,
+                mode: 'insensitive',
+              }
+            },
+            {
+              description: {
+                search: searchCondition,
+                mode: 'insensitive',
+              }
+            },
+            {
+              title: {
+                search: searchCondition,
+                mode: 'insensitive',
+              }
+            }
+          ],
+        },
+      });
+      return {books, itemCount};
+    }
+    catch(error){
+      throw new BadRequestException(error.message);
     }
   }
 }

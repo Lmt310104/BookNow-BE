@@ -15,6 +15,4 @@ export class GetReviewsDto extends PageOptionsDto {
   @IsEnum(ReviewState)
   @IsOptional()
   state?: ReviewState;
-  @IsOptional()
-  isHidden?: boolean;
 }

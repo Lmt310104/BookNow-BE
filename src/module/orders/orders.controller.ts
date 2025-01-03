@@ -107,12 +107,12 @@ export class OrdersController {
     const message = 'Order details retrive';
     return new StandardResponse<Orders>(order, message, HttpStatusCode.OK);
   }
+  @Public()
   @Get(GET_ONE)
   async getOrderDetails(
-    @UserSession() session: TUserSession,
     @Param('id', ParseUUIDPipe) id: string,
   ): Promise<StandardResponse<Orders>> {
-    const order = await this.orderService.getOrderProductsByUser(id, session);
+    const order = await this.orderService.getOrderProductsByUser(id);
     const message = 'Order details retrieved successfully';
     return new StandardResponse<Orders>(order, message, HttpStatusCode.OK);
   }
