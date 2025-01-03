@@ -323,12 +323,23 @@ export class BooksService {
         }
         imageUrls = uploadImagesData.urls;
       }
+      let authorName = '';
+      if (dto.authors) {
+        for (let i = 0; i < dto.authors.length; i++) {
+          console.log('dto.authors[i].toString()', dto.authors[i].toString());
+          const author = await this.prismaService.authors.findUnique({
+            where: { id: dto.authors[i].toString() },
+          });
+          authorName += author ? author.name + ' ' : '';
+        }
+      }
       return await this.prismaService.$transaction(async (tx) => {
         const updatedBook = await tx.books.update({
           where: { id },
           data: {
             title: dto.title,
             description: dto.description,
+            author: authorName !== '' ? authorName : existingBook.author,
             image_url: imageUrls.length
               ? [...(dto.image_url ? dto.image_url : []), ...imageUrls]
               : existingBook.image_url,
