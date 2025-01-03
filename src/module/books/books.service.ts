@@ -903,17 +903,17 @@ export class BooksService {
                 `Missing value in row ${rowNumber}, column ${i}`,
               );
             }
-            if(i === 5 && isNaN(Number(row.getCell(i).value))){
+            if(i === 5 && (isNaN(Number(row.getCell(i).value)) || Number(row.getCell(i).value)< 0)){
               throw new BadRequestException(
                 `Invalid value in row ${rowNumber}, column ${i}`,
               );
             }
-            if(i === 6 && isNaN(Number(row.getCell(i).value))){
+            if(i === 6 && (isNaN(Number(row.getCell(i).value)) || Number(row.getCell(i).value)< 0)){
               throw new BadRequestException(
                 `Invalid value in row ${rowNumber}, column ${i}`,
               );
             }
-            if (i === 7 && isNaN(Number(row.getCell(i).value))) {
+            if (i === 7 && (isNaN(Number(row.getCell(i).value)) || Number(row.getCell(i).value)< 0)){
               throw new BadRequestException(
                 `Invalid value in row ${rowNumber}, column ${i}`,
               );
