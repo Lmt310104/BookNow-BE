@@ -186,7 +186,6 @@ model Reviews {
   book            Books         @relation(fields: [book_id], references: [id])
   title           String
   rating          Decimal
-  is_hidden       Boolean       @default(false)
   description     String
   is_disable      Boolean       @default(false)
   state           ReviewState   @default(UNREVIEW)
