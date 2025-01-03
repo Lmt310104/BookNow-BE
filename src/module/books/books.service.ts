@@ -897,6 +897,28 @@ export class BooksService {
       const data = [];
       worksheet.eachRow((row, rowNumber) => {
         if (rowNumber > 2) {
+          for (let i = 1; i <= 8; i++) {
+            if (!row.getCell(i).value) {
+              throw new BadRequestException(
+                `Missing value in row ${rowNumber}, column ${i}`,
+              );
+            }
+            if(i === 5 && isNaN(Number(row.getCell(i).value))){
+              throw new BadRequestException(
+                `Invalid value in row ${rowNumber}, column ${i}`,
+              );
+            }
+            if(i === 6 && isNaN(Number(row.getCell(i).value))){
+              throw new BadRequestException(
+                `Invalid value in row ${rowNumber}, column ${i}`,
+              );
+            }
+            if (i === 7 && isNaN(Number(row.getCell(i).value))) {
+              throw new BadRequestException(
+                `Invalid value in row ${rowNumber}, column ${i}`,
+              );
+            }
+          }
           data.push({
             productCategory: row.getCell(1).value,
             productName: row.getCell(2).value,

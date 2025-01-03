@@ -279,7 +279,7 @@ export class BooksController {
     const hours = String(now.getHours()).padStart(2, '0');
     const minutes = String(now.getMinutes()).padStart(2, '0');
 
-    const fileName = `Cập nhật tồn kho ban đầu_${year}${month}${day}_${hours}${minutes}.xlsx`;
+    const fileName = `Cập nhật tồn kho ban đầu_${minutes}${hours}_${day}${month}${year}.xlsx`;
     res.setHeader(
       'Content-Disposition',
       `attachment; filename*=UTF-8''${encodeURIComponent(fileName)}`,
