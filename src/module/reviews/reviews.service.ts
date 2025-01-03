@@ -13,14 +13,14 @@ export class ReviewsService {
     private readonly prisma: PrismaService,
     private readonly geminiService: GeminiService,
   ) {}
-  async getAllReviews(dto: GetReviewsDto) {
+  async getAllReviews(dto: GetReviewsDto, isHidden?: boolean) {
     const reviews = await this.prisma.reviews.findMany({
       where: {
         ...(dto.search && { book: { title: { contains: dto.search } } }),
         ...(dto.rating && { rating: { in: dto.rating } }),
         ...(dto.date && { created_at: { equals: new Date(dto.date) } }),
         ...(dto.state && { state: dto.state }),
-        ...(dto.isHidden && { is_hidden: Boolean(dto.isHidden) }),
+        ...(isHidden !== undefined && { is_hidden: Boolean(isHidden) }),
       },
       include: {
         book: true,

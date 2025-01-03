@@ -25,7 +25,6 @@ import { sortObject } from 'src/utils/vnpay.utils';
 import sendSMS from 'src/services/sms-gateway';
 import { GeminiService } from '../gemini/gemini.service';
 import HttpStatusCode from 'src/utils/HttpStatusCode';
-import { use } from 'passport';
 @Injectable()
 export class OrderService {
   constructor(
@@ -187,9 +186,9 @@ export class OrderService {
     });
     return { orders, itemCount };
   }
-  async getOrderProductsByUser(id: string, session: TUserSession) {
+  async getOrderProductsByUser(id: string) {
     const order = await this.prisma.orders.findUnique({
-      where: { user_id: session.id, id: id },
+      where: { id: id },
       include: {
         OrderItems: {
           include: {

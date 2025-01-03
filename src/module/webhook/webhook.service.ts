@@ -187,7 +187,11 @@ export class WebhookService {
         }
         response.fulfillmentResponse.messages.push({
           text: {
-            text: [`Đơn hàng ${order.id} - **${status}**`],
+            text: [
+              `"🔍 Kết quả tìm kiếm đơn hàng",
+                  Mã đơn hàng: #${order.id}",
+                  Tình trạng đơn hàng: ${status}`,
+            ],
           },
         });
         response.fulfillmentResponse.messages.push({
@@ -195,12 +199,20 @@ export class WebhookService {
             richContent: [
               order.OrderItems.map((orderItem) => ({
                 type: 'info',
-                title: orderItem.book.title,
-                subtitle: orderItem.book.author,
+                title: `${orderItem.book.title}`,
+                subtitle: `orderItem.book.author - Số lượng: ${orderItem.quantity} - Giá: ${orderItem.price} VNĐ`,
                 image: {
                   rawUrl: orderItem.book.image_url[0],
                 },
               })),
+            ],
+          },
+        });
+        response.fulfillmentResponse.messages.push({
+          text: {
+            text: [
+              `Tổng tiền: ${order.total_price} VNĐ`,
+              `Ngày đặt hàng: ${order.created_at.toLocaleString()}`,
             ],
           },
         });

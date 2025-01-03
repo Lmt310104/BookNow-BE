@@ -36,6 +36,10 @@ import { PriceFilterDto } from './dto/filter-by-price.dto';
 import { RatingFilterDto } from './dto/filter-by-rating.dto';
 import { Public } from 'src/common/decorators/public.decorator';
 import { Response } from 'express';
+import {
+  TUserSession,
+  UserSession,
+} from 'src/common/decorators/user-session.decorator';
 
 const {
   BOOKS: {
@@ -292,5 +296,53 @@ export class BooksController {
   async uploadFile(@UploadedFile() file: Express.Multer.File) {
     const data = await this.bookService.readInventoryExcel(file?.buffer);
     return { message: 'File processed successfully', data };
+  }
+
+  @Public()
+  @Get('recommend-by-author/:bookId')
+  async getRecommendBookByAuthor(
+    @Query() query: BookQuery,
+    @Param('bookId', ParseUUIDPipe) bookId: string,
+  ) {
+    const { books, itemCount } = await this.bookService.getAllBookByAuthor(
+      query,
+      bookId,
+    );
+    const meta = new PageResponseMetaDto({
+      pageOptionsDto: query,
+      itemCount: itemCount,
+    });
+    return new PageResponseDto(books, meta);
+  }
+
+  @Public()
+  @Get('recommend-by-category/:bookId')
+  async getBookRecommendByCategory(
+    @Query() query: BookQuery,
+    @Param('bookId', ParseUUIDPipe) bookId: string,
+  ) {
+    const { books, itemCount } =
+      await this.bookService.getRecommendBooksByCategory(query, bookId);
+    const meta = new PageResponseMetaDto({
+      pageOptionsDto: query,
+      itemCount: itemCount,
+    });
+    return new PageResponseDto(books, meta);
+  }
+
+  @Get('recommend/cart')
+  async getRecommendBookByCart(
+    @UserSession() user: TUserSession,
+    @Query() query: BookQuery,
+  ) {
+    const { books, itemCount } = await this.bookService.getRecommendBooksByCart(
+      user,
+      query,
+    );
+    const meta = new PageResponseMetaDto({
+      pageOptionsDto: query,
+      itemCount: itemCount,
+    });
+    return new PageResponseDto(books, meta);
   }
 }

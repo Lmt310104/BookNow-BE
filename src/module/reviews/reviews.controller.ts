@@ -17,6 +17,7 @@ import { GetReviewsDto } from './dto/find-all-rating-reviews.dto';
 import { AdminReplyReviewDto } from './dto/reply-rating-reviews.dto';
 import { StandardResponse } from 'src/utils/response.dto';
 import HttpStatusCode from 'src/utils/HttpStatusCode';
+import { Public } from 'src/common/decorators/public.decorator';
 
 const {
   REVIEW: {
@@ -38,9 +39,12 @@ export class ReviewsController {
   @Get(GET_ALL)
   async getAll(
     @Query() query: GetReviewsDto,
+    @Query('isHidden') isHidden?: boolean,
   ): Promise<PageResponseDto<Reviews>> {
-    const { reviews, itemCount } =
-      await this.reviewService.getAllReviews(query);
+    const { reviews, itemCount } = await this.reviewService.getAllReviews(
+      query,
+      isHidden,
+    );
     const pageResponseMetaDto = new PageResponseMetaDto({
       pageOptionsDto: query,
       itemCount: itemCount,
@@ -63,6 +67,7 @@ export class ReviewsController {
       HttpStatusCode.CREATED,
     );
   }
+  @Public()
   @Get(GET_REVIEW_BY_BOOK_ID)
   async getReviewByBookId(
     @Param('bookId') bookId: string,

@@ -8,6 +8,7 @@ import { UpdateUserProfileDto } from './dto/update-user-profile.dto';
 import { GetAllUserDto } from './dto/get-all-user.dto';
 import { EUploadFolder, USER_IMAGE_URL } from 'src/utils/constants';
 import { uploadFilesFromFirebase } from 'src/services/files/upload';
+import { TypeUser } from '@prisma/client';
 
 @Injectable()
 export class UsersService {
@@ -50,6 +51,7 @@ export class UsersService {
       where: {
         ...(query.role && { role: query.role }),
         ...(isDisabled !== undefined && { is_disable: isDisabled }),
+        type_user: { not: TypeUser.POTENTIAL_CUSTOMER },
       },
       skip: query.skip,
       take: query.take,
@@ -106,7 +108,7 @@ export class UsersService {
       const { birthday, fullName, ...data } = dto;
       const filteredData = Object.fromEntries(
         Object.entries(data).filter(
-          ([_, value]) => value !== null && value !== '',
+          ([, value]) => value !== null && value !== '',
         ),
       );
       const updatedUser = await this.prisma.users.update({
@@ -167,6 +169,7 @@ export class UsersService {
         }),
         ...(query.role && { role: query.role }),
         ...(disable !== undefined && { is_disable: disable }),
+        type_user: { not: TypeUser.POTENTIAL_CUSTOMER },
       },
       skip: query.skip,
       take: query.take,
