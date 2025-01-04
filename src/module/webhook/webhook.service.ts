@@ -2,7 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { Request } from 'express';
 import { ConfigService } from '@nestjs/config';
-import { OrderStatus } from '@prisma/client';
+import { OrderStatus, Prisma } from '@prisma/client';
 import { GeminiService } from '../gemini/gemini.service';
 @Injectable()
 export class WebhookService {
@@ -23,28 +23,34 @@ export class WebhookService {
         bookcategory?.split(/\s+/).filter(Boolean).join(' & ');
       const books = await this.prisma.books.findMany({
         where: {
-          ...(bookname && {
-            title: {
-              contains: bookname,
-              mode: 'insensitive',
-            },
-          }),
-          ...(bookauthor && {
-            author: {
-              contains: bookauthor,
-              mode: 'insensitive',
-            },
-          }),
-          ...(bookcategory && {
-            Category: {
-              name: {
-                contains: bookcategory,
-                mode: 'insensitive',
-              },
-            },
-          }),
           ...(condition && {
             OR: [
+              {
+                ...(bookname && {
+                  title: {
+                    contains: bookname,
+                    mode: 'insensitive',
+                  },
+                }),
+              },
+              {
+                ...(bookauthor ?? {
+                  author: {
+                    contains: bookauthor,
+                    mode: 'insensitive',
+                  },
+                }),
+              },
+              {
+                ...(bookcategory && {
+                  Category: {
+                    name: {
+                      contains: bookcategory,
+                      mode: 'insensitive',
+                    },
+                  },
+                }),
+              },
               {
                 title: {
                   search: condition,
@@ -241,6 +247,73 @@ export class WebhookService {
   }
   async bookRecommendation(req: Request) {
     try {
+      const response = {
+        fulfillmentResponse: {
+          messages: [],
+        },
+      };
+      const { sessionInfo } = req.body;
+      const { parameters } = sessionInfo;
+      const { bookcategory } = parameters;
+      const condition = bookcategory?.split(/\s+/).filter(Boolean).join(' & ');
+      const books = await this.prisma.books.findMany({
+        where: {
+          ...(condition && {
+            OR: [
+              {
+                Category: {
+                  name: {
+                    contains: bookcategory,
+                    mode: 'insensitive',
+                  },
+                },
+              },
+              {
+                Category: {
+                  name: {
+                    search: condition,
+                    mode: 'insensitive',
+                  },
+                },
+              },
+            ],
+          }),
+        },
+        orderBy: [{ sold_quantity: 'desc' }, { avg_stars: 'desc' }],
+        take: 5,
+      });
+      if (books.length === 0) {
+        response.fulfillmentResponse.messages.push({
+          text: {
+            text: ['Không tìm thấy sách nào theo yêu cầu của bạn'],
+          },
+        });
+      } else {
+        response.fulfillmentResponse.messages.push({
+          text: {
+            text: [
+              `Đây là top 5 quyển sách được đề xuất cho bạn theo thể loại ${bookcategory}, hãy thử đọc nhé!`,
+            ],
+          },
+        });
+        const webUrl = this.configService.get<string>('client_url');
+        response.fulfillmentResponse.messages.push({
+          payload: {
+            richContent: [
+              books.map((book) => ({
+                type: 'info',
+                title: book.title,
+                subtitle: book.author,
+                image: {
+                  rawUrl: book.image_url[0],
+                },
+                actionLink: `${webUrl}/book/${book.id}`,
+              })),
+            ],
+          },
+        });
+      }
+      return response;
     } catch (error) {
       console.error(error);
       return {
@@ -273,11 +346,8 @@ export class WebhookService {
       };
     }
   }
-  async searchBookDetails(req: Request) {
+  async searchBookDetails(bookname?: string, bookauthor?: string) {
     try {
-      const { sessionInfo } = req.body;
-      const { parameters } = sessionInfo;
-      const { bookname, bookauthor } = parameters;
       const result = await this.geminiService.generateBookSummary(
         bookname,
         bookauthor,
@@ -292,25 +362,52 @@ export class WebhookService {
           text: [result],
         },
       });
+      const condition = (bookname + bookauthor)
+        .split(/\s+/)
+        .filter(Boolean)
+        .join(' & ');
       const book = await this.prisma.books.findFirst({
         where: {
-          ...(bookname && {
-            title: {
-              contains: bookname,
-              mode: 'insensitive',
-            },
-          }),
-          ...(bookauthor && {
-            author: {
-              contains: bookauthor,
-              mode: 'insensitive',
-            },
-          }),
+          OR: [
+            ...(bookname
+              ? [
+                  {
+                    title: {
+                      contains: bookname,
+                      mode: 'insensitive' as Prisma.QueryMode,
+                    },
+                  },
+                  {
+                    title: {
+                      search: condition,
+                      mode: 'insensitive' as Prisma.QueryMode,
+                    },
+                  },
+                ]
+              : []),
+            ...(bookauthor
+              ? [
+                  {
+                    author: {
+                      contains: bookauthor,
+                      mode: 'insensitive' as Prisma.QueryMode,
+                    },
+                  },
+                  {
+                    author: {
+                      search: condition,
+                      mode: 'insensitive' as Prisma.QueryMode,
+                    },
+                  },
+                ]
+              : []),
+          ] as Prisma.BooksWhereInput[],
         },
         include: {
           Category: true,
         },
       });
+
       if (book) {
         const existingMessage = response.fulfillmentResponse.messages.find(
           (message) => message.text && Array.isArray(message.text.text),
@@ -342,6 +439,11 @@ export class WebhookService {
           },
         });
       }
+      response.fulfillmentResponse.messages.forEach((message) => {
+        if (message.text) {
+          console.log(message.text.text);
+        }
+      });
       return response;
     } catch (error) {
       console.log(error);

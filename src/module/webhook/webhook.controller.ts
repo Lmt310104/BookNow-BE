@@ -36,7 +36,13 @@ export class WebhookController {
   @Public()
   @Post('webhook/book-details')
   async searchBookDetails(@Req() req: Request) {
-    const response = await this.webhookService.searchBookDetails(req);
+    const { sessionInfo } = req.body;
+    const { parameters } = sessionInfo;
+    const { bookname, bookauthor } = parameters;
+    const response = await this.webhookService.searchBookDetails(
+      bookname,
+      bookauthor,
+    );
     return response;
   }
 }

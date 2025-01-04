@@ -123,7 +123,8 @@ export class BooksService {
       include: {
         Category: true,
       },
-      orderBy: bookQuery.search
+      orderBy: [
+        condition1 !== undefined
         ? {
             _relevance: {
               fields: ['title', 'description', 'author'],
@@ -131,7 +132,10 @@ export class BooksService {
               sort: 'desc',
             },
           }
-        : { [bookQuery.sortBy]: bookQuery.order },
+        : {}
+        ,{ [bookQuery.sortBy]: bookQuery.order }
+
+      ],
       skip: bookQuery.skip,
       take: bookQuery.take,
     });
