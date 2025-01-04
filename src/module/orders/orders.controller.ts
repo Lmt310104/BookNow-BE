@@ -135,11 +135,9 @@ export class OrdersController {
     return new StandardResponse(review, message, HttpStatusCode.CREATED);
   }
 
+  @Public()
   @Post(CREATE_PAYMENT_URL_WITH_MOMO)
-  async createPaymentUrlWithMomo(
-    @UserSession() session: TUserSession,
-    @Body() dto: CreatePaymentUrlDto,
-  ) {
+  async createPaymentUrlWithMomo(@Body() dto: CreatePaymentUrlDto) {
     const paymentUrl = await this.orderService.createPaymentUrlWithMomo(dto);
     const message = 'Payment url created successfully';
     return new StandardResponse(paymentUrl, message, HttpStatusCode.CREATED);

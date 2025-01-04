@@ -920,27 +920,31 @@ export class OrderService {
                         book: true,
                       },
                     },
+                    user: true,
                   },
                 });
-                await this.emailService.sendOrderProcessing({
-                  order: {
-                    ...newOrder,
-                    total_price: Number(newOrder.total_price),
-                    payment_method: PAYMENT_METHOD[newOrder.payment_method],
-                    OrderItems: newOrder.OrderItems.map((item) => ({
-                      ...item,
-                      Book: item.book,
-                      price: Number(item.price),
-                      total_price: Number(item.total_price),
-                    })),
-                  },
-                  user,
-                });
-                await sendSMS({
-                  to: user.phone,
-                  content: `Đơn hàng ${order.id} của bạn đã được thanh toán và đang được xử lý. Cảm ơn bạn đã mua hàng tại BookNow!`,
-                });
-
+                if (user.email) {
+                  await this.emailService.sendOrderProcessing({
+                    order: {
+                      ...newOrder,
+                      total_price: Number(newOrder.total_price),
+                      payment_method: PAYMENT_METHOD[newOrder.payment_method],
+                      OrderItems: newOrder.OrderItems.map((item) => ({
+                        ...item,
+                        Book: item.book,
+                        price: Number(item.price),
+                        total_price: Number(item.total_price),
+                      })),
+                    },
+                    user,
+                  });
+                }
+                if (user.phone) {
+                  await sendSMS({
+                    to: user.phone,
+                    content: `Đơn hàng ${order.id} của bạn đã được thanh toán và đang được xử lý. Cảm ơn bạn đã mua hàng tại BookNow!`,
+                  });
+                }
                 res.status(200).json({ RspCode: '00', Message: 'Success' });
               } else {
                 res.status(200).json({ RspCode: '00', Message: 'Success' });
@@ -1112,24 +1116,28 @@ export class OrderService {
         const user = await this.prisma.users.findUnique({
           where: { id: order.user_id },
         });
-        await this.emailService.sendOrderProcessing({
-          order: {
-            ...newOrder,
-            total_price: Number(newOrder.total_price),
-            payment_method: PAYMENT_METHOD[newOrder.payment_method],
-            OrderItems: newOrder.OrderItems.map((item) => ({
-              ...item,
-              Book: item.book,
-              price: Number(item.price),
-              total_price: Number(item.total_price),
-            })),
-          },
-          user,
-        });
-        await sendSMS({
-          to: user.phone,
-          content: `Đơn hàng ${order.id} của bạn đã được thanh toán và đang được xử lý. Cảm ơn bạn đã mua hàng tại BookNow!`,
-        });
+        if (user.email) {
+          await this.emailService.sendOrderProcessing({
+            order: {
+              ...newOrder,
+              total_price: Number(newOrder.total_price),
+              payment_method: PAYMENT_METHOD[newOrder.payment_method],
+              OrderItems: newOrder.OrderItems.map((item) => ({
+                ...item,
+                Book: item.book,
+                price: Number(item.price),
+                total_price: Number(item.total_price),
+              })),
+            },
+            user,
+          });
+        }
+        if (user.phone) {
+          await sendSMS({
+            to: user.phone,
+            content: `Đơn hàng ${order.id} của bạn đã được thanh toán và đang được xử lý. Cảm ơn bạn đã mua hàng tại BookNow!`,
+          });
+        }
         result.return_code = 1;
         result.return_message = 'Success';
       }
@@ -1247,7 +1255,7 @@ export class OrderService {
             if (userPotential.phone) {
               await sendSMS({
                 to: userPotential.phone,
-                content: `Cảm ơn bạn đã đặt hàng tại BookNow, xin chân thành cảm ơn, mã đơn đặt hàng của bạn là ${order.id}. Bạn có thể tra cứu qua website của chúng tôi`,
+                content: `Cảm ơn bạn đã đặt hàng tại BookNow, xin chân thành cảm ơn, mã đơn đặt hàng của bạn là ${order.id} - Tổng tiền: ${order.total_price}. Bạn có thể tra cứu qua chatbot tại website của chúng tôi`,
               });
             }
           } else {

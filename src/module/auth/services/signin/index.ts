@@ -17,6 +17,7 @@ class SignInService {
   public async SignInByEmail(body: SignInByEmailDto, res: Response) {
     const { email, password } = body;
     const CAUSE = 'Email or password is incorrect or user has been disabled';
+    console.log(email, password);
     const user = await this.prisma.users.findFirst({
       where: { email: email, is_disable: false },
       select: {
@@ -26,6 +27,7 @@ class SignInService {
         verification: true,
       },
     });
+    console.log(user);
     if (!user) {
       throw new BadRequestException(CAUSE, {
         cause: new Error(CAUSE),
@@ -38,9 +40,7 @@ class SignInService {
     }
     const isMatchPassword = await bcrypt.compare(password, user.password);
     if (!isMatchPassword) {
-      throw new BadRequestException(CAUSE, {
-        cause: new Error(CAUSE),
-      });
+      throw new BadRequestException('Password is incorrect');
     }
     const jwts = await this.generateToken({ id: user.id, role: user.role });
     await this.prisma.users.update({
