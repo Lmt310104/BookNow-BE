@@ -222,8 +222,8 @@ model Address {
 model Supplier {
   id       String  @id @default(uuid())
   name     String  @unique
-  phone    String  @unique
-  email    String  @unique
+  phone    String
+  email    String
   address  String
   active   Boolean @default(true)
   unaccent String? @db.Text

@@ -153,6 +153,7 @@ export class ReviewsService {
         ...(query.rating && { rating: { in: query.rating } }),
         ...(query.date && { created_at: { equals: new Date(query.date) } }),
         ...(query.state && { state: query.state }),
+        is_hidden: false,
       },
       include: {
         book: true,

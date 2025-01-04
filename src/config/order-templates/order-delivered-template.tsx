@@ -6,7 +6,7 @@ interface OrderSuccessProps {
   userName: string;
 }
 
-export const OrderSuccess = ({ order, userName }: OrderSuccessProps) => {
+export const OrderDelivered = ({ order, userName }: OrderSuccessProps) => {
   return (
     <Html>
       <Head />
@@ -14,16 +14,19 @@ export const OrderSuccess = ({ order, userName }: OrderSuccessProps) => {
         The sales intelligence platform that helps you uncover qualified leads.
       </Preview>
       <Body style={main}>
-        <h1 style={title}>BookNow - Đơn hàng đã được giao thành công</h1>
-        <p style={paragraph}>Hi {userName},</p>
-        <p style={paragraph}>
-          Đơn đặt hàng của bạn đã được giao thành công vào{' '}
+        <h1 style={title}>
+          BOOKNOW - Đơn hàng đã được giao cho đơn vị vận chuyển vào ngày{' '}
           {order.delivered_at.toLocaleDateString('vi-VN', {
             day: '2-digit',
             month: '2-digit',
             year: 'numeric',
           })}
-          . Dưới đây là chi tiết đơn hàng của bạn:
+        </h1>
+        <p style={paragraph}>Hi {userName},</p>
+        <p style={paragraph}>
+          BookNow xin chân thành cảm ơn bạn vì đã mua hàng. Đơn đặt hàng của bạn
+          đã được giao cho đơn vị vận chuyển. Dưới đây là chi tiết đơn hàng của
+          bạn:
         </p>
         <p style={paragraph}>
           <strong>Mã đơn hàng:</strong> {order.id}
@@ -88,6 +91,7 @@ const paragraph = {
   fontSize: '16px',
   lineHeight: '1.5',
 };
+
 const tableStyle = {
   width: '100%',
   borderCollapse: 'collapse' as const,

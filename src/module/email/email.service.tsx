@@ -6,7 +6,10 @@ import { renderToStaticMarkup } from 'react-dom/server';
 import ResetPasswordEmail from 'src/config/email_pwd.template';
 import WelcomeEmail from 'src/config/email_template';
 import { OrderEmailTemplateDto } from 'src/config/order-templates/dto/order-email-template-dto';
+import { OrderDelivered } from 'src/config/order-templates/order-delivered-template';
 import { OrderProcessing } from 'src/config/order-templates/order-processing-template';
+import { OrderRejected } from 'src/config/order-templates/order-rejected-template';
+import { OrderSuccess } from 'src/config/order-templates/order-success-template';
 
 @Injectable()
 export class EmailService {
@@ -93,7 +96,7 @@ export class EmailService {
     user: Users;
   }) {
     const emailHtml = renderToStaticMarkup(
-      <OrderProcessing order={order} userName={user.full_name} />,
+      <OrderRejected order={order} userName={user.full_name} />,
     );
     const mailOptions = {
       from: this.configService.get<string>('smtp_user'),
@@ -111,7 +114,7 @@ export class EmailService {
     user: Users;
   }) {
     const emailHtml = renderToStaticMarkup(
-      <OrderProcessing order={order} userName={user.full_name} />,
+      <OrderSuccess order={order} userName={user.full_name} />,
     );
     const mailOptions = {
       from: this.configService.get<string>('smtp_user'),
@@ -129,7 +132,7 @@ export class EmailService {
     user: Users;
   }) {
     const emailHtml = renderToStaticMarkup(
-      <OrderProcessing order={order} userName={user.full_name} />,
+      <OrderDelivered order={order} userName={user.full_name} />,
     );
     const mailOptions = {
       from: this.configService.get<string>('smtp_user'),
