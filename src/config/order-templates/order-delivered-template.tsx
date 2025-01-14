@@ -34,7 +34,14 @@ export const OrderDelivered = ({ order, userName }: OrderSuccessProps) => {
           <strong>Mã đơn hàng:</strong> {order.id}
         </p>
         <p style={paragraph}>
-          <strong>Ngày đặt hàng:</strong> {order.created_at.toTimeString()}
+          <strong>Ngày đặt hàng:</strong>{' '}
+          {order.created_at.toLocaleDateString('vi-VN', {
+            hour: '2-digit',
+            minute: '2-digit',
+            day: '2-digit',
+            month: '2-digit',
+            year: 'numeric',
+          })}
         </p>
         <p style={paragraph}>
           <strong>Tổng giá trị đơn hàng:</strong>{' '}
