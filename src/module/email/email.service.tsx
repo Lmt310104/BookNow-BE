@@ -83,7 +83,7 @@ export class EmailService {
     const mailOptions = {
       from: this.configService.get<string>('smtp_user'),
       to: user.email,
-      subject: 'Order Processing',
+      subject: 'Đơn hàng đang được xử lý',
       html: emailHtml,
     };
     await this.transporter.sendMail(mailOptions);
@@ -101,7 +101,7 @@ export class EmailService {
     const mailOptions = {
       from: this.configService.get<string>('smtp_user'),
       to: user.email,
-      subject: 'Order Processing',
+      subject: 'Đơn hàng đã bị hủy bỏ',
       html: emailHtml,
     };
     await this.transporter.sendMail(mailOptions);
@@ -119,7 +119,7 @@ export class EmailService {
     const mailOptions = {
       from: this.configService.get<string>('smtp_user'),
       to: user.email,
-      subject: 'Order Processing',
+      subject: 'Đơn hàng đã giao thành công',
       html: emailHtml,
     };
     await this.transporter.sendMail(mailOptions);
@@ -137,7 +137,7 @@ export class EmailService {
     const mailOptions = {
       from: this.configService.get<string>('smtp_user'),
       to: user.email,
-      subject: 'Order Processing',
+      subject: 'Đơn hàng đang được vận chuyển',
       html: emailHtml,
     };
     await this.transporter.sendMail(mailOptions);
@@ -155,7 +155,7 @@ export class EmailService {
     const mailOptions = {
       from: this.configService.get<string>('smtp_user'),
       to: user.email,
-      subject: 'Order Failed to deliver',
+      subject: 'Đơn hàng giao thất bại',
       html: emailHtml,
     };
     await this.transporter.sendMail(mailOptions);

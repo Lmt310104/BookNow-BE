@@ -15,10 +15,12 @@ export const OrderSuccess = ({ order, userName }: OrderSuccessProps) => {
       </Preview>
       <Body style={main}>
         <h1 style={title}>BookNow - Đơn hàng đã được giao thành công</h1>
-        <p style={paragraph}>Hi {userName},</p>
+        <p style={paragraph}>Xin chào {userName},</p>
         <p style={paragraph}>
           Đơn đặt hàng của bạn đã được giao thành công vào{' '}
           {order.delivered_at.toLocaleDateString('vi-VN', {
+            hour: '2-digit',
+            minute: '2-digit',
             day: '2-digit',
             month: '2-digit',
             year: 'numeric',
@@ -29,14 +31,32 @@ export const OrderSuccess = ({ order, userName }: OrderSuccessProps) => {
           <strong>Mã đơn hàng:</strong> {order.id}
         </p>
         <p style={paragraph}>
-          <strong>Ngày đặt hàng:</strong> {order.created_at.toTimeString()}
+          <strong>Ngày đặt hàng:</strong>{' '}
+          {order.created_at.toLocaleDateString('vi-VN', {
+            hour: '2-digit',
+            minute: '2-digit',
+            day: '2-digit',
+            month: '2-digit',
+            year: 'numeric',
+          })}
         </p>
         <p style={paragraph}>
-          <strong>Tổng giá trị đơn hàng:</strong> {order.total_price.toString()}{' '}
+          <strong>Tổng giá trị đơn hàng:</strong>{' '}
+          {order.total_price.toLocaleString('vi-VN', {
+            style: 'currency',
+            currency: 'VND',
+          })}
           VND
         </p>
         <p style={paragraph}>
-          <strong>Phương thức thanh toán:</strong> {order.payment_method}
+          <strong>Phương thức thanh toán:</strong>{' '}
+          {order.payment_method === 'COD'
+            ? 'Thanh toán khi nhận hàng'
+            : order.payment_method}
+        </p>
+        <p style={paragraph}>
+          <strong>Thông tin người nhân hàng:</strong>{' '}
+          {order.full_name + ' - SĐT: ' + order.phone_number}
         </p>
         <p style={paragraph}>
           <strong>Địa chỉ nhận hàng:</strong> {order.address}

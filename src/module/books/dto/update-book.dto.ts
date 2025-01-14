@@ -1,4 +1,4 @@
-import { IsArray, IsOptional, IsString } from 'class-validator';
+import { IsArray, IsNumber, IsOptional, IsString } from 'class-validator';
 
 export class UpdateBookDto {
   @IsString({ message: 'Title is string' })
@@ -31,4 +31,8 @@ export class UpdateBookDto {
 
   @IsOptional()
   price: string;
+
+  @IsNumber()
+  @IsOptional()
+  stockQuantity: number;
 }

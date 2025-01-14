@@ -61,4 +61,21 @@ Respond with only the category name, without any additional explanation:`;
       throw new Error(`Failed to analyse comment: ${error.message}`);
     }
   }
+  async navigateCommand(command: string): Promise<string> {
+    try {
+      if (!command) {
+        throw new Error('Command is required');
+      }
+      const prompt =
+        `Bạn là chatbot tư vấn sách, bạn có khả năng tìm kiếm sách, tư vấn sách và nêu chi tiết sách cho khách hàng, không cần lặp lại điều đó trong câu trả lời, hãy trả lời câu hỏi sau: ` +
+        command;
+      const result = await this.model.generateContent([prompt]);
+      const response = await result.response.text();
+      console.log('Response:', response);
+      return response;
+    } catch (error) {
+      console.error('Error navigating command:', error);
+      throw new Error(`Failed to navigate command: ${error.message}`);
+    }
+  }
 }

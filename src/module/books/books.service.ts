@@ -336,6 +336,9 @@ export class BooksService {
       }
       let authorName = '';
       if (dto.authors) {
+        await this.prismaService.bookAuthor.deleteMany({
+          where: { book_id: id },
+        })
         for (let i = 0; i < dto.authors.length; i++) {
           console.log('dto.authors[i].toString()', dto.authors[i].toString());
           const author = await this.prismaService.authors.findUnique({
@@ -357,6 +360,7 @@ export class BooksService {
             category_id: dto.categoryId ?? existingBook.category_id,
             price: dto?.price ?? existingBook.price,
             entry_price: dto?.entryPrice ?? existingBook.entry_price,
+            stock_quantity: dto?.stockQuantity ?? existingBook.stock_quantity,
           },
         });
         return updatedBook;
