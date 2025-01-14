@@ -28,8 +28,8 @@ export class WebhookController {
 
   @Public()
   @Post('webhook/order-book')
-  async orderBook(@Req() req: Request) {
-    const response = await this.webhookService.orderBook(req);
+  async orderBook() {
+    const response = await this.webhookService.orderBook();
     return response;
   }
 
@@ -43,6 +43,12 @@ export class WebhookController {
       bookname,
       bookauthor,
     );
+    return response;
+  }
+  @Public()
+  @Post('webhook/bot-navigate')
+  async navigateBook(@Req() req: Request) {
+    const response = await this.webhookService.navigateBook(req);
     return response;
   }
 }

@@ -329,7 +329,7 @@ export class WebhookService {
       };
     }
   }
-  async orderBook(req: Request) {
+  async orderBook() {
     try {
     } catch (error) {
       console.error(error);
@@ -459,5 +459,99 @@ export class WebhookService {
         },
       };
     }
+  }
+  async navigateBook(req: Request) {
+    try {
+      console.log(req.body);
+      const { text } = req.body;
+      const result = await this.geminiService.navigateCommand(text);
+      const response = {
+        fulfillmentResponse: {
+          messages: [],
+        },
+      };
+      response.fulfillmentResponse.messages.push({
+        text: {
+          text: [result],
+        },
+      });
+      const booksCondition = this.extractBooks(result);
+      const condition = booksCondition.map((book) =>
+        book
+          .replace(/[^a-zA-Z0-9\sÀ-ỹ]/g, '')
+          .split(/\s+/)
+          .filter(Boolean)
+          .join(' & '),
+      );
+      const finalCondition = condition.join(' | ');
+      console.log(finalCondition);
+      if (finalCondition) {
+        const books = await this.prisma.books.findMany({
+          where: {
+            OR: [
+              {
+                title: {
+                  search: finalCondition,
+                  mode: 'insensitive',
+                },
+              },
+              {
+                description: {
+                  search: finalCondition,
+                  mode: 'insensitive',
+                },
+              },
+              {
+                Category: {
+                  name: {
+                    search: finalCondition,
+                    mode: 'insensitive',
+                  },
+                },
+              },
+            ],
+          },
+        });
+        const webUrl = this.configService.get<string>('client_url');
+        response.fulfillmentResponse.messages.push({
+          payload: {
+            richContent: [
+              books.map((book) => ({
+                type: 'info',
+                title: book.title,
+                subtitle: book.author,
+                image: {
+                  rawUrl: book.image_url[0],
+                },
+                actionLink: `${webUrl}/book/${book.id}`,
+              })),
+            ],
+          },
+        });
+      }
+      return response;
+    } catch (error) {
+      console.log(error);
+      return {
+        fulfillmentResponse: {
+          messages: [
+            {
+              text: {
+                text: ['Đã xảy ra lỗi'],
+              },
+            },
+          ],
+        },
+      };
+    }
+  }
+  extractBooks(response) {
+    const bookPattern = /\*\*(.*?)\*\*/g;
+    const books = [];
+    let match;
+    while ((match = bookPattern.exec(response)) !== null) {
+      books.push(match[1]);
+    }
+    return books;
   }
 }
