@@ -117,19 +117,33 @@ export class WebhookService {
         response.fulfillmentResponse.messages.push({
           payload: {
             richContent: [
-              books.map((book) => ({
-                type: 'info',
-                title: book.title,
-                subtitle: book.author,
-                image: {
-                  rawUrl: book.image_url[0],
-                },
-                actionLink: `${webUrl}/book/${book.id}`,
-              })),
+              books
+                .map((book) => [
+                  {
+                    type: 'image',
+                    rawUrl: book.image_url[0],
+                    accessibilityText: 'BookNow',
+                  },
+                  {
+                    type: 'info',
+                    title: book.title,
+                    subtitle: new Intl.NumberFormat('vi-VN', {
+                      style: 'currency',
+                      currency: 'VND',
+                    }).format(Number(book.price)),
+                    actionLink: `${webUrl}/book/${book.id}`,
+                  },
+                ])
+                .flat(),
             ],
           },
         });
       }
+      response.fulfillmentResponse.messages.forEach((message) => {
+        if (message.payload) {
+          console.log(message.payload.richContent);
+        }
+      });
       return response;
     } catch (error) {
       console.error(error);
@@ -300,15 +314,24 @@ export class WebhookService {
         response.fulfillmentResponse.messages.push({
           payload: {
             richContent: [
-              books.map((book) => ({
-                type: 'info',
-                title: book.title,
-                subtitle: book.author,
-                image: {
-                  rawUrl: book.image_url[0],
-                },
-                actionLink: `${webUrl}/book/${book.id}`,
-              })),
+              books
+                .map((book) => [
+                  {
+                    type: 'image',
+                    rawUrl: book.image_url[0],
+                    accessibilityText: 'BookNow',
+                  },
+                  {
+                    type: 'info',
+                    title: book.title,
+                    subtitle: new Intl.NumberFormat('vi-VN', {
+                      style: 'currency',
+                      currency: 'VND',
+                    }).format(Number(book.price)),
+                    actionLink: `${webUrl}/book/${book.id}`,
+                  },
+                ])
+                .flat(),
             ],
           },
         });
@@ -462,7 +485,6 @@ export class WebhookService {
   }
   async navigateBook(req: Request) {
     try {
-      console.log(req.body);
       const { text } = req.body;
       const result = await this.geminiService.navigateCommand(text);
       const response = {
@@ -516,15 +538,24 @@ export class WebhookService {
         response.fulfillmentResponse.messages.push({
           payload: {
             richContent: [
-              books.map((book) => ({
-                type: 'info',
-                title: book.title,
-                subtitle: book.author,
-                image: {
-                  rawUrl: book.image_url[0],
-                },
-                actionLink: `${webUrl}/book/${book.id}`,
-              })),
+              books
+                .map((book) => [
+                  {
+                    type: 'image',
+                    rawUrl: book.image_url[0],
+                    accessibilityText: 'BookNow',
+                  },
+                  {
+                    type: 'info',
+                    title: book.title,
+                    subtitle: new Intl.NumberFormat('vi-VN', {
+                      style: 'currency',
+                      currency: 'VND',
+                    }).format(Number(book.price)),
+                    actionLink: `${webUrl}/book/${book.id}`,
+                  },
+                ])
+                .flat(),
             ],
           },
         });
