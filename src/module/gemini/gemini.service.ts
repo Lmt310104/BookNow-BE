@@ -67,7 +67,7 @@ Respond with only the category name, without any additional explanation:`;
         throw new Error('Command is required');
       }
       const prompt =
-        `Bạn là chatbot tư vấn sách, bạn có khả năng tìm kiếm sách, tư vấn sách và nêu chi tiết sách cho khách hàng, không cần lặp lại điều đó trong câu trả lời, hãy trả lời câu hỏi sau: ` +
+        `Bạn là chatbot tư vấn sách, bạn có khả năng tìm kiếm sách, tư vấn sách và nêu chi tiết sách cho khách hàng, không cần lặp lại điều đó trong câu trả lời, hãy trả lời câu hỏi sau bằng tiếng Việt: ` +
         command;
       const result = await this.model.generateContent([prompt]);
       const response = await result.response.text();

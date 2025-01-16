@@ -46,7 +46,7 @@ model Users {
 model Vertifications {
   id            Int     @id @default(autoincrement())
   user_id       String  @unique
-  user          Users   @relation(fields: [user_id], references: [id])
+  user          Users   @relation(fields: [user_id], references: [id], onDelete: Cascade)
   verified_code String
   is_active     Boolean @default(false)
 }
@@ -73,8 +73,8 @@ model Books {
   unaccent            String?               @db.Text
   supplier_id         String?
   sku                 String?               @unique
-  Supplier            Supplier?             @relation(fields: [supplier_id], references: [id])
-  Category            Category              @relation(fields: [category_id], references: [id])
+  Supplier            Supplier?             @relation(fields: [supplier_id], references: [id], onDelete: Cascade)
+  Category            Category              @relation(fields: [category_id], references: [id], onDelete: Cascade)
   OrderItems          OrderItems[]
   CartItems           CartItems[]
   Reviews             Reviews[]
@@ -149,9 +149,9 @@ model Orders {
 model OrderItems {
   id            String      @id @default(uuid())
   order_id      String
-  order         Orders      @relation(fields: [order_id], references: [id])
+  order         Orders      @relation(fields: [order_id], references: [id], onDelete: Cascade)
   book_id       String
-  book          Books       @relation(fields: [book_id], references: [id])
+  book          Books       @relation(fields: [book_id], references: [id], onDelete: Cascade)
   review_status ReviewState @default(UNREVIEW)
   review_id     Int?
   review        Reviews?
@@ -163,7 +163,7 @@ model OrderItems {
 model Carts {
   id         Int         @id @default(autoincrement())
   user_id    String      @unique()
-  user       Users       @relation(fields: [user_id], references: [id])
+  user       Users       @relation(fields: [user_id], references: [id], onDelete: Cascade)
   created_at DateTime    @default(now())
   CartItems  CartItems[]
 }
@@ -171,7 +171,7 @@ model Carts {
 model CartItems {
   id         Int      @id @default(autoincrement())
   cart_id    Int
-  cart       Carts    @relation(fields: [cart_id], references: [id])
+  cart       Carts    @relation(fields: [cart_id], references: [id], onDelete: Cascade)
   book_id    String
   book       Books    @relation(fields: [book_id], references: [id])
   quantity   Int

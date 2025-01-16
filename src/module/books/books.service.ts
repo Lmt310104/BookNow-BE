@@ -360,7 +360,7 @@ export class BooksService {
             category_id: dto.categoryId ?? existingBook.category_id,
             price: dto?.price ?? existingBook.price,
             entry_price: dto?.entryPrice ?? existingBook.entry_price,
-            stock_quantity: dto?.stockQuantity ?? existingBook.stock_quantity,
+            stock_quantity: Number(dto?.stockQuantity) ?? existingBook.stock_quantity,
           },
         });
         return updatedBook;
