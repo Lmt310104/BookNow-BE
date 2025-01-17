@@ -51,7 +51,8 @@ export class GeminiService {
       if (!comment) {
         throw new Error('Comment is required');
       }
-      const prompt = `Classify the comment: "${comment}" into one of the following categories: POSITIVE, NEGATIVE, TOXIC. Provide only the category name as the response. No additional text or explanation is allowed.:`;
+      const prompt = `Analyze the following comment: "${comment}" and classify it as exactly one of the following categories: POSITIVE, NEGATIVE, or TOXIC.  
+Respond with only the category name, without any additional explanation:`;
       const result = await this.model.generateContent([prompt]);
       const response = await result.response.text();
       console.log('Response:', response);
