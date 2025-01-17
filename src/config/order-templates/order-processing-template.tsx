@@ -18,7 +18,7 @@ export const OrderProcessing = ({ order, userName }: OrderSuccessProps) => {
         <p style={paragraph}>Xin chào {userName},</p>
         <p style={paragraph}>
           BookNow xin chân thành cảm ơn bạn vì đã mua hàng. Đơn đặt hàng của bạn
-          đã được thanh toán và đang được xử lý vào ngày{' '}
+          đã được thanh toán và đang được xử lý vào {' '}
           {order.processing_at.toLocaleDateString('vi-VN', {
             hour: '2-digit',
             minute: '2-digit',

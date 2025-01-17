@@ -15,7 +15,7 @@ export const OrderDelivered = ({ order, userName }: OrderSuccessProps) => {
       </Preview>
       <Body style={main}>
         <h1 style={title}>
-          BOOKNOW - Đơn hàng đã được giao cho đơn vị vận chuyển vào ngày{' '}
+          BOOKNOW - Đơn hàng đã được giao cho đơn vị vận chuyển vào {' '}
           {order.delivered_at.toLocaleDateString('vi-VN', {
             hour: '2-digit',
             minute: '2-digit',

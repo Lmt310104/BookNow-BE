@@ -25,7 +25,6 @@ import * as qs from 'qs';
 import * as moment from 'moment';
 import { CreatePaymentUrlDto } from './dto/create-payment-url.dto';
 import { Request, Response } from 'express';
-import convertToUTC7 from 'src/utils/UTC7Transfer';
 import { EmailService } from '../email/email.service';
 import { sortObject } from 'src/utils/vnpay.utils';
 import sendSMS from 'src/services/sms-gateway';
@@ -80,9 +79,9 @@ export class OrderService {
                 phone_number: dto.phoneNumber,
                 payment_method: dto.paymentMethod,
                 address: dto.address,
-                pending_at: convertToUTC7(new Date()),
+                pending_at: new Date(),
                 status: ORDER_STATUS.PROCESSING as OrderStatus,
-                processing_at: convertToUTC7(new Date()),
+                processing_at: new Date(),
               },
             });
             order = await tx.orders.findFirst({
@@ -103,7 +102,7 @@ export class OrderService {
                 phone_number: dto.phoneNumber,
                 payment_method: dto.paymentMethod,
                 address: dto.address,
-                pending_at: convertToUTC7(new Date()),
+                pending_at: new Date(),
               },
             });
             order = orderTemp;
@@ -274,7 +273,7 @@ export class OrderService {
               where: { id },
               data: {
                 status: dto.status,
-                reject_at: convertToUTC7(new Date()),
+                reject_at: new Date(),
                 note: 'Bị hủy bởi người bán',
               },
             });
@@ -327,7 +326,7 @@ export class OrderService {
               where: { id },
               data: {
                 status: dto.status,
-                delivered_at: convertToUTC7(new Date()),
+                delivered_at: new Date(),
               },
             });
             const updatedOrder = await tx.orders.findUnique({
@@ -382,7 +381,7 @@ export class OrderService {
               where: { id },
               data: {
                 status: dto.status,
-                reject_at: convertToUTC7(new Date()),
+                reject_at: new Date(),
                 note: 'Đơn hàng giao hàng không thành công',
               },
             });
@@ -435,7 +434,7 @@ export class OrderService {
               where: { id },
               data: {
                 status: dto.status,
-                success_at: convertToUTC7(new Date()),
+                success_at: new Date(),
               },
               include: {
                 OrderItems: {
@@ -510,65 +509,70 @@ export class OrderService {
       throw new NotFoundException('Book not found');
     }
     try {
-      return await this.prisma.$transaction(async (tx) => {
-        const newTotalReviews = book.total_reviews + 1;
-        const newAvgStars =
-          (Number(book.avg_stars) * book.total_reviews + dto.star) /
-          newTotalReviews;
-        const type = await this.geminiService.analyseComment(
-          dto.title + ' ' + dto.description,
-        );
-        if (type.trim() === ReviewType.TOXIC) {
-          throw new HttpException(
-            'Your comment is toxic, please try again',
-            HttpStatusCode.BAD_REQUEST,
+      return await this.prisma.$transaction(
+        async (tx) => {
+          const newTotalReviews = book.total_reviews + 1;
+          const newAvgStars =
+            (Number(book.avg_stars) * book.total_reviews + dto.star) /
+            newTotalReviews;
+          const type = await this.geminiService.analyseComment(
+            dto.title + ' ' + dto.description,
           );
-        }
-        const is_hidden = type.trim() === ReviewType.NEGATIVE;
-        const review = await tx.reviews.create({
-          data: {
-            user_id: session.id,
-            book_id: book.id,
-            rating: dto.star,
-            description: dto.description,
-            title: dto.title,
-            order_item_id: orderDetailId,
-            type: type.trim() as ReviewType,
-            is_hidden: is_hidden,
-          },
-          include: {
-            book: true,
-          },
-        });
-        await tx.books.update({
-          where: { id: book.id },
-          data: {
-            total_reviews: newTotalReviews,
-            avg_stars: newAvgStars,
-          },
-        });
-        await tx.orderItems.update({
-          where: { id: orderDetailId },
-          data: { review_status: ReviewState.REVIEWED, review_id: review.id },
-        });
-        const orderItems = await tx.orderItems.findMany({
-          where: { order_id: id },
-        });
-        let flag = true;
-        for (const item of orderItems) {
-          if (item.review_status !== ReviewState.REVIEWED) {
-            flag = false;
-            break;
+          if (type.trim() === ReviewType.TOXIC) {
+            throw new HttpException(
+              'Your comment is toxic, please try again',
+              HttpStatusCode.BAD_REQUEST,
+            );
           }
-        }
-        if (flag) {
-          await tx.orders.update({
-            where: { id },
-            data: { review_state: ReviewState.REVIEWED },
+          const is_hidden = type.trim() === ReviewType.NEGATIVE;
+          const review = await tx.reviews.create({
+            data: {
+              user_id: session.id,
+              book_id: book.id,
+              rating: dto.star,
+              description: dto.description,
+              title: dto.title,
+              order_item_id: orderDetailId,
+              type: type.trim() as ReviewType,
+              is_hidden: is_hidden,
+            },
+            include: {
+              book: true,
+            },
           });
-        }
-        return review;
-      });
+          await tx.books.update({
+            where: { id: book.id },
+            data: {
+              total_reviews: newTotalReviews,
+              avg_stars: newAvgStars,
+            },
+          });
+          await tx.orderItems.update({
+            where: { id: orderDetailId },
+            data: { review_status: ReviewState.REVIEWED, review_id: review.id },
+          });
+          const orderItems = await tx.orderItems.findMany({
+            where: { order_id: id },
+          });
+          let flag = true;
+          for (const item of orderItems) {
+            if (item.review_status !== ReviewState.REVIEWED) {
+              flag = false;
+              break;
+            }
+          }
+          if (flag) {
+            await tx.orders.update({
+              where: { id },
+              data: { review_state: ReviewState.REVIEWED },
+            });
+          }
+          return review;
+        },
+        {
+          timeout: 20000,
+        },
+      );
     } catch (error) {
       console.log('Error:', error);
       throw new BadRequestException({
@@ -598,7 +602,7 @@ export class OrderService {
           where: { id },
           data: {
             status: ORDER_STATUS.CANCELLED as OrderStatus,
-            cancelled_at: convertToUTC7(new Date()),
+            cancelled_at: new Date(),
             note: 'Hủy bởi người mua',
           },
         });
@@ -747,7 +751,7 @@ export class OrderService {
           where: { id: orderId as string },
           data: {
             status: ORDER_STATUS.PROCESSING as OrderStatus,
-            processing_at: convertToUTC7(new Date()),
+            processing_at: new Date(),
             is_paid: true,
           },
         });
@@ -940,7 +944,7 @@ export class OrderService {
                   where: { id: orderId as string },
                   data: {
                     status: ORDER_STATUS.PROCESSING as OrderStatus,
-                    processing_at: convertToUTC7(new Date()),
+                    processing_at: new Date(),
                     is_paid: true,
                   },
                 });
@@ -1130,7 +1134,7 @@ export class OrderService {
           where: { id: orderId as string },
           data: {
             status: ORDER_STATUS.PROCESSING as OrderStatus,
-            processing_at: convertToUTC7(new Date()),
+            processing_at: new Date(),
             is_paid: true,
           },
         });
@@ -1261,9 +1265,9 @@ export class OrderService {
                 phone_number: dto.phoneNumber,
                 payment_method: dto.paymentMethod,
                 address: dto.address,
-                pending_at: convertToUTC7(new Date()),
+                pending_at: new Date(),
                 status: ORDER_STATUS.PROCESSING as OrderStatus,
-                processing_at: convertToUTC7(new Date()),
+                processing_at: new Date(),
               },
             });
             order = await tx.orders.findFirst({
@@ -1294,7 +1298,7 @@ export class OrderService {
                 phone_number: dto.phoneNumber,
                 payment_method: dto.paymentMethod,
                 address: dto.address,
-                pending_at: convertToUTC7(new Date()),
+                pending_at: new Date(),
               },
             });
             order = orderTemp;

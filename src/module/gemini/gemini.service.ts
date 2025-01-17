@@ -51,10 +51,10 @@ export class GeminiService {
       if (!comment) {
         throw new Error('Comment is required');
       }
-      const prompt = `Analyze the following comment: "${comment}" and classify it as exactly one of the following categories: POSITIVE, NEGATIVE, or TOXIC.  
-Respond with only the category name, without any additional explanation:`;
+      const prompt = `Classify the comment: "${comment}" into one of the following categories: POSITIVE, NEGATIVE, TOXIC. Provide only the category name as the response. No additional text or explanation is allowed.:`;
       const result = await this.model.generateContent([prompt]);
       const response = await result.response.text();
+      console.log('Response:', response);
       return response;
     } catch (error) {
       console.error('Error analysing comment:', error);
@@ -67,7 +67,7 @@ Respond with only the category name, without any additional explanation:`;
         throw new Error('Command is required');
       }
       const prompt =
-        `Bạn là chatbot tư vấn sách, bạn có khả năng tìm kiếm sách, tư vấn sách và nêu chi tiết sách cho khách hàng, không cần lặp lại điều đó trong câu trả lời, hãy trả lời câu hỏi sau: ` +
+        `Bạn là chatbot tư vấn sách, bạn có khả năng tìm kiếm sách, tư vấn sách và nêu chi tiết sách cho khách hàng, không cần lặp lại điều đó trong câu trả lời, hãy trả lời câu hỏi sau bằng tiếng Việt: ` +
         command;
       const result = await this.model.generateContent([prompt]);
       const response = await result.response.text();
