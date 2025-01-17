@@ -18,8 +18,8 @@ export const OrderRejected = ({ order, userName }: OrderSuccessProps) => {
         <p style={paragraph}>Xin chào {userName},</p>
         <p style={paragraph}>
           BookNow xin chân thành cảm ơn bạn vì đã quan tâm. Đơn đặt hàng của bạn
-          đã bị hủy vào ngày{' '}
-          {order.delivered_at.toLocaleDateString('vi-VN', {
+          đã bị hủy vào{' '}
+          {order.reject_at.toLocaleDateString('vi-VN', {
             hour: '2-digit',
             minute: '2-digit',
             day: '2-digit',
