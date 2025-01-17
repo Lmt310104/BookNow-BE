@@ -449,12 +449,17 @@ export class WebhookService {
             richContent: [
               [
                 {
+                  type: 'image',
+                  rawUrl: book.image_url[0],
+                  accessibilityText: 'BookNow',
+                },
+                {
                   type: 'info',
                   title: book.title,
-                  subtitle: book.author,
-                  image: {
-                    rawUrl: book.image_url[0],
-                  },
+                  subtitle: new Intl.NumberFormat('vi-VN', {
+                    style: 'currency',
+                    currency: 'VND',
+                  }).format(Number(book.price)),
                   actionLink: `${webUrl}/book/${book.id}`,
                 },
               ],
