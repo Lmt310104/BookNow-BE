@@ -344,6 +344,14 @@ export class BooksService {
           const author = await this.prismaService.authors.findUnique({
             where: { id: dto.authors[i].toString() },
           });
+          if(author){
+            await this.prismaService.bookAuthor.create({
+              data: {
+                book_id: id,
+                author_id: dto.authors[i],
+                },
+              });
+          }
           authorName += author ? author.name + ' ' : '';
         }
       }
