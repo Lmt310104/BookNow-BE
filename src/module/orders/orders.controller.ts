@@ -49,6 +49,7 @@ const {
     CREATE_PAYMENT_URL_WITH_VNPAY,
     CALLBACK_WITH_VNPAY,
     GET_PAYMENT_STATUS_WITH_VNPAY,
+    ANONYMOUS_CHECKOUT,
   },
 } = END_POINTS;
 
@@ -106,12 +107,12 @@ export class OrdersController {
     const message = 'Order details retrive';
     return new StandardResponse<Orders>(order, message, HttpStatusCode.OK);
   }
+  @Public()
   @Get(GET_ONE)
   async getOrderDetails(
-    @UserSession() session: TUserSession,
     @Param('id', ParseUUIDPipe) id: string,
   ): Promise<StandardResponse<Orders>> {
-    const order = await this.orderService.getOrderProductsByUser(id, session);
+    const order = await this.orderService.getOrderProductsByUser(id);
     const message = 'Order details retrieved successfully';
     return new StandardResponse<Orders>(order, message, HttpStatusCode.OK);
   }
@@ -134,15 +135,10 @@ export class OrdersController {
     return new StandardResponse(review, message, HttpStatusCode.CREATED);
   }
 
+  @Public()
   @Post(CREATE_PAYMENT_URL_WITH_MOMO)
-  async createPaymentUrlWithMomo(
-    @UserSession() session: TUserSession,
-    @Body() dto: CreatePaymentUrlDto,
-  ) {
-    const paymentUrl = await this.orderService.createPaymentUrlWithMomo(
-      session,
-      dto,
-    );
+  async createPaymentUrlWithMomo(@Body() dto: CreatePaymentUrlDto) {
+    const paymentUrl = await this.orderService.createPaymentUrlWithMomo(dto);
     const message = 'Payment url created successfully';
     return new StandardResponse(paymentUrl, message, HttpStatusCode.CREATED);
   }
@@ -153,15 +149,10 @@ export class OrdersController {
     await this.orderService.callbackWithMomo(req, res);
   }
 
+  @Public()
   @Post(CREATE_PAYMENT_URL_WITH_ZALO)
-  async createPaymentUrlWithZalo(
-    @UserSession() session: TUserSession,
-    @Body() dto: CreatePaymentUrlDto,
-  ) {
-    const paymentUrl = await this.orderService.createPaymentUrlWithZaloPay(
-      dto,
-      session,
-    );
+  async createPaymentUrlWithZalo(@Body() dto: CreatePaymentUrlDto) {
+    const paymentUrl = await this.orderService.createPaymentUrlWithZaloPay(dto);
     const message = 'Payment url created successfully';
     return new StandardResponse(paymentUrl, message, HttpStatusCode.CREATED);
   }
@@ -186,6 +177,7 @@ export class OrdersController {
     return result;
   }
 
+  @Public()
   @Post(CREATE_PAYMENT_URL_WITH_VNPAY)
   async createPaymentUrlWithVNPay(
     @Req() req: Request,
@@ -220,5 +212,13 @@ export class OrdersController {
     const order = await this.orderService.cancelOrder(id, session);
     const message = 'Order cancelled successfully';
     return new StandardResponse(order, message, HttpStatusCode.OK);
+  }
+
+  @Public()
+  @Post(ANONYMOUS_CHECKOUT)
+  async anonymousCheckout(@Body() dto: CreateOrderDto) {
+    const order = await this.orderService.anonymousCheckout(dto);
+    const message = 'Order created successfully';
+    return new StandardResponse(order, message, HttpStatusCode.CREATED);
   }
 }

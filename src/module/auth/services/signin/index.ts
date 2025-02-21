@@ -1,6 +1,6 @@
 import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
-import { Role } from '@prisma/client';
+import { Role, TypeUser } from '@prisma/client';
 import * as bcrypt from 'bcrypt';
 import { PrismaService } from 'src/module/prisma/prisma.service';
 import { SignInByEmailDto, SignInByPhoneDto } from '../../dto';
@@ -17,7 +17,8 @@ class SignInService {
   public async SignInByEmail(body: SignInByEmailDto, res: Response) {
     const { email, password } = body;
     const CAUSE = 'Email or password is incorrect or user has been disabled';
-    const user = await this.prisma.users.findUnique({
+    console.log(email, password);
+    const user = await this.prisma.users.findFirst({
       where: { email: email, is_disable: false },
       select: {
         id: true,
@@ -26,6 +27,7 @@ class SignInService {
         verification: true,
       },
     });
+    console.log(user);
     if (!user) {
       throw new BadRequestException(CAUSE, {
         cause: new Error(CAUSE),
@@ -38,9 +40,7 @@ class SignInService {
     }
     const isMatchPassword = await bcrypt.compare(password, user.password);
     if (!isMatchPassword) {
-      throw new BadRequestException(CAUSE, {
-        cause: new Error(CAUSE),
-      });
+      throw new BadRequestException('Password is incorrect');
     }
     const jwts = await this.generateToken({ id: user.id, role: user.role });
     await this.prisma.users.update({
@@ -58,8 +58,8 @@ class SignInService {
   public async SignInByPhone(body: SignInByPhoneDto, res: Response) {
     const { phone, password } = body;
     const CAUSE = 'Phone or password is incorrect';
-    const user = await this.prisma.users.findUnique({
-      where: { phone: phone },
+    const user = await this.prisma.users.findFirst({
+      where: { phone: phone, type_user: TypeUser.SYSTEM_CUSTOMER },
       select: {
         id: true,
         password: true,

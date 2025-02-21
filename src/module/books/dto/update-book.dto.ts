@@ -1,12 +1,38 @@
-import { PartialType } from '@nestjs/swagger';
-import { CreateBookDto } from './create-book.dto';
 import { IsArray, IsOptional, IsString } from 'class-validator';
 
-export class UpdateBookDto extends PartialType(CreateBookDto) {
+export class UpdateBookDto {
+  @IsString({ message: 'Title is string' })
+  @IsOptional({ message: 'Title is required' })
+  title: string;
+
   @IsArray()
   @IsOptional()
   image_url?: string[];
   @IsString()
   @IsOptional()
   categoryId?: string;
+  @IsOptional()
+  @IsArray()
+  authors: string[];
+
+  @IsString()
+  @IsOptional()
+  supplierId: string;
+
+  @IsString()
+  @IsOptional()
+  sku: string;
+
+  @IsOptional()
+  entryPrice: string;
+
+  @IsOptional()
+  description: string;
+
+  @IsOptional()
+  price: string;
+
+  @IsString()
+  @IsOptional()
+  stockQuantity: string;
 }

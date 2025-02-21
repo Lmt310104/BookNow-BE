@@ -5,22 +5,25 @@ import { BooksModule } from './books/books.module';
 import { CartItemsModule } from './cart-items/cart-items.module';
 import { CartsModule } from './carts/carts.module';
 import { CategoriesModule } from './categories/categories.module';
-import { ChatModule } from './chats/chat.module';
 import { DashboardModule } from './dashboard/dashboard.module';
 import { EmailModule } from './email/email.module';
 import { EventsModule } from './events_gateway/event_gateway.module';
 import { GeminiModule } from './gemini/gemini.module';
 import { GoogleOauthModule } from './google-oauth/google-oauth.module';
-import { MessagesModule } from './messages/message.module';
+import { InventoryModule } from './inventory/inventory.module';
+import { OpenAIModule } from './openai/openai.module';
 import { OrdersModule } from './orders/orders.module';
 import { ReviewsModule } from './reviews/reviews.module';
 import { StatisticModule } from './statistic/statistic.module';
+import { StreamChatModule } from './stream-chat/stream-chat.module';
+import { SupplierModule } from './supplier/supplier.module';
 import { UsersModule } from './users/users.module';
 import { WebhookModule } from './webhook/webhook.module';
 const Modules = [
   AuthorsModule,
   EmailModule,
   UsersModule,
+  GeminiModule,
   BooksModule,
   AuthModule,
   CategoriesModule,
@@ -33,10 +36,11 @@ const Modules = [
   AddressModule,
   StatisticModule,
   EventsModule,
-  ChatModule,
-  MessagesModule,
   WebhookModule,
-  GeminiModule,
+  StreamChatModule,
+  OpenAIModule,
+  SupplierModule,
+  InventoryModule,
 ];
 
 export default Modules;

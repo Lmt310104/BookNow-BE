@@ -1,5 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsNotEmpty, IsString } from 'class-validator';
+import { IsArray, IsNotEmpty, IsOptional, IsString } from 'class-validator';
 
 export class CreateBookDto {
   @ApiProperty({
@@ -17,7 +17,7 @@ export class CreateBookDto {
     required: true,
     example: 'Haruki Murakami',
   })
-  @IsNotEmpty({ message: 'author is required' })
+  @IsOptional({ message: 'author is required' })
   author: string;
 
   @ApiProperty({
@@ -63,4 +63,16 @@ export class CreateBookDto {
   @IsString()
   @IsNotEmpty({ message: 'description is required' })
   description: string;
+
+  @IsArray()
+  @IsNotEmpty()
+  authors: string[];
+
+  @IsString()
+  @IsNotEmpty()
+  supplierId: string;
+
+  @IsString()
+  @IsNotEmpty()
+  sku: string;
 }

@@ -1,19 +1,26 @@
-import { BadRequestException, Injectable } from '@nestjs/common';
+import { BadRequestException, HttpException, Injectable } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { GetReviewsDto } from './dto/find-all-rating-reviews.dto';
 import { AdminReplyReviewDto } from './dto/reply-rating-reviews.dto';
 import { ReviewState } from 'src/utils/constants';
+import { GeminiService } from '../gemini/gemini.service';
+import { ReviewType } from '@prisma/client';
+import HttpStatusCode from 'src/utils/HttpStatusCode';
 
 @Injectable()
 export class ReviewsService {
-  constructor(private readonly prisma: PrismaService) {}
-  async getAllReviews(dto: GetReviewsDto) {
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly geminiService: GeminiService,
+  ) {}
+  async getAllReviews(dto: GetReviewsDto, isHidden?: boolean) {
     const reviews = await this.prisma.reviews.findMany({
       where: {
         ...(dto.search && { book: { title: { contains: dto.search } } }),
         ...(dto.rating && { rating: { in: dto.rating } }),
         ...(dto.date && { created_at: { equals: new Date(dto.date) } }),
         ...(dto.state && { state: dto.state }),
+        ...(isHidden !== undefined && { is_hidden: Boolean(isHidden) }),
       },
       include: {
         book: true,
@@ -49,6 +56,13 @@ export class ReviewsService {
     return reviewDetail;
   }
   async createAdminReply(id: number, dto: AdminReplyReviewDto) {
+    const type = await this.geminiService.analyseComment(dto.reply);
+    if (type.trim() === ReviewType.TOXIC) {
+      throw new HttpException(
+        'Your comment is toxic, please try again',
+        HttpStatusCode.BAD_REQUEST,
+      );
+    }
     const review = await this.prisma.reviews.findUnique({
       where: {
         id: id,
@@ -139,6 +153,7 @@ export class ReviewsService {
         ...(query.rating && { rating: { in: query.rating } }),
         ...(query.date && { created_at: { equals: new Date(query.date) } }),
         ...(query.state && { state: query.state }),
+        is_hidden: false,
       },
       include: {
         book: true,
@@ -195,5 +210,35 @@ export class ReviewsService {
       },
     });
     return { reviews, itemCount };
+  }
+  async hideReview(id: number) {
+    try {
+      return await this.prisma.reviews.update({
+        where: {
+          id: id,
+        },
+        data: {
+          is_hidden: true,
+        },
+      });
+    } catch (error) {
+      console.log(error);
+      throw new BadRequestException(error.messages);
+    }
+  }
+  async showReview(id: number) {
+    try {
+      return await this.prisma.reviews.update({
+        where: {
+          id: id,
+        },
+        data: {
+          is_hidden: false,
+        },
+      });
+    } catch (error) {
+      console.log(error);
+      throw new BadRequestException(error.messages);
+    }
   }
 }

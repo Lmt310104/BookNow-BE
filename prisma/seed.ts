@@ -7,7 +7,6 @@ export const hashPassword = async (password: string) => {
   return await bcrypt.hash(password, salt);
 };
 import { faker } from '@faker-js/faker';
-import authors_data from './seeds/authors';
 import category_data from './seeds/categories';
 import { USER_IMAGE_URL } from 'src/utils/constants';
 async function main() {
@@ -15,15 +14,6 @@ async function main() {
    * Neccessary to hash the password before seeding
    * Neccessary seeds: authors, categories, books, carts, orders, comments
    */
-  const transform_author = authors_data.map((author) => ({
-    name: author.name,
-    birthday: author.birthday.toISOString(),
-    description: author.description,
-  }));
-  await prisma.authors.createMany({
-    data: transform_author,
-    skipDuplicates: true,
-  });
   const author_ids = (await prisma.authors.findMany({})).map(
     (author) => author.id,
   );

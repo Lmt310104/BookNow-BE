@@ -17,6 +17,7 @@ import { GetReviewsDto } from './dto/find-all-rating-reviews.dto';
 import { AdminReplyReviewDto } from './dto/reply-rating-reviews.dto';
 import { StandardResponse } from 'src/utils/response.dto';
 import HttpStatusCode from 'src/utils/HttpStatusCode';
+import { Public } from 'src/common/decorators/public.decorator';
 
 const {
   REVIEW: {
@@ -26,6 +27,8 @@ const {
     REPLY,
     GET_REVIEW_BY_BOOK_ID,
     GET_REVIEW_BY_ORDER_ID,
+    HIDE_REVIEW,
+    SHOW_REVIEW,
   },
 } = END_POINTS;
 
@@ -36,9 +39,12 @@ export class ReviewsController {
   @Get(GET_ALL)
   async getAll(
     @Query() query: GetReviewsDto,
+    @Query('isHidden') isHidden?: boolean,
   ): Promise<PageResponseDto<Reviews>> {
-    const { reviews, itemCount } =
-      await this.reviewService.getAllReviews(query);
+    const { reviews, itemCount } = await this.reviewService.getAllReviews(
+      query,
+      isHidden,
+    );
     const pageResponseMetaDto = new PageResponseMetaDto({
       pageOptionsDto: query,
       itemCount: itemCount,
@@ -61,6 +67,7 @@ export class ReviewsController {
       HttpStatusCode.CREATED,
     );
   }
+  @Public()
   @Get(GET_REVIEW_BY_BOOK_ID)
   async getReviewByBookId(
     @Param('bookId') bookId: string,
@@ -90,5 +97,23 @@ export class ReviewsController {
       itemCount: itemCount,
     });
     return new PageResponseDto(reviews, pageResponseMetaDto);
+  }
+  @Post(HIDE_REVIEW)
+  async hideReview(@Param('id', ParseIntPipe) id: number) {
+    await this.reviewService.hideReview(id);
+    return new StandardResponse(
+      null,
+      'Hide review successfully',
+      HttpStatusCode.NO_CONTENT,
+    );
+  }
+  @Post(SHOW_REVIEW)
+  async showReview(@Param('id', ParseIntPipe) id: number) {
+    await this.reviewService.showReview(id);
+    return new StandardResponse(
+      null,
+      'Show review successfully',
+      HttpStatusCode.NO_CONTENT,
+    );
   }
 }
