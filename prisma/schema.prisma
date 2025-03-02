@@ -284,6 +284,26 @@ model InventoryAddress {
   type    InventoryType
 }
 
+model Promotion {
+  id                String            @id @default(uuid())
+  name              String
+  start_date        DateTime
+  end_date          DateTime
+  order_limit       Int?
+  discount_value    Float?
+  max_user_per_unit Int?
+  type              PromotionCategory
+  discount_type     DiscountType
+  create_at         DateTime          @default(now())
+  update_at         DateTime          @updatedAt
+}
+
+model PromotionProduct {
+  id           String @id @default(uuid())
+  promotion_id String
+  book_id      String
+}
+
 enum Role {
   CUSTOMER
   ADMIN
@@ -353,4 +373,16 @@ enum InventoryFormState {
   PENDING
   DONE
   CANCELLED
+}
+
+enum PromotionCategory {
+  SHOP_DISCOUNT
+  COMBO_DISCOUNT
+  DEAL_DISCOUNT
+}
+
+enum DiscountType {
+  PERCENTAGE
+  FIXED
+  SPECIAL
 }
