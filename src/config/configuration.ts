@@ -48,4 +48,7 @@ export default () => ({
   gemini_api_key_9: process.env.GEMINI_API_KEY_9,
   gemini_api_key_10: process.env.GEMINI_API_KEY_10,
   https_proxy: process.env.HTTPS_PROXY,
+  recombee_database: process.env.RECOMBEE_DATABASE,
+  recombee_secret: process.env.RECOMBEE_SECRET,
+  recombee_region: process.env.RECOMBEE_REGION,
 });

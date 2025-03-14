@@ -13,6 +13,7 @@ import { GoogleOauthModule } from './google-oauth/google-oauth.module';
 import { InventoryModule } from './inventory/inventory.module';
 import { OpenAIModule } from './openai/openai.module';
 import { OrdersModule } from './orders/orders.module';
+import { PromotionModule } from './promotion/promotion.module';
 import { ReviewsModule } from './reviews/reviews.module';
 import { StatisticModule } from './statistic/statistic.module';
 import { StreamChatModule } from './stream-chat/stream-chat.module';
@@ -41,6 +42,7 @@ const Modules = [
   OpenAIModule,
   SupplierModule,
   InventoryModule,
+  PromotionModule,
 ];
 
 export default Modules;

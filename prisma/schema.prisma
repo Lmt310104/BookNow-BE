@@ -10,9 +10,9 @@ generator client {
 }
 
 datasource db {
-  provider = "postgresql"
-  url      = env("DATABASE_URL")
-  // directUrl = env("DIRECT_URL")
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
 }
 
 model Users {
@@ -81,6 +81,7 @@ model Books {
   BookAuthor          BookAuthor[]
   InventoryFormItem   InventoryFormItem[]
   AdjustStockFormItem AdjustStockFormItem[]
+  PromotionBook       PromotionBook[]
 
   @@index([title, author], map: "books_fulltext_idx")
 }
@@ -285,23 +286,26 @@ model InventoryAddress {
 }
 
 model Promotion {
-  id                String            @id @default(uuid())
-  name              String
-  start_date        DateTime
-  end_date          DateTime
-  order_limit       Int?
-  discount_value    Float?
-  max_user_per_unit Int?
-  type              PromotionCategory
-  discount_type     DiscountType
-  create_at         DateTime          @default(now())
-  update_at         DateTime          @updatedAt
+  id                 String            @id @default(uuid())
+  name               String
+  start_date         DateTime
+  end_date           DateTime
+  order_limit        Int?
+  discount_value     Float
+  max_usage_per_user Int?
+  type               PromotionCategory
+  discount_type      DiscountType
+  create_at          DateTime          @default(now())
+  update_at          DateTime          @updatedAt
+  PromotionBook      PromotionBook[]
 }
 
-model PromotionProduct {
-  id           String @id @default(uuid())
+model PromotionBook {
+  id           String    @id @default(uuid())
   promotion_id String
+  promotion    Promotion @relation(fields: [promotion_id], references: [id])
   book_id      String
+  book         Books     @relation(fields: [book_id], references: [id])
 }
 
 enum Role {

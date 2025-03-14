@@ -12,6 +12,7 @@ export const DOCUMENTATION = {
     CARTS: 'CART',
     CART_ITEMS: 'CART_ITEMS',
     COMMENT: 'COMMENT',
+    PROMOTION: 'PROMOTION',
   },
 };
 
@@ -206,6 +207,15 @@ export const END_POINTS = {
     INACTIVE: '/inactive/:id',
     CREATE_INVENTORY_ADDRESS: '/create-inventory-address',
     GET_ALL_INVENTORY_ADDRESS: '/get-all-inventory-address',
+  },
+  PROMOTION: {
+    BASE: '/promotion',
+    GET_ALL: '/get-all',
+    CREATE: '/create',
+    UPDATE: '/update/:id',
+    GET_ONE: '/get-one/:id',
+    ACTIVE: '/active/:id',
+    INACTIVE: '/inactive/:id',
   },
 };
 

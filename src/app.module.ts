@@ -4,6 +4,16 @@ import Modules from './module';
 import configuration from './config/configuration';
 import { AutomapperModule } from '@automapper/nestjs';
 import { classes } from '@automapper/classes';
+import {
+  CACHE_MANAGER,
+  CacheInterceptor,
+  CacheModule,
+} from '@nestjs/cache-manager';
+import { APP_INTERCEPTOR } from '@nestjs/core';
+import { createKeyv } from '@keyv/redis';
+import { Keyv } from 'keyv';
+import { CacheableMemory } from 'cacheable';
+
 @Module({
   imports: [
     ConfigModule.forRoot({
@@ -14,10 +24,23 @@ import { classes } from '@automapper/classes';
     AutomapperModule.forRoot({
       strategyInitializer: classes(),
     }),
+    CacheModule.registerAsync({
+      useFactory: async () => {
+        return {
+          stores: [createKeyv('redis://localhost:6379')],
+        };
+      },
+      isGlobal: true,
+    }),
 
     ...Modules,
   ],
   controllers: [],
-  providers: [],
+  providers: [
+    {
+      provide: APP_INTERCEPTOR,
+      useClass: CacheInterceptor,
+    },
+  ],
 })
 export class AppModule {}
