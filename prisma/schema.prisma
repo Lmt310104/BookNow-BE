@@ -52,36 +52,37 @@ model Vertifications {
 }
 
 model Books {
-  id                  String                @id @default(uuid())
-  title               String                @db.VarChar(255)
-  author              String?
-  category_id         String
-  price               Decimal
-  stock_quantity      Int
-  description         String                @db.Text
-  entry_price         Decimal
-  final_price         Decimal?
-  discountPercentage  Int?
-  discountDate        DateTime?
-  avg_stars           Decimal               @default(0)
-  total_reviews       Int                   @default(0)
-  sold_quantity       Int                   @default(0)
-  image_url           String[]              @default([])
-  status              BookStatus            @default(ACTIVE)
-  created_at          DateTime              @default(now())
-  updated_at          DateTime              @updatedAt
-  unaccent            String?               @db.Text
-  supplier_id         String?
-  sku                 String?               @unique
-  Supplier            Supplier?             @relation(fields: [supplier_id], references: [id], onDelete: Cascade)
-  Category            Category              @relation(fields: [category_id], references: [id], onDelete: Cascade)
-  OrderItems          OrderItems[]
-  CartItems           CartItems[]
-  Reviews             Reviews[]
-  BookAuthor          BookAuthor[]
-  InventoryFormItem   InventoryFormItem[]
-  AdjustStockFormItem AdjustStockFormItem[]
-  PromotionBook       PromotionBook[]
+  id                          String                        @id @default(uuid())
+  title                       String                        @db.VarChar(255)
+  author                      String?
+  category_id                 String
+  price                       Decimal
+  stock_quantity              Int
+  description                 String                        @db.Text
+  entry_price                 Decimal
+  final_price                 Decimal?
+  discountPercentage          Int?
+  discountDate                DateTime?
+  avg_stars                   Decimal                       @default(0)
+  total_reviews               Int                           @default(0)
+  sold_quantity               Int                           @default(0)
+  image_url                   String[]                      @default([])
+  status                      BookStatus                    @default(ACTIVE)
+  created_at                  DateTime                      @default(now())
+  updated_at                  DateTime                      @updatedAt
+  unaccent                    String?                       @db.Text
+  supplier_id                 String?
+  sku                         String?                       @unique
+  Supplier                    Supplier?                     @relation(fields: [supplier_id], references: [id], onDelete: Cascade)
+  Category                    Category                      @relation(fields: [category_id], references: [id], onDelete: Cascade)
+  OrderItems                  OrderItems[]
+  CartItems                   CartItems[]
+  Reviews                     Reviews[]
+  BookAuthor                  BookAuthor[]
+  InventoryFormItem           InventoryFormItem[]
+  AdjustStockFormItem         AdjustStockFormItem[]
+  PromotionBook               PromotionBook[]
+  PromotionShockDealCondition PromotionShockDealCondition[]
 
   @@index([title, author], map: "books_fulltext_idx")
 }
@@ -286,18 +287,59 @@ model InventoryAddress {
 }
 
 model Promotion {
-  id                 String            @id @default(uuid())
-  name               String
-  start_date         DateTime
-  end_date           DateTime
-  order_limit        Int?
-  discount_value     Float
-  max_usage_per_user Int?
-  type               PromotionCategory
-  discount_type      DiscountType
-  create_at          DateTime          @default(now())
-  update_at          DateTime          @updatedAt
-  PromotionBook      PromotionBook[]
+  id                    String                 @id @default(uuid())
+  name                  String
+  start_date            DateTime
+  end_date              DateTime
+  order_limit           Int?
+  description           String
+  status                Boolean
+  promotion_category    PromotionCategory
+  create_at             DateTime               @default(now())
+  update_at             DateTime               @updatedAt
+  PromotionBook         PromotionBook[]
+  PromotionNormalDetail PromotionNormalDetail?
+  PromotionCombo        PromotionCombo?
+  PromotionShockDeal    PromotionShockDeal?
+}
+
+model PromotionNormalDetail {
+  id              String    @id @default(uuid())
+  promotion_id    String    @unique
+  Promotion       Promotion @relation(fields: [promotion_id], references: [id])
+  discount_amount Decimal
+  min_quantity    Int?
+  discount_rate   Int
+}
+
+model PromotionCombo {
+  id                      String                   @id @default(uuid())
+  promotion_id            String                   @unique
+  Promotion               Promotion                @relation(fields: [promotion_id], references: [id])
+  PromotionComboCondition PromotionComboCondition?
+}
+
+model PromotionComboCondition {
+  id                 String         @id @default(uuid())
+  promotion_combo_id String         @unique
+  Promotion          PromotionCombo @relation(fields: [promotion_combo_id], references: [id])
+}
+
+model PromotionShockDeal {
+  id                          String                       @id @default(uuid())
+  promotion_id                String                       @unique
+  Promotion                   Promotion                    @relation(fields: [promotion_id], references: [id])
+  PromotionShockDealCondition PromotionShockDealCondition?
+}
+
+model PromotionShockDealCondition {
+  id                      String             @id @default(uuid())
+  promotion_shock_deal_id String             @unique
+  PromotionShockDeal      PromotionShockDeal @relation(fields: [promotion_shock_deal_id], references: [id])
+  discount_rate           Int
+  discount_amount         Decimal
+  book_id                 String
+  Book                    Books              @relation(fields: [book_id], references: [id])
 }
 
 model PromotionBook {

@@ -4,16 +4,9 @@ import Modules from './module';
 import configuration from './config/configuration';
 import { AutomapperModule } from '@automapper/nestjs';
 import { classes } from '@automapper/classes';
-import {
-  CACHE_MANAGER,
-  CacheInterceptor,
-  CacheModule,
-} from '@nestjs/cache-manager';
+import { CacheInterceptor, CacheModule } from '@nestjs/cache-manager';
 import { APP_INTERCEPTOR } from '@nestjs/core';
 import { createKeyv } from '@keyv/redis';
-import { Keyv } from 'keyv';
-import { CacheableMemory } from 'cacheable';
-
 @Module({
   imports: [
     ConfigModule.forRoot({

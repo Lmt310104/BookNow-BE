@@ -12,14 +12,26 @@ import {
 import { ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { DOCUMENTATION, END_POINTS } from 'src/utils/constants';
 import { PromotionService } from './promotion.service';
-import { FindAllPromotionDto } from './dtos/find-all-promotion.dto';
-import { CreatePromotionDto } from './dtos/create-promotion.dto';
-import { UpdatePromotionDto } from './dtos/update-promotion.dto';
+import { FindAllPromotionDto } from './dto/find-all-promotion.dto';
+import { UpdatePromotionDto } from './dto/update-promotion.dto';
 import { CACHE_MANAGER, CacheInterceptor } from '@nestjs/cache-manager';
 import { Cache } from 'cache-manager';
+import {
+  CreateNormalPromotionDto,
+  CreatePromotionComboDto,
+  CreatePromotionShockDealDto,
+} from './dto/create-promotion.dto';
 
 const {
-  PROMOTION: { BASE, GET_ALL, CREATE, UPDATE, GET_ONE, ACTIVE, INACTIVE },
+  PROMOTION: {
+    BASE,
+    GET_ALL,
+    CREATE_NORMAL,
+    CREATE_COMBO,
+    CREATE_SHOCK_DEAL,
+    UPDATE,
+    GET_ONE,
+  },
 } = END_POINTS;
 
 @ApiTags(DOCUMENTATION.TAGS.PROMOTION)
@@ -30,12 +42,29 @@ export class PromotionController {
     @Inject(CACHE_MANAGER) private cacheManager: Cache,
     private readonly promotionService: PromotionService,
   ) {}
+
   @ApiOperation({
-    summary: 'Create new promotion campaign',
+    description: 'Create new combo promotion',
   })
-  @Post(CREATE)
-  async createNewPromotion(@Body() dto: CreatePromotionDto) {
-    return await this.promotionService.createNewPromotion(dto);
+  @Post(CREATE_COMBO)
+  async createNewPromotionCombo(dto: CreatePromotionComboDto) {
+    return await this.promotionService.CreateNewPromotionCombo(dto);
+  }
+
+  @ApiOperation({
+    description: 'Create new normal promotion',
+  })
+  @Post(CREATE_NORMAL)
+  async createNewNormalPromotion(dto: CreateNormalPromotionDto) {
+    return await this.promotionService.CreateNewNormalPromotion(dto);
+  }
+
+  @ApiOperation({
+    description: 'Create new shock deal promotion',
+  })
+  @Post(CREATE_SHOCK_DEAL)
+  async createNewPromotionSockDeal(dto: CreatePromotionShockDealDto) {
+    return await this.promotionService.CreateNewPromotionShockDeal(dto);
   }
 
   @ApiOperation({

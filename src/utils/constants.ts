@@ -211,11 +211,19 @@ export const END_POINTS = {
   PROMOTION: {
     BASE: '/promotion',
     GET_ALL: '/get-all',
-    CREATE: '/create',
+    CREATE_NORMAL: '/create-normal',
+    CREATE_COMBO: '/create-combo',
+    CREATE_SHOCK_DEAL: '/create-shock-deal',
     UPDATE: '/update/:id',
     GET_ONE: '/get-one/:id',
     ACTIVE: '/active/:id',
     INACTIVE: '/inactive/:id',
+  },
+  RECOMMENDATION: {
+    BASE: '/recommendation',
+    GET_ALL: '/get-all',
+    ADD_USER_PROPERTIES: '/add-user-properties',
+    ADD_ITEMS_PROPERTIES: '/add-items-properties',
   },
 };
 
