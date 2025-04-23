@@ -1,21 +1,107 @@
-import { Inject, Injectable } from '@nestjs/common';
+import {
+  Inject,
+  Injectable,
+  InternalServerErrorException,
+} from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { RecombeeProvider } from 'src/common/providers/recombeeAI.provider';
 
 @Injectable()
 export class RecommendationService {
   constructor(
     @Inject('RECOMBEEAI') private readonly recombeeProvider: RecombeeProvider,
+    private readonly config: ConfigService,
   ) {}
-
-  async recommendBooks() {}
-  async recommendAuthors() {}
-  async addBookToRecombee() {}
-  async addAuthorToRecombee() {}
+  async recommendBooks(userId, searchQuery, limit = 10, page = 1) {
+    try {
+      let recommendations = null;
+      if (searchQuery) {
+        const req = new this.recombeeProvider.rqs.SearchItems(
+          userId.toString(),
+          searchQuery,
+          limit,
+          {
+            scenario: 'book_recommendation',
+            cascadeCreate: true,
+            returnProperties: true,
+          },
+        );
+        req.timeout = 10000;
+        recommendations = await this.recombeeProvider.client.send(req);
+      } else {
+        const req = new this.recombeeProvider.rqs.RecommendItemsToUser(
+          userId.toString(),
+          limit,
+          {
+            scenario: 'book_recommendation',
+            cascadeCreate: true,
+            returnProperties: true,
+          },
+        );
+        req.timeout = 10000;
+        recommendations = await this.recombeeProvider.client.send(req);
+      }
+      return recommendations;
+    } catch (error) {
+      console.log(error);
+      throw new InternalServerErrorException('Có lỗi xảy ra trong hệ thống');
+    }
+  }
+  async addBookToRecombee(book: any) {
+    try {
+      const req = new this.recombeeProvider.rqs.SetItemValues(
+        book.id.toString(),
+        {
+          title: book.title,
+          description: book.description,
+          author: book.author,
+          price: book.final_price,
+          rating: book.avg_stars,
+          totalReview: book.total_reviews,
+          soldQuantity: book.sold_quantity,
+          imageLink: book.image_url,
+          category: book.Category.name,
+          url: `${this.config.get<string>('url_web')}/book/${book.id}`,
+          onSale: `${book.PromotionBook || book.PromotionShockDealCondition ? true : false}`,
+        },
+        {
+          cascadeCreate: true,
+        },
+      );
+      req.timeout = 10000;
+      await this.recombeeProvider.client.send(req);
+    } catch (error) {
+      console.log(error);
+      throw new InternalServerErrorException('Có lỗi xảy ra trong hệ thống');
+    }
+  }
   async sendIneraction() {}
-  async addUserToRecombee() {}
-  async updateBookToRecombee() {}
-  async updateAuthorToRecombee() {}
-  async updateUserToRecombee() {}
+  async addUserToRecombee(user: any) {
+    try {
+      const req = new this.recombeeProvider.rqs.SetUserValues(
+        user.id.toString(),
+        {
+          gender: user.gender,
+          hobbies: user.hobbies,
+          age: new Date().getFullYear() - user.birthday.getFullYear(),
+          purchase_history: user.purchase_history,
+        },
+        {
+          cascadeCreate: true,
+        },
+      );
+      await this.recombeeProvider.client.send(req);
+    } catch (error) {
+      console.log(error);
+      throw new InternalServerErrorException('Có lỗi xảy ra trong hệ thống');
+    }
+  }
+  async updateBookToRecombee(book: any) {
+    await this.addBookToRecombee(book);
+  }
+  async updateUserToRecombee(user: any) {
+    await this.updateUserToRecombee(user);
+  }
 
   async addEntityPropertiesToRecombee() {
     try {

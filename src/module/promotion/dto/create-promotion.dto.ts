@@ -84,23 +84,29 @@ export class CreatePromotionDto {
 
 export class CreatePromotionNormalDetailDto {
   @ApiProperty({
+    description: 'Book id',
+    example: '4cf1da1a-1641-458e-8d37-7f80f96119ba',
+  })
+  @IsOptional()
+  book_id: string;
+  @ApiProperty({
     description: 'Discount amount of the promotion',
     example: '30000',
   })
   @IsOptional()
-  discount_amount: Decimal;
+  discount_amount: number;
 
   @ApiProperty({
     description: 'Discount percentage of the promotion',
     example: '10',
   })
-  discount_rate: Decimal;
+  discount_rate: number;
 
   @ApiProperty({
     description: 'Min quantity must be bought to adapt',
     example: '10',
   })
-  min_quantity: Decimal;
+  min_quantity: number;
 }
 
 export class CreateNormalPromotionDto {
@@ -140,7 +146,7 @@ export class CreateNormalPromotionDto {
   @ApiProperty()
   @Type(() => CreateNormalPromotionDto)
   @IsNotEmpty()
-  promotion_eligibility: CreatePromotionNormalDetailDto;
+  promotion_eligibility: CreatePromotionNormalDetailDto[];
 }
 
 export class CreatePromotionComboDto {

@@ -1,6 +1,7 @@
 import {
   BadRequestException,
   Injectable,
+  InternalServerErrorException,
   NotFoundException,
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
@@ -8,18 +9,57 @@ import { FindAllPromotionDto } from './dto/find-all-promotion.dto';
 import {
   CreateNormalPromotionDto,
   CreatePromotionComboDto,
+  CreatePromotionNormalDetailDto,
   CreatePromotionShockDealDto,
 } from './dto/create-promotion.dto';
 import { UpdatePromotionDto } from './dto/update-promotion.dto';
+import { BookStatus, PromotionCategory } from '@prisma/client';
+import { StandardResponse } from 'src/utils/response.dto';
 
 @Injectable()
 export class PromotionService {
   constructor(private readonly prisma: PrismaService) {}
-  async CreateNewNormalPromotion(dto: CreateNormalPromotionDto) {}
+  async CreateNewNormalPromotion(dto: CreateNormalPromotionDto) {
+    try {
+      if (dto.start_date > dto.end_date) {
+        throw new BadRequestException('Start date must be before end date');
+      }
+      // Additional validations can be added here if needed
+      // await ValidateProduct(dto.promotion_eligibility);
+      // // Validate promotion eligibility details
+      // await this.prisma.promotion.create({
+      //   data: {
+      //     name: dto.name,
+      //     start_date: dto.start_date,
+      //     end_date: dto.end_date,
+      //     description: dto.description,
+      //     status: true,
+      //     promotion_category: PromotionCategory.SHOP_DISCOUNT,
+      //     PromotionNormalDetail: {
+      //       create: dto.promotion_eligibility.map((pe) => ({
+      //         discount_amount: pe.discount_amount,
+      //         min_quantity: pe.min_quantity,
+      //         discount_rate: pe.discount_rate,
+      //       })),
+      //     },
+      //   },
+      // });
+      return new StandardResponse(null, 'Promotion created successfully', 201);
+    } catch (error) {
+      console.log(error);
+      throw new InternalServerErrorException('Server error');
+    }
+  }
 
-  async CreateNewPromotionCombo(dto: CreatePromotionComboDto) {}
+  async CreateNewPromotionCombo(dto: CreatePromotionComboDto) {
+    try {
+    } catch (error) {
+      console.log(error);
+      throw new InternalServerErrorException('Server error');
+    }
+  }
 
-  async CreateNewPromotionShockDeal(dto: CreatePromotionShockDealDto){}
+  async CreateNewPromotionShockDeal(dto: CreatePromotionShockDealDto) {}
 
   async getAllPromotions(query: FindAllPromotionDto) {
     const data = await this.prisma.promotion.findMany({
@@ -75,8 +115,7 @@ export class PromotionService {
           });
         });
       }
-      // eslint-disable-next-line @typescript-eslint/no-unused-vars
-      const { book_ids, ...data } = filteredDto;
+      const { _, ...data } = filteredDto;
       return await this.prisma.promotion.update({
         where: { id },
         data: data,
@@ -100,5 +139,51 @@ export class PromotionService {
     } catch (error) {
       throw error;
     }
+  }
+  private async ValidateProduct(
+    promotion_eligibility: CreatePromotionNormalDetailDto[],
+  ) {
+    if (!promotion_eligibility) {
+      throw new BadRequestException('Invalid promotion eligibility data');
+    }
+
+    const bookIds = promotion_eligibility.map((pe) => pe.book_id);
+
+    // Fetch all books by their IDs
+    const books = await this.prisma.books.findMany({
+      where: {
+        id: {
+          in: bookIds,
+        },
+      },
+      select: {
+        id: true,
+        status: true,
+      },
+    });
+
+    // Check if all books were found
+    if (books.length !== bookIds.length) {
+      const foundIds = books.map((book) => book.id);
+      const missingIds = bookIds.filter((id) => !foundIds.includes(id));
+
+      throw new NotFoundException(
+        `The following books were not found: ${missingIds.join(', ')}`,
+      );
+    }
+
+    // Check if all books are active
+    const inactiveBooks = books.filter(
+      (book) => book.status !== BookStatus.ACTIVE,
+    );
+    if (inactiveBooks.length > 0) {
+      const inactiveIds = inactiveBooks.map((book) => book.id);
+
+      throw new BadRequestException(
+        `The following books are not active and cannot be included in promotions: ${inactiveIds.join(', ')}`,
+      );
+    }
+
+    return true;
   }
 }

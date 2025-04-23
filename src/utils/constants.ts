@@ -221,7 +221,7 @@ export const END_POINTS = {
   },
   RECOMMENDATION: {
     BASE: '/recommendation',
-    GET_ALL: '/get-all',
+    RECOMMEND_FOR_YOU: '',
     ADD_USER_PROPERTIES: '/add-user-properties',
     ADD_ITEMS_PROPERTIES: '/add-items-properties',
   },
