@@ -376,7 +376,6 @@ export class BooksService {
           where: {id},
           include: {
             Category: true,
-            PromotionBook : true, 
             PromotionShockDealCondition: true,
           }
         })

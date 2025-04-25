@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Query } from '@nestjs/common';
+import { Controller, Get, Param, ParseUUIDPipe, Post, Query } from '@nestjs/common';
 import { END_POINTS } from 'src/utils/constants';
 import { RecommendationService } from './recommendation.service';
 import { Public } from 'src/common/decorators/public.decorator';
@@ -13,6 +13,7 @@ const {
   RECOMMENDATION: {
     BASE,
     RECOMMEND_FOR_YOU,
+    GET_SIMILAR_BOOK,
     ADD_ITEMS_PROPERTIES,
     ADD_USER_PROPERTIES,
   },
@@ -47,5 +48,16 @@ export class RecommendationController {
       query.take,
       query.page,
     );
+  }
+
+  @ApiOperation({
+    summary: 'Get similar books for a book',
+  })
+  @Get(GET_SIMILAR_BOOK)
+  async GetSimilarBooks(
+    @Param('bookId', ParseUUIDPipe) bookId: string,
+    @UserSession() user: TUserSession,
+  ) {
+    return await this.recommendationService.getSimilarBooks(bookId, user.id);
   }
 }

@@ -1,5 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { DiscountType, PromotionCategory } from '@prisma/client';
+import { DiscountType, PromotionCategory, PromotionComboType } from '@prisma/client';
 import { Decimal } from '@prisma/client/runtime/library';
 import { Type } from 'class-transformer';
 import {
@@ -101,12 +101,6 @@ export class CreatePromotionNormalDetailDto {
     example: '10',
   })
   discount_rate: number;
-
-  @ApiProperty({
-    description: 'Min quantity must be bought to adapt',
-    example: '10',
-  })
-  min_quantity: number;
 }
 
 export class CreateNormalPromotionDto {
@@ -117,6 +111,12 @@ export class CreateNormalPromotionDto {
   @IsNotEmpty()
   name: string;
 
+  @ApiProperty({
+    description: 'Order limit',
+    example: 10,
+  })
+  @IsOptional()
+  order_limit: number;
   @ApiProperty({
     description: 'Start date of the promotion',
     example: '2025-03-03 00:00:00',
@@ -151,37 +151,74 @@ export class CreateNormalPromotionDto {
 
 export class CreatePromotionComboDto {
   @ApiProperty({
+    description: 'Name of the campaign',
+  })
+  @IsNotEmpty()
+  name: string;
+  @ApiProperty({
+    description: 'Start date of the promotion',
+    example: '2025-03-03 00:00:00',
+  })
+  @IsNotEmpty()
+  @IsDate()
+  @Type(() => Date)
+  start_date: Date;
+
+  @ApiProperty({
+    description: 'End date of the promotion',
+    example: '2025-04-03 00:00:00',
+  })
+  @IsNotEmpty()
+  @IsDate()
+  @Type(() => Date)
+  end_date: Date;
+
+  @ApiProperty({
+    description: 'Description of the promotion',
+    example: 'Description example',
+  })
+  @IsNotEmpty()
+  @IsString()
+  description: string;
+  @ApiProperty({
+    description: 'Promotion combo category',
+  })
+  @IsNotEmpty()
+  @IsEnum(PromotionComboType)
+  type: PromotionComboType;
+  @ApiProperty({
     description: 'Max usage per user',
   })
   @IsNotEmpty()
-  nax_usage_per_user: Decimal;
+  max_usage_per_user: number;
 
   @ApiProperty({
     description: 'Promotion eligibilities',
   })
   @IsArray()
-  @Type(() => CreatePromotionComboEligibility)
-  eligibilities: CreatePromotionComboEligibility[];
+  @Type(() => CreatePromotionComboCondition)
+  eligibilities: CreatePromotionComboCondition[];
+  @ApiProperty({
+    description: 'Product ids',
+    example: ['0e723bd6-8c68-4477-be17-5233c8e7b63a'],
+  })
+  @IsArray()
+  @IsNotEmpty()
+  book_ids: string[];
 }
 
-export class CreatePromotionComboEligibility {
+export class CreatePromotionComboCondition {
   @ApiProperty({
-    description: 'Discount rate',
+    description: 'Quantity',
   })
   @IsNotEmpty()
-  discount_rate: Decimal;
+  quantity: number;
 
   @ApiProperty({
-    description: 'Discount amout',
+    description: 'Discount value',
   })
   @IsNotEmpty()
-  discount_amount: Decimal;
-
-  @ApiProperty({
-    description: 'Min quantity must be bought to adapt',
-  })
-  @IsNotEmpty()
-  quatity: Decimal;
+  discount_value: number;
 }
 
 export class CreatePromotionShockDealDto {

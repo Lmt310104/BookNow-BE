@@ -81,8 +81,9 @@ model Books {
   BookAuthor                  BookAuthor[]
   InventoryFormItem           InventoryFormItem[]
   AdjustStockFormItem         AdjustStockFormItem[]
-  PromotionBook               PromotionBook[]
   PromotionShockDealCondition PromotionShockDealCondition[]
+  PromotionNormalDetail       PromotionNormalDetail[]
+  PromotionComboProduct       PromotionComboProduct[]
 
   @@index([title, author], map: "books_fulltext_idx")
 }
@@ -287,42 +288,55 @@ model InventoryAddress {
 }
 
 model Promotion {
-  id                    String                 @id @default(uuid())
+  id                    String                  @id @default(uuid())
   name                  String
   start_date            DateTime
   end_date              DateTime
   order_limit           Int?
+  max_usage_per_user    Int?
   description           String
-  status                Boolean
+  status                PromotionStatus
   promotion_category    PromotionCategory
-  create_at             DateTime               @default(now())
-  update_at             DateTime               @updatedAt
-  PromotionBook         PromotionBook[]
-  PromotionNormalDetail PromotionNormalDetail?
+  create_at             DateTime                @default(now())
+  update_at             DateTime                @updatedAt
+  PromotionNormalDetail PromotionNormalDetail[]
   PromotionCombo        PromotionCombo?
   PromotionShockDeal    PromotionShockDeal?
 }
 
 model PromotionNormalDetail {
   id              String    @id @default(uuid())
-  promotion_id    String    @unique
+  promotion_id    String
   Promotion       Promotion @relation(fields: [promotion_id], references: [id])
+  book_id         String
+  Book            Books     @relation(fields: [book_id], references: [id])
   discount_amount Decimal
-  min_quantity    Int?
-  discount_rate   Int
+  discount_rate   Decimal
 }
 
 model PromotionCombo {
-  id                      String                   @id @default(uuid())
-  promotion_id            String                   @unique
-  Promotion               Promotion                @relation(fields: [promotion_id], references: [id])
-  PromotionComboCondition PromotionComboCondition?
+  id                      String                    @id @default(uuid())
+  promotion_id            String                    @unique
+  Promotion               Promotion                 @relation(fields: [promotion_id], references: [id])
+  promotion_combo_type    PromotionComboType
+  PromotionComboCondition PromotionComboCondition[]
+  PromotionComboProduct   PromotionComboProduct[]
+}
+
+model PromotionComboProduct {
+  id                 String          @id @default(uuid())
+  promotion_combo_id String
+  PromotionCombo     PromotionCombo? @relation(fields: [promotion_combo_id], references: [id])
+  book_id            String
+  Book               Books           @relation(fields: [book_id], references: [id])
 }
 
 model PromotionComboCondition {
   id                 String         @id @default(uuid())
-  promotion_combo_id String         @unique
-  Promotion          PromotionCombo @relation(fields: [promotion_combo_id], references: [id])
+  promotion_combo_id String
+  PromotionCombo     PromotionCombo @relation(fields: [promotion_combo_id], references: [id])
+  quantity           Int
+  discount_value     Decimal
 }
 
 model PromotionShockDeal {
@@ -340,14 +354,6 @@ model PromotionShockDealCondition {
   discount_amount         Decimal
   book_id                 String
   Book                    Books              @relation(fields: [book_id], references: [id])
-}
-
-model PromotionBook {
-  id           String    @id @default(uuid())
-  promotion_id String
-  promotion    Promotion @relation(fields: [promotion_id], references: [id])
-  book_id      String
-  book         Books     @relation(fields: [book_id], references: [id])
 }
 
 enum Role {
@@ -431,4 +437,16 @@ enum DiscountType {
   PERCENTAGE
   FIXED
   SPECIAL
+}
+
+enum PromotionStatus {
+  UPCOMING
+  ONGOING
+  COMPLETED
+}
+
+enum PromotionComboType {
+  PERCENTAGE
+  FIXED_AMOUNT
+  SPECIAL_DISCOUNT
 }

@@ -84,10 +84,10 @@
     "@faker-js/faker": "^9.0.3",
     "@nestjs/cli": "^10.0.0",
     "@nestjs/schematics": "^10.0.0",
-    "@nestjs/testing": "^10.0.0",
+    "@nestjs/testing": "^10.4.17",
     "@types/async": "^3.2.24",
     "@types/express": "^4.17.17",
-    "@types/jest": "^29.5.2",
+    "@types/jest": "^29.5.14",
     "@types/node": "^20.16.5",
     "@types/nodemailer": "^6.4.16",
     "@types/passport-google-oauth20": "^2.0.16",
@@ -117,9 +117,9 @@
       "ts"
     ],
     "moduleNameMapper": {
-        "^src/(.*)$": "<rootDir>/$1",
-        "^@module/(.*)$": "<rootDir>/module/$1",
-        "^@config/(.*)$": "<rootDir>/config/$1"
+      "^src/(.*)$": "<rootDir>/$1",
+      "^@module/(.*)$": "<rootDir>/module/$1",
+      "^@config/(.*)$": "<rootDir>/config/$1"
     },
     "rootDir": "src",
     "testRegex": ".*\\.spec\\.ts$",

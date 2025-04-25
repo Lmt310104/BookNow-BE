@@ -47,6 +47,27 @@ export class RecommendationService {
       throw new InternalServerErrorException('Có lỗi xảy ra trong hệ thống');
     }
   }
+  async getSimilarBooks(bookId, userId, limit = 20, page = 1) {
+    try {
+      let recommendations = null;
+      const req = new this.recombeeProvider.rqs.RecommendItemsToItem(
+        bookId,
+        userId,
+        limit,
+        {
+          scenario: 'books_similar',
+          cascadeCreate: true,
+          returnProperties: true,
+        },
+      );
+      req.timeout = 10000;
+      recommendations = await this.recombeeProvider.client.send(req);
+      return recommendations;
+    } catch (error) {
+      console.log(error);
+      throw new InternalServerErrorException('Có lỗi xảy ra trong hệ thống');
+    }
+  }
   async addBookToRecombee(book: any) {
     try {
       const req = new this.recombeeProvider.rqs.SetItemValues(

@@ -222,6 +222,7 @@ export const END_POINTS = {
   RECOMMENDATION: {
     BASE: '/recommendation',
     RECOMMEND_FOR_YOU: '',
+    GET_SIMILAR_BOOK: '/similar-books/:bookId',
     ADD_USER_PROPERTIES: '/add-user-properties',
     ADD_ITEMS_PROPERTIES: '/add-items-properties',
   },
