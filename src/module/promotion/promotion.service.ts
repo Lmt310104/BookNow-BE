@@ -11,7 +11,12 @@ import {
   CreatePromotionNormalDetailDto,
   CreatePromotionShockDealDto,
 } from './dto/create-promotion.dto';
-import { BookStatus, PromotionCategory, PromotionStatus } from '@prisma/client';
+import {
+  BookStatus,
+  PromotionCategory,
+  PromotionShockDealType,
+  PromotionStatus,
+} from '@prisma/client';
 import { StandardResponse } from 'src/utils/response.dto';
 
 @Injectable()
@@ -121,7 +126,177 @@ export class PromotionService {
     }
   }
 
-  async CreateNewPromotionShockDeal(dto: CreatePromotionShockDealDto) {}
+  async CreateNewPromotionShockDeal(dto: CreatePromotionShockDealDto) {
+    try {
+      this.ValidateDate(dto.start_date, dto.end_date);
+      this.ValidateBookIds(dto.book_ids);
+      if (
+        dto.type === PromotionShockDealType.BUY_WITH_SHOCK_DEAL &&
+        (!dto.promotion_shockdeal_conditions ||
+          dto.promotion_shockdeal_conditions.length === 0)
+      ) {
+        throw new BadRequestException(
+          'For BUY_WITH_SHOCK_DEAL type, at least one promotion shock deal condition is required',
+        );
+      }
+
+      if (
+        dto.type === PromotionShockDealType.BUY_TO_GET_GIFT &&
+        (!dto.promotion_shockdeal_freegift_book ||
+          dto.promotion_shockdeal_freegift_book.length === 0 ||
+          !dto.required_purchase_quantity ||
+          dto.required_purchase_quantity <= 0 ||
+          !dto.gift_quantity ||
+          dto.gift_quantity <= 0)
+      ) {
+        throw new BadRequestException(
+          'For BUY_TO_GET_GIFT type, at least one free gift book, a positive required purchase quantity, and a positive gift quantity are required',
+        );
+      }
+      if (dto.type === PromotionShockDealType.BUY_WITH_SHOCK_DEAL) {
+        if (
+          !dto.promotion_shockdeal_conditions ||
+          dto.promotion_shockdeal_conditions.length === 0
+        ) {
+          throw new BadRequestException(
+            'For BUY_WITH_SHOCK_DEAL type, at least one promotion shock deal condition is required',
+          );
+        }
+        await this.ValidateBookIds(
+          dto.promotion_shockdeal_conditions.map((p) => p.book_id),
+        );
+        // Validate each condition
+        for (const condition of dto.promotion_shockdeal_conditions) {
+          if (
+            (condition.discount_amount === null ||
+              condition.discount_amount === undefined) &&
+            (condition.discount_rate === null ||
+              condition.discount_rate === undefined)
+          ) {
+            // Ensure at least one discount type is provided
+            throw new BadRequestException(
+              'Each condition must have either a discount amount or a discount rate',
+            );
+          }
+
+          // Validate discount rate is within valid range (0-100%)
+          if (
+            condition.discount_rate !== null &&
+            condition.discount_rate !== undefined
+          ) {
+            if (condition.discount_rate < 0 || condition.discount_rate > 100) {
+              throw new BadRequestException(
+                'Discount rate must be between 0 and 100',
+              );
+            }
+          }
+        }
+      }
+      if (dto.type === PromotionShockDealType.BUY_TO_GET_GIFT) {
+        if (
+          !dto.promotion_shockdeal_freegift_book ||
+          dto.promotion_shockdeal_freegift_book.length === 0
+        ) {
+          throw new BadRequestException(
+            'For BUY_TO_GET_GIFT type, at least one free gift book is required',
+          );
+        }
+
+        if (
+          !dto.required_purchase_quantity ||
+          dto.required_purchase_quantity <= 0
+        ) {
+          throw new BadRequestException(
+            'Required purchase quantity must be a positive number',
+          );
+        }
+
+        if (!dto.gift_quantity || dto.gift_quantity <= 0) {
+          throw new BadRequestException(
+            'Gift quantity must be a positive number',
+          );
+        }
+
+        // Validate gift books existence and status
+        await this.ValidateBookIds(
+          dto.promotion_shockdeal_freegift_book.map((p) => p.book_id),
+        );
+      }
+      return await this.prisma.$transaction(async (tx) => {
+        const promotion = await tx.promotion.create({
+          data: {
+            name: dto.name,
+            start_date: dto.start_date,
+            end_date: dto.end_date,
+            description: dto.description,
+            promotion_category: PromotionCategory.DEAL_DISCOUNT,
+            status: PromotionStatus.UPCOMING,
+          },
+        });
+        const promotionShockDeal = await tx.promotionShockDeal.create({
+          data: {
+            promotion_id: promotion.id,
+            promotion_shock_deal_type: dto.type,
+            required_purchase_quantity:
+              dto.type === PromotionShockDealType.BUY_TO_GET_GIFT
+                ? dto.required_purchase_quantity
+                : null,
+            gift_quantity:
+              dto.type === PromotionShockDealType.BUY_TO_GET_GIFT
+                ? dto.gift_quantity
+                : null,
+          },
+        });
+        await tx.promotionShockDealBook.createMany({
+          data: dto.book_ids.map((bookId) => ({
+            promotion_shock_deal_id: promotionShockDeal.id,
+            book_id: bookId,
+          })),
+        });
+        if (
+          dto.type === PromotionShockDealType.BUY_WITH_SHOCK_DEAL &&
+          dto.promotion_shockdeal_conditions &&
+          dto.promotion_shockdeal_conditions.length > 0
+        ) {
+          await tx.promotionShockDealCondition.createMany({
+            data: dto.promotion_shockdeal_conditions.map((condition) => ({
+              promotion_shock_deal_id: promotionShockDeal.id,
+              book_id: condition.book_id,
+              discount_amount: condition.discount_amount,
+              discount_rate: condition.discount_rate,
+            })),
+          });
+        }
+
+        // Handle free gift books if applicable
+        if (
+          dto.type === PromotionShockDealType.BUY_TO_GET_GIFT &&
+          dto.promotion_shockdeal_freegift_book &&
+          dto.promotion_shockdeal_freegift_book.length > 0
+        ) {
+          await tx.promotionShockDealFreeGiftBook.createMany({
+            data: dto.promotion_shockdeal_freegift_book.map((condition) => ({
+              promotion_shock_deal_id: promotionShockDeal.id,
+              book_id: condition.book_id,
+            })),
+          });
+        }
+        return new StandardResponse(
+          { promotionId: promotion.id },
+          'Combo promotion created successfully',
+          201,
+        );
+      });
+    } catch (error) {
+      if (
+        error instanceof BadRequestException ||
+        error instanceof NotFoundException
+      ) {
+        throw error;
+      }
+      throw new InternalServerErrorException('Server error');
+    }
+  }
 
   // async getAllPromotions(query: FindAllPromotionDto) {
   //   const data = await this.prisma.promotion.findMany({
@@ -289,5 +464,16 @@ export class PromotionService {
       );
     }
     return books;
+  }
+
+  private ValidateDate(start_date: Date, end_date: Date) {
+    const now = new Date();
+    if (start_date > end_date) {
+      throw new BadRequestException('Start date must be before end date');
+    }
+
+    if (start_date <= now) {
+      throw new BadRequestException('Start date must be in the future');
+    }
   }
 }

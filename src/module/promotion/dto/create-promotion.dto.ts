@@ -1,5 +1,10 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { DiscountType, PromotionCategory, PromotionComboType } from '@prisma/client';
+import {
+  DiscountType,
+  PromotionCategory,
+  PromotionComboType,
+  PromotionShockDealType,
+} from '@prisma/client';
 import { Decimal } from '@prisma/client/runtime/library';
 import { Type } from 'class-transformer';
 import {
@@ -223,35 +228,105 @@ export class CreatePromotionComboCondition {
 
 export class CreatePromotionShockDealDto {
   @ApiProperty({
-    description: 'Max deal can make by a user',
-    example: '10',
+    description: 'Name of the campaign',
   })
   @IsNotEmpty()
-  max_deal_can_make: Decimal;
+  name: string;
+  @ApiProperty({
+    description: 'Start date of the promotion',
+    example: '2025-03-03 00:00:00',
+  })
+  @IsNotEmpty()
+  @IsDate()
+  @Type(() => Date)
+  start_date: Date;
 
   @ApiProperty({
-    description: 'Promotion eligibilities',
+    description: 'End date of the promotion',
+    example: '2025-04-03 00:00:00',
+  })
+  @IsNotEmpty()
+  @IsDate()
+  @Type(() => Date)
+  end_date: Date;
+
+  @ApiProperty({
+    description: 'Description of the promotion',
+    example: 'Description example',
+  })
+  @IsNotEmpty()
+  @IsString()
+  description: string;
+  @ApiProperty({
+    description: 'Promotion combo category',
+  })
+  @IsNotEmpty()
+  @IsEnum(PromotionShockDealType)
+  type: PromotionShockDealType;
+
+  @ApiProperty({
+    description: 'The required quantity of items for a purchase',
+    example: 5,
+  })
+  @IsOptional()
+  required_purchase_quantity: number;
+
+  @ApiProperty({
+    description: 'The quantity of gift items received with the purchase',
+    example: 1,
+  })
+  @IsOptional()
+  gift_quantity: number;
+
+  @ApiProperty({
+    description: 'Product ids',
+    example: ['0e723bd6-8c68-4477-be17-5233c8e7b63a'],
   })
   @IsArray()
-  @Type(() => CreatePromotionShockDealEligibility)
-  eligibilities: CreatePromotionShockDealEligibility[];
+  book_ids: string[];
+
+  @ApiProperty({
+    description: 'Product ids',
+    example: ['0e723bd6-8c68-4477-be17-5233c8e7b63a'],
+  })
+  @IsArray()
+  @IsOptional()
+  @Type(() => CreatePromotionShockDealConditionDto)
+  promotion_shockdeal_conditions: CreatePromotionShockDealConditionDto[];
+
+  @ApiProperty({
+    description: 'Product ids',
+    example: ['0e723bd6-8c68-4477-be17-5233c8e7b63a'],
+  })
+  @IsArray()
+  @IsOptional()
+  @Type(() => CreatePromotionShockDealFreeGiftBookDto)
+  promotion_shockdeal_freegift_book: CreatePromotionShockDealFreeGiftBookDto[];
 }
-
-class CreatePromotionShockDealEligibility {
+export class CreatePromotionShockDealConditionDto {
   @ApiProperty({
-    description: 'Discount rate',
-    example: '10',
+    description: 'The discount rate as an integer (e.g., 10 for 10%)',
+    example: 15,
   })
-  @IsNotEmpty()
-  discount_rate: Decimal;
+  discount_rate: number;
 
   @ApiProperty({
-    description: 'Discount amount',
+    description: 'The discount amount as a decimal value',
+    example: 9.99,
   })
-  @IsNotEmpty()
   discount_amount: Decimal;
 
-  @ApiProperty()
-  @IsNotEmpty()
-  product_id: string;
+  @ApiProperty({
+    description: 'The ID of the associated book',
+    example: 'f9e8d7c6-b5a4-3210-fedc-ba9876543210',
+  })
+  book_id: string;
+}
+
+export class CreatePromotionShockDealFreeGiftBookDto {
+  @ApiProperty({
+    description: 'The ID of the free gift book',
+    example: 'f9e8d7c6-b5a4-3210-fedc-ba9876543210',
+  })
+  book_id: string;
 }

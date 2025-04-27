@@ -1,19 +1,13 @@
 import {
   Body,
   Controller,
-  Get,
   Inject,
-  Param,
-  Patch,
   Post,
-  Query,
   UseInterceptors,
 } from '@nestjs/common';
-import { ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
+import { ApiOperation, ApiTags } from '@nestjs/swagger';
 import { DOCUMENTATION, END_POINTS } from 'src/utils/constants';
 import { PromotionService } from './promotion.service';
-import { FindAllPromotionDto } from './dto/find-all-promotion.dto';
-import { UpdatePromotionDto } from './dto/update-promotion.dto';
 import { CACHE_MANAGER, CacheInterceptor } from '@nestjs/cache-manager';
 import { Cache } from 'cache-manager';
 import {
@@ -23,15 +17,7 @@ import {
 } from './dto/create-promotion.dto';
 
 const {
-  PROMOTION: {
-    BASE,
-    GET_ALL,
-    CREATE_NORMAL,
-    CREATE_COMBO,
-    CREATE_SHOCK_DEAL,
-    UPDATE,
-    GET_ONE,
-  },
+  PROMOTION: { BASE, CREATE_NORMAL, CREATE_COMBO, CREATE_SHOCK_DEAL },
 } = END_POINTS;
 
 @ApiTags(DOCUMENTATION.TAGS.PROMOTION)
@@ -59,13 +45,13 @@ export class PromotionController {
     return await this.promotionService.CreateNewNormalPromotion(dto);
   }
 
-  // @ApiOperation({
-  //   description: 'Create new shock deal promotion',
-  // })
-  // @Post(CREATE_SHOCK_DEAL)
-  // async createNewPromotionSockDeal(dto: CreatePromotionShockDealDto) {
-  //   return await this.promotionService.CreateNewPromotionShockDeal(dto);
-  // }
+  @ApiOperation({
+    description: 'Create new shock deal promotion',
+  })
+  @Post(CREATE_SHOCK_DEAL)
+  async createNewPromotionSockDeal(@Body() dto: CreatePromotionShockDealDto) {
+    return await this.promotionService.CreateNewPromotionShockDeal(dto);
+  }
 
   // @ApiOperation({
   //   summary: 'Update existing promotion campaign',
