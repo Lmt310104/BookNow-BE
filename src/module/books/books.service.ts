@@ -123,6 +123,21 @@ export class BooksService {
       },
       include: {
         Category: true,
+        PromotionComboProduct: {
+          include: {
+            PromotionCombo: true,
+          }
+        },
+        PromotionNormalDetail: {
+          include: {
+            Promotion: true,
+          }
+        },
+        PromotionShockDealBook: {
+          include: {
+            PromotionShockDeal: true,
+          }
+        }
       },
       orderBy: [
         condition1 !== undefined

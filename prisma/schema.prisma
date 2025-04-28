@@ -299,8 +299,9 @@ model Promotion {
   description           String
   status                PromotionStatus
   promotion_category    PromotionCategory
-  create_at             DateTime                @default(now())
-  update_at             DateTime                @updatedAt
+  is_active             Boolean                 @default(true)
+  created_at            DateTime                @default(now())
+  updated_at            DateTime?               @updatedAt
   PromotionNormalDetail PromotionNormalDetail[]
   PromotionCombo        PromotionCombo?
   PromotionShockDeal    PromotionShockDeal?

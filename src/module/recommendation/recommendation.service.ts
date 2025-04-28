@@ -76,7 +76,7 @@ export class RecommendationService {
           title: book.title,
           description: book.description,
           author: book.author,
-          price: book.final_price,
+          price: book.price,
           rating: book.avg_stars,
           totalReview: book.total_reviews,
           soldQuantity: book.sold_quantity,

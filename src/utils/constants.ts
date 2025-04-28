@@ -218,6 +218,7 @@ export const END_POINTS = {
     GET_ONE: '/get-one/:id',
     ACTIVE: '/active/:id',
     INACTIVE: '/inactive/:id',
+    EDIT_TIME: 'edit-time/:id',
   },
   RECOMMENDATION: {
     BASE: '/recommendation',
