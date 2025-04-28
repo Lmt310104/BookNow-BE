@@ -18,6 +18,11 @@ import {
   PromotionStatus,
 } from '@prisma/client';
 import { StandardResponse } from 'src/utils/response.dto';
+import { FindAllPromotionDto } from './dto/find-all-promotion.dto';
+import { PageResponseDto } from 'src/utils/page-response.dto';
+import { PageResponseMetaDto } from 'src/utils/page-response-meta.dto';
+import { UpdatePromotionDto } from './dto/update-promotion.dto';
+import { EditTimePromotionDto } from './dto/edit-time-promotion.dto';
 
 @Injectable()
 export class PromotionService {
@@ -298,85 +303,405 @@ export class PromotionService {
     }
   }
 
-  // async getAllPromotions(query: FindAllPromotionDto) {
-  //   const data = await this.prisma.promotion.findMany({
-  //     where: {},
-  //     skip: query.skip,
-  //     take: query.take,
-  //     orderBy: { [query.sortBy]: query.order },
-  //   });
-  //   return { data, length: data.length };
-  // }
-  // async updatePromotion(id: string, dto: UpdatePromotionDto) {
-  //   try {
-  //     await this.prisma.promotion.findUniqueOrThrow({
-  //       where: { id: id },
-  //     });
-  //     const filteredDto = Object.fromEntries(
-  //       Object.entries(dto).filter(([_, v]) => v !== null && v !== undefined),
-  //     );
-  //     if (filteredDto.start_date && filteredDto.end_date) {
-  //       if (filteredDto.start_date < filteredDto.end_date) {
-  //         throw new BadRequestException(
-  //           'Chương trình phải kéo dài ít nhất là 1 ngày kể từ khi bắt đầu',
-  //         );
-  //       }
-  //       if (filteredDto.end_date.getDate() < Date.now()) {
-  //         throw new BadRequestException(
-  //           'Thời gian kết thúc chương trình phải lớn hơn thời gian hiện tại',
-  //         );
-  //       }
-  //     }
-  //     if (filteredDto.book_ids) {
-  //       await this.prisma.promotionBook.deleteMany({
-  //         where: {
-  //           promotion_id: id,
-  //         },
-  //       });
-  //       dto.book_ids.forEach(async (book_id) => {
-  //         const book = await this.prisma.books.findUnique({
-  //           where: {
-  //             id: book_id,
-  //           },
-  //         });
-  //         if (!book) {
-  //           throw new NotFoundException(
-  //             `Không tìm thấy sách với id ${book_id}`,
-  //           );
-  //         }
-  //         await this.prisma.promotionBook.create({
-  //           data: {
-  //             promotion_id: id,
-  //             book_id: book_id,
-  //           },
-  //         });
-  //       });
-  //     }
-  //     const { _, ...data } = filteredDto;
-  //     return await this.prisma.promotion.update({
-  //       where: { id },
-  //       data: data,
-  //     });
-  //   } catch (error) {
-  //     throw error;
-  //   }
-  // }
-  // async getOnePromotion(id: string) {
-  //   try {
-  //     return await this.prisma.promotion.findUniqueOrThrow({
-  //       where: { id },
-  //       include: {
-  //         PromotionBook: {
-  //           include: {
-  //             book: true,
-  //           },
-  //         },
-  //       },
-  //     });
-  //   } catch (error) {
-  //     throw error;
-  //   }
-  // }
+  async getAllPromotions(query: FindAllPromotionDto) {
+    const where: any = {};
+    if (query.name) {
+      where.name = {
+        contains: query.name,
+        mode: 'insensitive',
+      };
+    }
+    if (query.is_active !== null) {
+      where.is_active = query.is_active;
+    }
+
+    if (query.promotion_category) {
+      where.promotion_category = query.promotion_category;
+    }
+
+    if (query.status) {
+      where.status = query.status;
+    }
+
+    if (query.start_date) {
+      where.start_date = {
+        gte: new Date(query.start_date),
+      };
+    }
+
+    if (query.end_date) {
+      where.end_date = {
+        lte: new Date(query.end_date),
+      };
+    }
+    console.log(where);
+    const totalCount = await this.prisma.promotion.count({ where });
+    const data = await this.prisma.promotion.findMany({
+      where: where,
+      skip: query.skip,
+      take: query.take,
+      orderBy: { [query.sortBy]: query.order },
+    });
+    return new PageResponseDto(
+      data,
+      new PageResponseMetaDto({
+        pageOptionsDto: query,
+        itemCount: totalCount,
+      }),
+    );
+  }
+  async getOnePromotion(id: string) {
+    try {
+      const promotion = await this.prisma.promotion.findUniqueOrThrow({
+        where: { id },
+        include: {
+          PromotionCombo: {
+            include: {
+              PromotionComboCondition: true,
+              PromotionComboProduct: true,
+            },
+          },
+          PromotionNormalDetail: true,
+          PromotionShockDeal: {
+            include: {
+              PromotionShockDealBook: true,
+              PromotionShockDealCondition: true,
+              PromotionShockDealFreeGiftBook: true,
+            },
+          },
+        },
+      });
+      return new StandardResponse(
+        promotion,
+        'Promotion retrieved successfully',
+        200,
+      );
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  async activatePromotion(id: string) {
+    await this.prisma.promotion.findUniqueOrThrow({
+      where: { id },
+    });
+    await this.prisma.promotion.update({
+      where: { id },
+      data: {
+        is_active: true,
+      },
+    });
+    return new StandardResponse(true, 'Active promotion successfully', 200);
+  }
+
+  async deactivatePromotion(id: string) {
+    await this.prisma.promotion.findUniqueOrThrow({
+      where: { id },
+    });
+    await this.prisma.promotion.update({
+      where: { id },
+      data: {
+        is_active: false,
+      },
+    });
+    return new StandardResponse(true, 'Deactive promotion successfully', 200);
+  }
+
+  async updatePromotion(id: string, dto: UpdatePromotionDto) {
+    try {
+      const existingPromotion = await this.prisma.promotion.findUniqueOrThrow({
+        where: { id },
+        include: {
+          PromotionNormalDetail: true,
+          PromotionCombo: true,
+          PromotionShockDeal: true,
+        },
+      });
+      if (!existingPromotion.is_active) {
+        throw new BadRequestException(
+          'You can not edit this promotion campaign because it is inactive',
+        );
+      }
+
+      // Filter out undefined values
+      const filteredDto = Object.fromEntries(
+        Object.entries(dto).filter(([_, v]) => v !== null && v !== undefined),
+      );
+
+      return await this.prisma.$transaction(async (tx) => {
+        await tx.promotion.update({
+          where: { id },
+          data: {
+            name: filteredDto.name,
+            description: filteredDto.description,
+            max_usage_per_user: filteredDto.max_usage_per_user,
+            order_limit: filteredDto.order_limit,
+          },
+        });
+        // For promotion category-specific updates
+        switch (existingPromotion.promotion_category) {
+          case PromotionCategory.SHOP_DISCOUNT:
+            if (
+              filteredDto.normal_details &&
+              filteredDto.normal_details.length > 0
+            ) {
+              // Validate the book IDs in normal details
+              await this.ValidateProduct(filteredDto.normal_details);
+
+              // Delete existing details
+              await tx.promotionNormalDetail.deleteMany({
+                where: { promotion_id: id },
+              });
+
+              // Create new details
+              await tx.promotionNormalDetail.createMany({
+                data: filteredDto.normal_details.map((detail) => ({
+                  promotion_id: id,
+                  book_id: detail.book_id,
+                  discount_amount: detail.discount_amount,
+                  discount_rate: detail.discount_rate,
+                })),
+              });
+            }
+            break;
+          case PromotionCategory.COMBO_DISCOUNT:
+            if (
+              existingPromotion.PromotionCombo &&
+              filteredDto.combo_book_ids &&
+              filteredDto.combo_book_ids.length > 0
+            ) {
+              await this.ValidateBookIds(filteredDto.combo_book_ids);
+
+              const comboId = existingPromotion.PromotionCombo[0].id;
+
+              await tx.promotionComboProduct.deleteMany({
+                where: { promotion_combo_id: comboId },
+              });
+
+              await tx.promotionComboProduct.createMany({
+                data: filteredDto.combo_book_ids.map((bookId) => ({
+                  promotion_combo_id: comboId,
+                  book_id: bookId,
+                })),
+              });
+
+              if (
+                filteredDto.combo_conditions &&
+                filteredDto.combo_conditions.length > 0
+              ) {
+                await tx.promotionComboCondition.deleteMany({
+                  where: { promotion_combo_id: comboId },
+                });
+                await tx.promotionComboCondition.createMany({
+                  data: filteredDto.combo_conditions.map((condition) => ({
+                    promotion_combo_id: comboId,
+                    quantity: condition.quantity,
+                    discount_value: condition.discount_value,
+                  })),
+                });
+              }
+            }
+            break;
+          case PromotionCategory.DEAL_DISCOUNT:
+            if (existingPromotion.PromotionShockDeal) {
+              const shockDealId = existingPromotion.PromotionShockDeal[0].id;
+              const shockDealType =
+                existingPromotion.PromotionShockDeal[0]
+                  .promotion_shock_deal_type;
+
+              if (
+                filteredDto.shock_deal_book_ids &&
+                filteredDto.shock_deal_book_ids.length > 0
+              ) {
+                await this.ValidateBookIds(filteredDto.shock_deal_book_ids);
+
+                await tx.promotionShockDealBook.deleteMany({
+                  where: { promotion_shock_deal_id: shockDealId },
+                });
+
+                await tx.promotionShockDealBook.createMany({
+                  data: filteredDto.shock_deal_book_ids.map((bookId) => ({
+                    promotion_shock_deal_id: shockDealId,
+                    book_id: bookId,
+                  })),
+                });
+              }
+              if (
+                shockDealType === PromotionShockDealType.BUY_WITH_SHOCK_DEAL
+              ) {
+                if (
+                  filteredDto.shock_deal_conditions &&
+                  filteredDto.shock_deal_conditions.length > 0
+                ) {
+                  for (const condition of filteredDto.shock_deal_conditions) {
+                    if (
+                      (condition.discount_amount === null ||
+                        condition.discount_amount === undefined) &&
+                      (condition.discount_rate === null ||
+                        condition.discount_rate === undefined)
+                    ) {
+                      throw new BadRequestException(
+                        'Each condition must have either a discount amount or a discount rate',
+                      );
+                    }
+
+                    if (
+                      condition.discount_rate !== null &&
+                      condition.discount_rate !== undefined
+                    ) {
+                      if (
+                        condition.discount_rate < 0 ||
+                        condition.discount_rate > 100
+                      ) {
+                        throw new BadRequestException(
+                          'Discount rate must be between 0 and 100',
+                        );
+                      }
+                    }
+                  }
+
+                  await tx.promotionShockDealCondition.deleteMany({
+                    where: { promotion_shock_deal_id: shockDealId },
+                  });
+
+                  await tx.promotionShockDealCondition.createMany({
+                    data: filteredDto.shock_deal_conditions.map(
+                      (condition) => ({
+                        promotion_shock_deal_id: shockDealId,
+                        book_id: condition.book_id,
+                        discount_amount: condition.discount_amount,
+                        discount_rate: condition.discount_rate,
+                      }),
+                    ),
+                  });
+                }
+              } else if (
+                shockDealType === PromotionShockDealType.BUY_TO_GET_GIFT
+              ) {
+                if (
+                  filteredDto.required_purchase_quantity ||
+                  filteredDto.gift_quantity
+                ) {
+                  await tx.promotionShockDeal.update({
+                    where: { id: shockDealId },
+                    data: {
+                      required_purchase_quantity:
+                        filteredDto.required_purchase_quantity,
+                      gift_quantity: filteredDto.gift_quantity,
+                    },
+                  });
+                }
+
+                if (
+                  filteredDto.shock_deal_gift_books &&
+                  filteredDto.shock_deal_gift_books.length > 0
+                ) {
+                  await this.ValidateBookIds(filteredDto.shock_deal_gift_books);
+
+                  await tx.promotionShockDealFreeGiftBook.deleteMany({
+                    where: { promotion_shock_deal_id: shockDealId },
+                  });
+
+                  await tx.promotionShockDealFreeGiftBook.createMany({
+                    data: filteredDto.shock_deal_gift_books.map((bookId) => ({
+                      promotion_shock_deal_id: shockDealId,
+                      book_id: bookId,
+                    })),
+                  });
+                }
+              }
+            }
+            break;
+        }
+        return new StandardResponse(
+          { promotionId: id },
+          'Promotion updated successfully',
+          200,
+        );
+      });
+    } catch (error) {
+      console.log(error);
+
+      if (
+        error instanceof BadRequestException ||
+        error instanceof NotFoundException
+      ) {
+        throw error;
+      }
+
+      throw new InternalServerErrorException('Failed to update promotion');
+    }
+  }
+
+  async editPromotionTime(id: string, dto: EditTimePromotionDto) {
+    try {
+      const promotion = await this.prisma.promotion.findUniqueOrThrow({
+        where: { id },
+        select: {
+          id: true,
+          start_date: true,
+          end_date: true,
+          status: true,
+        },
+      });
+
+      const now = new Date();
+      const newStartDate = dto.start_date || promotion.start_date;
+      const newEndDate = dto.end_date || promotion.end_date;
+
+      if (newStartDate > newEndDate) {
+        throw new BadRequestException('Start date must be before end date');
+      }
+
+      if (promotion.start_date <= now && newStartDate > now) {
+        throw new BadRequestException(
+          'Cannot change start date of an active or past promotion to a future date',
+        );
+      }
+      if (promotion.end_date < now) {
+        throw new BadRequestException(
+          'Cannot modify end date of an already concluded promotion',
+        );
+      }
+
+      let newStatus = promotion.status;
+      if (newStartDate > now) {
+        newStatus = PromotionStatus.UPCOMING;
+      } else if (newEndDate < now) {
+        newStatus = PromotionStatus.COMPLETED;
+      } else {
+        newStatus = PromotionStatus.ONGOING;
+      }
+
+      const updatedPromotion = await this.prisma.promotion.update({
+        where: { id },
+        data: {
+          start_date: newStartDate,
+          end_date: newEndDate,
+          status: newStatus,
+        },
+      });
+      return new StandardResponse(
+        updatedPromotion,
+        'Promotion time period updated successfully',
+        200,
+      );
+    } catch (error) {
+      console.log(error);
+
+      if (
+        error instanceof BadRequestException ||
+        error instanceof NotFoundException
+      ) {
+        throw error;
+      }
+
+      throw new InternalServerErrorException(
+        'Failed to update promotion time period',
+      );
+    }
+  }
+
   private async ValidateProduct(
     promotion_eligibility: CreatePromotionNormalDetailDto[],
   ) {

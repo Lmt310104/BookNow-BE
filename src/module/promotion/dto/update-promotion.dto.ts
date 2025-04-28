@@ -1,14 +1,7 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { DiscountType, PromotionCategory } from '@prisma/client';
 import { Type } from 'class-transformer';
-import {
-  IsArray,
-  IsDate,
-  IsEnum,
-  IsNotEmpty,
-  IsOptional,
-  IsString,
-} from 'class-validator';
+import { IsArray, IsDate, IsEnum, IsOptional, IsString } from 'class-validator';
 
 export class UpdatePromotionDto {
   @ApiProperty({
