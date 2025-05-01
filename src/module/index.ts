@@ -10,6 +10,7 @@ import { EmailModule } from './email/email.module';
 import { EventsModule } from './events_gateway/event_gateway.module';
 import { GeminiModule } from './gemini/gemini.module';
 import { GoogleOauthModule } from './google-oauth/google-oauth.module';
+import { GroupBuyModule } from './group-buy/group-buy.module';
 import { InventoryModule } from './inventory/inventory.module';
 import { OpenAIModule } from './openai/openai.module';
 import { OrdersModule } from './orders/orders.module';
@@ -45,6 +46,7 @@ const Modules = [
   InventoryModule,
   PromotionModule,
   RecommendationModule,
+  GroupBuyModule,
 ];
 
 export default Modules;

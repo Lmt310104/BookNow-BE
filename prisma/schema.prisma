@@ -38,6 +38,9 @@ model Users {
   Orders              Orders[]
   Carts               Carts?
   Reviews             Reviews[]
+  Groups              Groups[]
+  OrderItems          OrderItems[]
+  GroupMembers        GroupMembers[]
 
   @@unique([email, type_email])
   @@index([full_name, email, phone, type_email], map: "users_fulltext_idx")
@@ -86,6 +89,7 @@ model Books {
   PromotionComboProduct          PromotionComboProduct[]
   PromotionShockDealBook         PromotionShockDealBook[]
   PromotionShockDealFreeGiftBook PromotionShockDealFreeGiftBook[]
+  GroupItems                     GroupItems[]
 
   @@index([title, author], map: "books_fulltext_idx")
 }
@@ -160,6 +164,9 @@ model OrderItems {
   review_status ReviewState @default(UNREVIEW)
   review_id     Int?
   review        Reviews?
+  promotion_ids String[]    @default([])
+  group_user_id String?
+  GroupUser     Users?      @relation(fields: [group_user_id], references: [id], onDelete: Cascade)
   quantity      Int
   price         Decimal
   total_price   Decimal
@@ -380,6 +387,38 @@ model PromotionShockDealFreeGiftBook {
   Book                    Books              @relation(fields: [book_id], references: [id])
 }
 
+model Groups {
+  id           String         @id @default(uuid())
+  host_id      String
+  User         Users          @relation(fields: [host_id], references: [id])
+  group_status GroupStatus    @default(ACTIVE)
+  created_at   DateTime       @default(now())
+  updated_at   DateTime       @updatedAt
+  GroupMembers GroupMembers[]
+}
+
+model GroupMembers {
+  id         String       @id @default(uuid())
+  group_id   String
+  Group      Groups       @relation(fields: [group_id], references: [id])
+  user_id    String
+  User       Users        @relation(fields: [user_id], references: [id])
+  GroupItems GroupItems[]
+}
+
+model GroupItems {
+  id              String       @id @default(uuid())
+  group_member_id String
+  GroupMember     GroupMembers @relation(fields: [group_member_id], references: [id])
+  book_id         String
+  Book            Books        @relation(fields: [book_id], references: [id])
+  quantity        Int
+  created_at      DateTime     @default(now())
+  updated_at      DateTime     @updatedAt
+
+  @@unique([group_member_id, book_id])
+}
+
 enum Role {
   CUSTOMER
   ADMIN
@@ -478,4 +517,10 @@ enum PromotionComboType {
 enum PromotionShockDealType {
   BUY_WITH_SHOCK_DEAL
   BUY_TO_GET_GIFT
+}
+
+enum GroupStatus {
+  ACTIVE
+  CHECK_OUT
+  DELETED
 }
