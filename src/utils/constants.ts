@@ -227,6 +227,17 @@ export const END_POINTS = {
     ADD_USER_PROPERTIES: '/add-user-properties',
     ADD_ITEMS_PROPERTIES: '/add-items-properties',
   },
+  GROUP_BUY: {
+    BASE: '/group-buy',
+    CREATE_GROUP: '/create-new-group/',
+    GET_GROUP_BASKET: '/get-group-basket/:group_id',
+    ADD_BOOK_TO_GROUP: '/add-book-to-group/:group_id',
+    DELETE_BOOK: '/delete-book',
+    UPDATE_BOOK: '/update-book-quantity/:group_id',
+    UPDATE_GROUP_STATUS: '/update-group-status/:group_id',
+    CREATE_GROUP_ORDER: '/create-group-order',
+    JOIN_GROUP: '/join-group/:group_id',
+  },
 };
 
 export enum ROLE {
