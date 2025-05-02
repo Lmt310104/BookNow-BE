@@ -114,7 +114,6 @@ describe('PromotionService - CreateNewPromotionCombo', () => {
           name: createPromotionComboDto.name,
           start_date: createPromotionComboDto.start_date,
           end_date: createPromotionComboDto.end_date,
-          description: createPromotionComboDto.description,
           max_usage_per_user: createPromotionComboDto.max_usage_per_user,
           promotion_category: PromotionCategory.COMBO_DISCOUNT,
           status: PromotionStatus.UPCOMING,
