@@ -9,7 +9,6 @@ import {
   Query,
 } from '@nestjs/common';
 import { END_POINTS } from 'src/utils/constants';
-import { AddressService } from './address.service';
 import { CreateAddressDto } from './dto/create_address.dto';
 import { StandardResponse } from 'src/utils/response.dto';
 import HttpStatusCode from 'src/utils/HttpStatusCode';
@@ -22,6 +21,7 @@ import { GetAddressDto } from './dto/get_address.dto';
 import { PageResponseMetaDto } from 'src/utils/page-response-meta.dto';
 import { PageResponseDto } from 'src/utils/page-response.dto';
 import { GetAllAddressByAdminDto } from './dto/get_address_by_admin..dto';
+import { AddressService } from './address.service';
 
 const {
   ADDRESS: { BASE, CREATE, GET_ALL_BY_ADMIN, GET_ALL_BY_USER, UPDATE, DELETE },
