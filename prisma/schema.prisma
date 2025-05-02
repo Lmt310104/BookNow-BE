@@ -66,6 +66,7 @@ model Books {
   description                    String                           @db.Text
   entry_price                    Decimal
   final_price                    Decimal?
+  current_price                  Decimal?
   discountPercentage             Int?
   discountDate                   DateTime?
   avg_stars                      Decimal                          @default(0)
@@ -306,7 +307,6 @@ model Promotion {
   end_date              DateTime
   order_limit           Int?
   max_usage_per_user    Int?
-  description           String
   status                PromotionStatus
   promotion_category    PromotionCategory
   is_active             Boolean                 @default(true)

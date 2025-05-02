@@ -177,14 +177,6 @@ export class CreatePromotionComboDto {
   @IsDate()
   @Type(() => Date)
   end_date: Date;
-
-  @ApiProperty({
-    description: 'Description of the promotion',
-    example: 'Description example',
-  })
-  @IsNotEmpty()
-  @IsString()
-  description: string;
   @ApiProperty({
     description: 'Promotion combo category',
   })
@@ -260,9 +252,9 @@ export class CreatePromotionShockDealDto {
   @ApiProperty({
     description: 'Promotion combo category',
   })
-  @IsNotEmpty()
+  @IsOptional()
   @IsEnum(PromotionShockDealType)
-  type: PromotionShockDealType;
+  type: PromotionShockDealType = PromotionShockDealType.BUY_WITH_SHOCK_DEAL;
 
   @ApiProperty({
     description: 'The required quantity of items for a purchase',

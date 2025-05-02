@@ -23,6 +23,7 @@ import { PageResponseDto } from 'src/utils/page-response.dto';
 import { PageResponseMetaDto } from 'src/utils/page-response-meta.dto';
 import { UpdatePromotionDto } from './dto/update-promotion.dto';
 import { EditTimePromotionDto } from './dto/edit-time-promotion.dto';
+import { GetAvailableBookForPromotionDto } from './dto/get-available-promotion.dto';
 
 @Injectable()
 export class PromotionService {
@@ -76,7 +77,6 @@ export class PromotionService {
             name: dto.name,
             start_date: dto.start_date,
             end_date: dto.end_date,
-            description: dto.description,
             max_usage_per_user: dto.max_usage_per_user,
             promotion_category: PromotionCategory.COMBO_DISCOUNT,
             status: PromotionStatus.UPCOMING,
@@ -338,6 +338,34 @@ export class PromotionService {
     const totalCount = await this.prisma.promotion.count({ where });
     const data = await this.prisma.promotion.findMany({
       where: where,
+      include: {
+        PromotionNormalDetail: {
+          include: {
+            Book: true,
+          },
+        },
+        PromotionCombo: {
+          include: {
+            PromotionComboCondition: true,
+            PromotionComboProduct: {
+              include: {
+                Book: true,
+              },
+            },
+          },
+        },
+        PromotionShockDeal: {
+          include: {
+            PromotionShockDealBook: {
+              include: {
+                Book: true,
+              },
+            },
+            PromotionShockDealCondition: true,
+            PromotionShockDealFreeGiftBook: true,
+          },
+        },
+      },
       skip: query.skip,
       take: query.take,
       orderBy: { [query.sortBy]: query.order },
@@ -358,13 +386,25 @@ export class PromotionService {
           PromotionCombo: {
             include: {
               PromotionComboCondition: true,
-              PromotionComboProduct: true,
+              PromotionComboProduct: {
+                include: {
+                  Book: true,
+                },
+              },
             },
           },
-          PromotionNormalDetail: true,
+          PromotionNormalDetail: {
+            include: {
+              Book: true,
+            },
+          },
           PromotionShockDeal: {
             include: {
-              PromotionShockDealBook: true,
+              PromotionShockDealBook: {
+                include: {
+                  Book: true,
+                },
+              },
               PromotionShockDealCondition: true,
               PromotionShockDealFreeGiftBook: true,
             },
@@ -702,6 +742,81 @@ export class PromotionService {
     }
   }
 
+  async getAvailableBookForPromotion(query: GetAvailableBookForPromotionDto) {
+    const where: any = {
+      status: BookStatus.ACTIVE,
+    };
+
+    if (query.book_name) {
+      where.OR = [
+        {
+          title: {
+            contains: query.book_name,
+            mode: 'insensitive',
+          },
+        },
+        {
+          unaccent: {
+            contains: query.book_name,
+            mode: 'insensitive',
+          },
+        },
+      ];
+    }
+
+    const currentPromotionCampaign = await this.prisma.promotion.findMany({
+      where: {
+        start_date: { lte: new Date() },
+        end_date: { gte: new Date() },
+        is_active: true,
+      },
+      select: {
+        id: true,
+        name: true,
+        PromotionNormalDetail: {
+          select: {
+            book_id: true,
+          },
+        },
+        PromotionCombo: {
+          select: {
+            PromotionComboProduct: {
+              select: {
+                book_id: true,
+              },
+            },
+          },
+        },
+        PromotionShockDeal: {
+          select: {
+            PromotionShockDealBook: {
+              select: {
+                book_id: true,
+              },
+            },
+          },
+        },
+      },
+    });
+    const books = await this.prisma.books.findMany({
+      where,
+      select: {
+        id: true,
+        title: true,
+        author: true,
+        price: true,
+        stock_quantity: true,
+        image_url: true,
+        Category: {
+          select: {
+            id: true,
+            name: true,
+          },
+        },
+      }
+    });
+
+  }
   private async ValidateProduct(
     promotion_eligibility: CreatePromotionNormalDetailDto[],
   ) {
@@ -800,5 +915,27 @@ export class PromotionService {
     if (start_date <= now) {
       throw new BadRequestException('Start date must be in the future');
     }
+  }
+
+  private async checkConflictedProductsInNormalPromotion(
+    book_ids: string[],
+    start_date: Date,
+    end_date: Date,
+  ): Promise<string[]> {
+    const conflicted = await this.prisma.promotionNormalDetail.findMany({
+      where: {
+        book_id: { in: book_ids },
+        Promotion: {
+          start_date: { lte: start_date },
+          end_date: { gte: end_date },
+          is_active: true,
+        },
+      },
+      select: {
+        book_id: true,
+      },
+    });
+
+    return [...new Set(conflicted.map((item) => item.book_id))];
   }
 }
