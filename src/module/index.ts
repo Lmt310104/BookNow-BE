@@ -1,4 +1,5 @@
-import { AddressModule } from './address/address.module';
+import { AddressModule } from './address/v1/address.module';
+import { AddressModuleV2 } from './address/v2/address.module';
 import { AuthModule } from './auth/auth.module';
 import { AuthorsModule } from './authors/authors.module';
 import { BooksModule } from './books/books.module';
@@ -47,6 +48,7 @@ const Modules = [
   PromotionModule,
   RecommendationModule,
   GroupBuyModule,
+  AddressModuleV2,
 ];
 
 export default Modules;

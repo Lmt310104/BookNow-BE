@@ -138,4 +138,13 @@ export class GroupBuyController {
       200,
     );
   }
+
+  @Get('test-goship-sdk')
+  async testGoShipSDK() {
+    return new StandardResponse(
+      await this.groupBuyService.testGoShipIntegration(),
+      'Update group status successfully',
+      200,
+    );
+  }
 }

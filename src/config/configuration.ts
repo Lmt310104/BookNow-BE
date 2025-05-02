@@ -51,4 +51,5 @@ export default () => ({
   recombee_database: process.env.RECOMBEE_DATABASE,
   recombee_secret: process.env.RECOMBEE_SECRET,
   recombee_region: process.env.RECOMBEE_REGION,
+  goship_accesstoken : process.env.GOSHIP_ACCESS_TOKEN,
 });

@@ -41,6 +41,8 @@ model Users {
   Groups              Groups[]
   OrderItems          OrderItems[]
   GroupMembers        GroupMembers[]
+  Payments            Payments[]
+  NewAddress          NewAddress[]
 
   @@unique([email, type_email])
   @@index([full_name, email, phone, type_email], map: "users_fulltext_idx")
@@ -151,6 +153,7 @@ model Orders {
   payment_method PaymentMethod @default(COD)
   is_deleted     Boolean       @default(false)
   OrderItems     OrderItems[]
+  Payments       Payments[]
 
   @@index([full_name, phone_number, address], map: "orders_fulltext_idx")
 }
@@ -419,6 +422,51 @@ model GroupItems {
   @@unique([group_member_id, book_id])
 }
 
+model NewAddress {
+  id           String    @id @default(uuid())
+  user_id      String
+  User         Users     @relation(fields: [user_id], references: [id])
+  full_name    String
+  phone_number String
+  street       String
+  ward_name    String?
+  district_id  String
+  District     Districts @relation(fields: [district_id], references: [id])
+  lat          Decimal
+  lon          Decimal
+  created_at   DateTime  @default(now())
+  updated_at   DateTime  @updatedAt
+}
+
+model Payments {
+  id         String        @id @default(uuid())
+  order_id   String
+  Order      Orders        @relation(fields: [order_id], references: [id])
+  user_id    String
+  User       Users         @relation(fields: [user_id], references: [id])
+  amount     Float
+  method     PaymentMethod
+  status     PaymentStatus
+  created_at DateTime      @default(now())
+  updated_at DateTime      @updatedAt
+}
+
+model Districts {
+  id            String       @id @default(uuid())
+  name          String
+  city_id       String
+  City          Cities       @relation(fields: [city_id], references: [id])
+  district_code String
+  NewAddress    NewAddress[]
+}
+
+model Cities {
+  id          String      @id @default(uuid())
+  name        String
+  Districts   Districts[]
+  postal_code String
+}
+
 enum Role {
   CUSTOMER
   ADMIN
@@ -523,4 +571,10 @@ enum GroupStatus {
   ACTIVE
   CHECK_OUT
   DELETED
+}
+
+enum PaymentStatus {
+  PENDING
+  SUCCESS
+  FAILED
 }

@@ -6,12 +6,14 @@ import { GroupStatus } from '@prisma/client';
 import { UpdateGroupItemBookDto } from './dto/update-group-item-book.dto';
 import { UpdateGroupStatusDto } from './dto/update-group-status.dto';
 import { CreateGroupOrderDto } from './dto/create-group-order.dto';
+import { GoshipSDKProvider } from 'src/common/providers/goship.provider';
 
 @Injectable()
 export class GroupBuyService {
   constructor(
     private readonly prisma: PrismaService,
     private configService: ConfigService,
+    private readonly goshipProvider: GoshipSDKProvider,
   ) {}
   async getGroupBasket(group_id: string) {
     return await this.prisma.groups.findUnique({
@@ -198,6 +200,10 @@ export class GroupBuyService {
     group_id: string,
     dto: CreateGroupOrderDto,
   ) {}
+
+  async testGoShipIntegration() {
+    return this.goshipProvider.getCities();
+  }
 
   private async checkValidGroupMemberAndBookRequest(
     user_id: string,
