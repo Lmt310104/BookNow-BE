@@ -20,6 +20,7 @@ import {
   CreatePromotionShockDealDto,
 } from './dto/create-promotion.dto';
 import { FindAllPromotionDto } from './dto/find-all-promotion.dto';
+import { GetAvailableBookForPromotionDto } from './dto/get-available-promotion.dto';
 
 const {
   PROMOTION: {
@@ -114,5 +115,15 @@ export class PromotionController {
   })
   async editPromotionTime(@Param('id') id: string, @Body() dto: any) {
     return await this.promotionService.editPromotionTime(id, dto);
+  }
+
+  @Get('get-available-books')
+  @ApiOperation({
+    summary: 'Find books that can be added to a promotion campaign',
+  })
+  async searchAvailablePromotion(
+    @Query() query: GetAvailableBookForPromotionDto,
+  ) {
+    return await this.promotionService.getAvailableBookForPromotion(query);
   }
 }

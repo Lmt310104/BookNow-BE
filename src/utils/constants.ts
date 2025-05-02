@@ -305,6 +305,12 @@ export enum PAYMENT_METHOD {
   VNPAY = 'VNPAY',
 }
 
+export enum PROMOTION_TYPE {
+  NORMAL_DISCOUNT = 'NORMAL_DISCOUNT',
+  COMBO_DISCOUNT = 'COMBO_DISCOUNT',
+  SHOCK_DEAL = 'SHOCK_DEAL',
+}
+
 export const CURRENCY = 'VND';
 
 export const JWT_ACCESS_STRATEGY = 'jwt-access-strategy';

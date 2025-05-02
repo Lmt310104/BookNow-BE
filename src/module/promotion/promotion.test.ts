@@ -62,7 +62,6 @@ describe('PromotionService - CreateNewPromotionCombo', () => {
 
     const createPromotionComboDto: CreatePromotionComboDto = {
       name: 'Test Combo Promotion',
-      description: 'Test Description',
       start_date: new Date('2023-01-01'),
       end_date: new Date('2023-12-31'),
       book_ids: [validBookId1, validBookId2],

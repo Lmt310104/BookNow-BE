@@ -7,6 +7,7 @@ import { classes } from '@automapper/classes';
 import { CacheInterceptor, CacheModule } from '@nestjs/cache-manager';
 import { APP_INTERCEPTOR } from '@nestjs/core';
 import { createKeyv } from '@keyv/redis';
+import { ScheduleModule } from '@nestjs/schedule';
 @Module({
   imports: [
     ConfigModule.forRoot({
@@ -14,6 +15,7 @@ import { createKeyv } from '@keyv/redis';
       envFilePath: ['.env', '.env.development'],
       load: [configuration],
     }),
+    ScheduleModule.forRoot(),
     AutomapperModule.forRoot({
       strategyInitializer: classes(),
     }),
