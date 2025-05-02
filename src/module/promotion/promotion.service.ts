@@ -40,7 +40,6 @@ export class PromotionService {
           name: dto.name,
           start_date: dto.start_date,
           end_date: dto.end_date,
-          description: dto.description,
           promotion_category: PromotionCategory.SHOP_DISCOUNT,
           order_limit: dto.order_limit ?? 0,
           status: PromotionStatus.UPCOMING,
@@ -233,7 +232,6 @@ export class PromotionService {
             name: dto.name,
             start_date: dto.start_date,
             end_date: dto.end_date,
-            description: dto.description,
             promotion_category: PromotionCategory.DEAL_DISCOUNT,
             status: PromotionStatus.UPCOMING,
           },
@@ -473,7 +471,6 @@ export class PromotionService {
           where: { id },
           data: {
             name: filteredDto.name,
-            description: filteredDto.description,
             max_usage_per_user: filteredDto.max_usage_per_user,
             order_limit: filteredDto.order_limit,
           },
