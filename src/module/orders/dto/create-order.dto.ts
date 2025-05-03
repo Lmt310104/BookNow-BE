@@ -5,6 +5,7 @@ import {
   IsEnum,
   IsNotEmpty,
   IsNumber,
+  IsOptional,
   IsPositive,
   IsString,
   Min,
@@ -22,6 +23,10 @@ export class OrderItemDto {
   @IsPositive()
   @Min(1)
   quantity: number;
+
+  @IsArray()
+  @IsOptional()
+  promotion_ids: string[];
 }
 
 export class CreateOrderDto {

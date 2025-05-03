@@ -1,6 +1,6 @@
 import { ApiProperty } from '@nestjs/swagger';
+import { PromotionCategory } from '@prisma/client';
 import { IsEnum, IsNotEmpty, IsOptional, IsString } from 'class-validator';
-import { PROMOTION_TYPE } from 'src/utils/constants';
 import { PageOptionsDto } from 'src/utils/page-options-dto';
 
 export class GetAvailableBookForPromotionDto extends PageOptionsDto {
@@ -16,7 +16,7 @@ export class GetAvailableBookForPromotionDto extends PageOptionsDto {
     description: 'Promotion type',
     required: false,
   })
-  @IsEnum(PROMOTION_TYPE)
+  @IsEnum(PromotionCategory)
   @IsNotEmpty()
-  promotion_type?: PROMOTION_TYPE;
+  promotion_type?: PromotionCategory;
 }
