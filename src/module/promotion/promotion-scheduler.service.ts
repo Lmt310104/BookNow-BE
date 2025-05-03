@@ -6,16 +6,11 @@ import {
   PromotionStatus,
   PromotionShockDealType,
 } from '@prisma/client';
-import { PromotionService } from './promotion.service';
-
 @Injectable()
 export class PromotionSchedulerService {
   private readonly logger = new Logger(PromotionSchedulerService.name);
 
-  constructor(
-    private readonly prisma: PrismaService,
-    private readonly promotionService: PromotionService,
-  ) {}
+  constructor(private readonly prisma: PrismaService) {}
 
   @Cron(CronExpression.EVERY_HOUR)
   async handlePromotionStatusUpdates() {
@@ -23,7 +18,6 @@ export class PromotionSchedulerService {
     const now = new Date();
 
     try {
-      // 1. Find promotions that should become active (start_date passed, still active)
       const activatingPromotions = await this.prisma.promotion.findMany({
         where: {
           status: PromotionStatus.UPCOMING,
@@ -49,7 +43,6 @@ export class PromotionSchedulerService {
         },
       });
 
-      // 2. Find promotions that have expired (end_date passed)
       const expiredPromotions = await this.prisma.promotion.findMany({
         where: {
           status: PromotionStatus.ONGOING,
@@ -227,8 +220,6 @@ export class PromotionSchedulerService {
             where: { id: detail.book_id },
             data: {
               current_price: newPrice,
-              // If this is the best price, also update final_price
-              final_price: newPrice,
             },
           });
 
@@ -328,7 +319,6 @@ export class PromotionSchedulerService {
             where: { id: condition.book_id },
             data: {
               current_price: newPrice,
-              final_price: newPrice,
             },
           });
 

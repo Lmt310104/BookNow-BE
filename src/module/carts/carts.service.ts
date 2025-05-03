@@ -201,6 +201,7 @@ export class CartsService {
         items: cartItems.map((item) => ({
           bookId: item.book.id,
           quantity: item.quantity,
+          promotion_ids: [],
         })),
         fullName: dto.fullName,
         phoneNumber: dto.phone,

@@ -460,6 +460,12 @@ model Districts {
   NewAddress    NewAddress[]
 }
 
+model Vouchers {
+  id   String @id @default(uuid())
+  code String @unique
+  name String
+}
+
 model Cities {
   id          String      @id @default(uuid())
   name        String
