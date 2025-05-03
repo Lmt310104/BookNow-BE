@@ -332,7 +332,6 @@ export class PromotionService {
         lte: new Date(query.end_date),
       };
     }
-    console.log(where);
     const totalCount = await this.prisma.promotion.count({ where });
     const data = await this.prisma.promotion.findMany({
       where: where,
@@ -368,8 +367,18 @@ export class PromotionService {
       take: query.take,
       orderBy: { [query.sortBy]: query.order },
     });
+    const transformed = data.map((promotion) => {
+      return {
+        ...promotion,
+        PromotionNormalDetail:
+          promotion.PromotionNormalDetail.length > 0
+            ? promotion.PromotionNormalDetail
+            : null,
+      };
+    });
+
     return new PageResponseDto(
-      data,
+      transformed,
       new PageResponseMetaDto({
         pageOptionsDto: query,
         itemCount: totalCount,
@@ -434,12 +443,14 @@ export class PromotionService {
 
   async deactivatePromotion(id: string) {
     await this.prisma.promotion.findUniqueOrThrow({
-      where: { id },
+      where: { id, is_active: true },
     });
+
     await this.prisma.promotion.update({
       where: { id },
       data: {
         is_active: false,
+        status: PromotionStatus.COMPLETED,
       },
     });
     return new StandardResponse(true, 'Deactive promotion successfully', 200);
@@ -766,6 +777,7 @@ export class PromotionService {
         start_date: { lte: new Date() },
         end_date: { gte: new Date() },
         is_active: true,
+        promotion_category: query.promotion_type,
       },
       select: {
         id: true,
@@ -795,6 +807,49 @@ export class PromotionService {
         },
       },
     });
+    const promotedBookIds = new Set<string>();
+
+    currentPromotionCampaign.forEach((promotion) => {
+      // Get book IDs from normal promotions
+      if (
+        promotion.PromotionNormalDetail &&
+        promotion.PromotionNormalDetail.length > 0
+      ) {
+        promotion.PromotionNormalDetail.forEach((detail) => {
+          promotedBookIds.add(detail.book_id);
+        });
+      }
+
+      // Get book IDs from combo promotions
+      if (promotion.PromotionCombo) {
+        const comboProducts = promotion.PromotionCombo.PromotionComboProduct;
+        if (comboProducts && comboProducts.length > 0) {
+          comboProducts.forEach((product) => {
+            promotedBookIds.add(product.book_id);
+          });
+        }
+      }
+
+      // Get book IDs from shock deal promotions
+      if (promotion.PromotionShockDeal) {
+        const shockDealBooks =
+          promotion.PromotionShockDeal.PromotionShockDealBook;
+        if (shockDealBooks && shockDealBooks.length > 0) {
+          shockDealBooks.forEach((book) => {
+            promotedBookIds.add(book.book_id);
+          });
+        }
+      }
+    });
+
+    if (promotedBookIds.size > 0) {
+      where.id = {
+        notIn: Array.from(promotedBookIds),
+      };
+    }
+
+    const totalCount = await this.prisma.books.count({ where });
+
     const books = await this.prisma.books.findMany({
       where,
       select: {
@@ -810,9 +865,22 @@ export class PromotionService {
             name: true,
           },
         },
-      }
+      },
+      orderBy: {
+        [query.sortBy || 'title']: query.order || 'asc',
+      },
+      skip: query.skip || 0,
+      take: query.take || 10,
     });
 
+    // Return paginated results
+    return new PageResponseDto(
+      books,
+      new PageResponseMetaDto({
+        pageOptionsDto: query,
+        itemCount: totalCount,
+      }),
+    );
   }
   private async ValidateProduct(
     promotion_eligibility: CreatePromotionNormalDetailDto[],
@@ -912,27 +980,5 @@ export class PromotionService {
     if (start_date <= now) {
       throw new BadRequestException('Start date must be in the future');
     }
-  }
-
-  private async checkConflictedProductsInNormalPromotion(
-    book_ids: string[],
-    start_date: Date,
-    end_date: Date,
-  ): Promise<string[]> {
-    const conflicted = await this.prisma.promotionNormalDetail.findMany({
-      where: {
-        book_id: { in: book_ids },
-        Promotion: {
-          start_date: { lte: start_date },
-          end_date: { gte: end_date },
-          is_active: true,
-        },
-      },
-      select: {
-        book_id: true,
-      },
-    });
-
-    return [...new Set(conflicted.map((item) => item.book_id))];
   }
 }
