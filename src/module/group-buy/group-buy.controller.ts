@@ -6,7 +6,6 @@ import {
   ParseUUIDPipe,
   Post,
   Put,
-  Query,
 } from '@nestjs/common';
 import { END_POINTS } from 'src/utils/constants';
 import { GroupBuyService } from './group-buy.service';
@@ -19,7 +18,7 @@ import { ApiOperation } from '@nestjs/swagger';
 import { AddBookToGroupBasketDto } from './dto/add-book-to-group-basket.dto';
 import { UpdateGroupItemBookDto } from './dto/update-group-item-book.dto';
 import { UpdateGroupStatusDto } from './dto/update-group-status.dto';
-import { CreateGroupOrderDto } from './dto/create-group-order.dto';
+import { CheckoutGroupOrderDto } from './dto/checkout-group-order.dto';
 
 const {
   GROUP_BUY: {
@@ -126,10 +125,10 @@ export class GroupBuyController {
   async checkOutGroupCart(
     @Param('group_id', ParseUUIDPipe) group_id: string,
     @UserSession() currentUser: TUserSession,
-    @Body() body: CreateGroupOrderDto,
+    @Body() body: CheckoutGroupOrderDto,
   ) {
     return new StandardResponse(
-      await this.groupBuyService.createGroupOrder(
+      await this.groupBuyService.checkOutGroupOrder(
         currentUser.id,
         group_id,
         body,
@@ -139,11 +138,31 @@ export class GroupBuyController {
     );
   }
 
-  @Get('test-goship-sdk')
-  async testGoShipSDK() {
+  @Post(':group_id/confirm-order')
+  async confirmOrder(
+    @Param('group_id', ParseUUIDPipe) group_id: string,
+    @UserSession() currentUser: TUserSession,
+  ) {
     return new StandardResponse(
-      await this.groupBuyService.testGoShipIntegration(),
-      'Update group status successfully',
+      await this.groupBuyService.confirmOrder(currentUser.id, group_id),
+      'Confirm order successfully',
+      200,
+    );
+  }
+
+  @Post(':group_id/kick-out-group-member/:member_id')
+  async kickOutGroupMember(
+    @Param('group_id', ParseUUIDPipe) group_id: string,
+    @Param('member_id', ParseUUIDPipe) member_id: string,
+    @UserSession() currentUser: TUserSession,
+  ) {
+    return new StandardResponse(
+      await this.groupBuyService.kickOutGroupMember(
+        currentUser.id,
+        group_id,
+        member_id,
+      ),
+      'Kick out group member successfully',
       200,
     );
   }

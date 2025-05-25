@@ -5,15 +5,15 @@ import { AddBookToGroupBasketDto } from './dto/add-book-to-group-basket.dto';
 import { GroupStatus } from '@prisma/client';
 import { UpdateGroupItemBookDto } from './dto/update-group-item-book.dto';
 import { UpdateGroupStatusDto } from './dto/update-group-status.dto';
-import { CreateGroupOrderDto } from './dto/create-group-order.dto';
-import { GoshipSDKProvider } from 'src/common/providers/goship.provider';
+import { CheckoutGroupOrderDto } from './dto/checkout-group-order.dto';
+import { GroupBuyGateway } from './group-buy.gateway';
 
 @Injectable()
 export class GroupBuyService {
   constructor(
     private readonly prisma: PrismaService,
     private configService: ConfigService,
-    private readonly goshipProvider: GoshipSDKProvider,
+    private readonly groupBuyGateway: GroupBuyGateway,
   ) {}
   async getGroupBasket(group_id: string) {
     return await this.prisma.groups.findUnique({
@@ -102,6 +102,14 @@ export class GroupBuyService {
         },
       });
     }
+    this.groupBuyGateway.notifyGroupUpdate(group_id, 'BOOK_ADDED', {
+      user_id,
+      book_id: dto.book_id,
+      book_name: book.title,
+      book_image: book.image_url,
+      quantity: dto.quantity,
+    });
+
     return true;
   }
   async joinGroup(user_id: string, group_id: string) {
@@ -127,6 +135,9 @@ export class GroupBuyService {
         user_id: user_id,
         group_id: group_id,
       },
+    });
+    this.groupBuyGateway.notifyGroupUpdate(group_id, 'MEMBER_ADDED', {
+      user_id,
     });
     return true;
   }
@@ -192,17 +203,86 @@ export class GroupBuyService {
         group_status: dto.group_status,
       },
     });
+    this.groupBuyGateway.notifyGroupUpdate(group_id, 'STATUS_UPDATED', {
+      status: dto.group_status,
+      updatedBy: user_id,
+    });
+
     return true;
   }
 
-  async createGroupOrder(
+
+  async confirmOrder(user_id: string, group_id: string) {
+    const { groupMember } = await this.checkValidGroupMember(user_id, group_id);
+    if (groupMember.is_confirmed) {
+      throw new BadRequestException('You have already confirmed the order ');
+    }
+    await this.prisma.groupMembers.update({
+      where: {
+        id: groupMember.id,
+      },
+      data: {
+        is_confirmed: true,
+      },
+    });
+    return true;
+  }
+
+  async checkOutGroupOrder(
     user_id: string,
     group_id: string,
-    dto: CreateGroupOrderDto,
-  ) {}
+    dto: CheckoutGroupOrderDto,
+  ) {
+    const { group } = await this.checkValidGroupMemberAndHostAuthorize(
+      user_id,
+      group_id,
+    );
+    const groupMembers = await this.prisma.groupMembers.findMany({
+      where: {
+        group_id: group.id,
+      },
+    });
+    const isAllConfirmed = groupMembers.every((member) => member.is_confirmed);
+    if (!isAllConfirmed) {
+      throw new BadRequestException(
+        'All group members must confirm the order before checkout',
+      );
+    }
+  }
 
-  async testGoShipIntegration() {
-    return this.goshipProvider.getCities();
+  async kickOutGroupMember(
+    user_id: string,
+    group_id: string,
+    member_id: string,
+  ) {
+    const { group } = await this.checkValidGroupMemberAndHostAuthorize(
+      user_id,
+      group_id,
+    );
+    const groupMember = await this.prisma.groupMembers.findFirst({
+      where: {
+        id: member_id,
+        group_id: group.id,
+      },
+    });
+    if (!groupMember) {
+      throw new BadRequestException('Group member not found');
+    }
+    await this.prisma.groupMembers.delete({
+      where: {
+        id: groupMember.id,
+      },
+    });
+    await this.prisma.groupItems.deleteMany({
+      where: {
+        group_member_id: groupMember.id,
+      },
+    });
+    this.groupBuyGateway.notifyGroupUpdate(group_id, 'MEMBER_KICKED', {
+      removedMemberId: member_id,
+      removedBy: user_id,
+    });
+    return true;
   }
 
   private async checkValidGroupMemberAndBookRequest(
@@ -244,6 +324,32 @@ export class GroupBuyService {
     return { book, groupMember };
   }
 
+  private async checkValidGroupMember(user_id: string, group_id: string) {
+    await this.prisma.users.findFirstOrThrow({
+      where: {
+        id: user_id,
+      },
+    });
+    const group = await this.prisma.groups.findFirst({
+      where: {
+        id: group_id,
+        group_status: GroupStatus.ACTIVE,
+      },
+    });
+    if (!group) {
+      throw new BadRequestException('Group must be in active status');
+    }
+    const groupMember = await this.prisma.groupMembers.findFirst({
+      where: {
+        group_id: group_id,
+        user_id: user_id,
+      },
+    });
+    if (!groupMember) {
+      throw new BadRequestException('You have not joined this group');
+    }
+    return { group, groupMember };
+  }
   private async checkValidGroupMemberAndHostAuthorize(
     user_id: string,
     group_id: string,
@@ -257,6 +363,9 @@ export class GroupBuyService {
       where: {
         id: group_id,
       },
+      include: {
+        GroupMembers: true,
+      }
     });
     if (!group) {
       throw new BadRequestException('Group not found');
@@ -265,7 +374,7 @@ export class GroupBuyService {
       where: {
         group_id: group_id,
         user_id: user_id,
-      },
+      }
     });
     if (!groupMember) {
       throw new BadRequestException('You have not joined this group');
@@ -274,5 +383,38 @@ export class GroupBuyService {
       throw new BadRequestException('You are not the host of this group');
     }
     return { group };
+  }
+
+  async getUserGroups(userId: string) {
+    return this.prisma.groupMembers
+      .findMany({
+        where: { user_id: userId },
+        select: {
+          Group: true,
+        },
+      })
+      .then((results) => results.map((r) => r.Group));
+  }
+
+  // Check if a user is a member of a specific group
+  async isUserGroupMember(userId: string, groupId: string): Promise<boolean> {
+    const member = await this.prisma.groupMembers.findFirst({
+      where: {
+        user_id: userId,
+        group_id: groupId,
+      },
+    });
+
+    return !!member;
+  }
+  async getUserDetails(userId: string) {
+    return this.prisma.users.findUnique({
+      where: { id: userId },
+      select: {
+        id: true,
+        full_name: true,
+        avatar_url: true,
+      },
+    });
   }
 }

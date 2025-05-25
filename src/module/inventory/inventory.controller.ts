@@ -63,4 +63,9 @@ export class InventoryController {
   //   const result = await this.inventoryService.adjustStockInInventory(data);
   //   return new StandardResponse(result, 'Inventory updated successfully');
   // }
+  // @Post(PLANING_ROUTE)
+  // async planRoute(@Body() data: CreateInventoryFormDto) {
+  //   const result = await this.inventoryService.planRoute(data);
+  //   return new StandardResponse(result, 'Route planned successfully', 201);
+  // }
 }

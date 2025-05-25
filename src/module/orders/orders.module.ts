@@ -5,10 +5,11 @@ import { PrismaModule } from '../prisma/prisma.module';
 import { ConfigModule } from '@nestjs/config';
 import { EmailModule } from '../email/email.module';
 import { GeminiModule } from '../gemini/gemini.module';
+import { OrderImportExportService } from './orders-import-export.service';
 
 @Module({
   imports: [PrismaModule, ConfigModule, GeminiModule, EmailModule],
-  providers: [OrderService],
+  providers: [OrderService, OrderImportExportService],
   controllers: [OrdersController],
   exports: [OrderService],
 })
