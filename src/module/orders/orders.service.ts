@@ -75,18 +75,17 @@ export class OrderService {
         discount_amount?: Decimal;
       }
     >();
-
-    for (const item of dto.items) {
-      const { book, total_discount_combo, promotion_shock_deal_map } =
-        await this.validateBookPromotions(
-          session.id,
-          item.bookId,
-          item.promotion_ids,
-          item.quantity,
-        );
-      discountMap.set(book.id, total_discount_combo);
-      promotions_shock_deal_map.set(book.id, promotion_shock_deal_map);
-    }
+    // for (const item of dto.items) {
+    //   const { book, total_discount_combo, promotion_shock_deal_map } =
+    //     await this.validateBookPromotions(
+    //       session.id,
+    //       item.bookId,
+    //       item.promotion_ids,
+    //       item.quantity,
+    //     );
+    //   discountMap.set(book.id, total_discount_combo);
+    //   promotions_shock_deal_map.set(book.id, promotion_shock_deal_map);
+    // }
     const bookPriceMap = new Map(
       books.map((book) => [
         book.id,
@@ -145,27 +144,28 @@ export class OrderService {
           const orderItems = dto.items.map((item) => {
             const { price, finalPrice } = bookPriceMap.get(item.bookId);
             let { current_price } = bookPriceMap.get(item.bookId);
-            const promotion_shock_deal_map = promotions_shock_deal_map.get(
-              item.bookId,
-            );
-            const has_primary_book = dto.items.some((item) =>
-              promotion_shock_deal_map.book_primary.includes(item.bookId),
-            );
-            if (has_primary_book) {
-              current_price = new Decimal(
-                Number(current_price) -
-                  (promotion_shock_deal_map.discount_amount
-                    ? Number(promotion_shock_deal_map.discount_amount)
-                    : (Number(promotion_shock_deal_map.discount_rate) *
-                        Number(current_price)) /
-                      100),
-              );
-            }
-            const totalPrice =
-              (current_price
-                ? Number(current_price) * item.quantity
-                : Number(finalPrice) * item.quantity) -
-              discountMap.get(item.bookId);
+            console.log(current_price, price, finalPrice);
+            // const promotion_shock_deal_map = promotions_shock_deal_map.get(
+            //   item.bookId,
+            // );
+            // const has_primary_book = dto.items.some((item) =>
+            //   promotion_shock_deal_map.book_primary.includes(item.bookId),
+            // );
+            // if (has_primary_book) {
+            //   current_price = new Decimal(
+            //     Number(current_price) -
+            //       (promotion_shock_deal_map.discount_amount
+            //         ? Number(promotion_shock_deal_map.discount_amount)
+            //         : (Number(promotion_shock_deal_map.discount_rate) *
+            //             Number(current_price)) /
+            //           100),
+            //   );
+            // }
+            const totalPrice = current_price
+              ? Number(current_price) * item.quantity
+              : Number(finalPrice) * item.quantity;
+            //   ) -
+            // discountMap.get(item.bookId);
             return {
               order_id: order.id,
               book_id: item.bookId,
@@ -1411,166 +1411,166 @@ export class OrderService {
     }
   }
 
-  private async validateBookPromotions(
-    user_id: string,
-    book_id: string,
-    promotion_ids: string[],
-    quantity: number,
-  ) {
-    const promotion_shock_deal_map: PromotionShockDeal = {
-      book_primary: [],
-      discount_rate: undefined,
-      discount_amount: undefined,
-    };
-    let total_discount_combo = 0;
-    const book = await this.prisma.books.findUnique({
-      where: { id: book_id },
-    });
+  // private async validateBookPromotions(
+  //   user_id: string,
+  //   book_id: string,
+  //   promotion_ids: string[],
+  //   quantity: number,
+  // ) {
+  //   const promotion_shock_deal_map: PromotionShockDeal = {
+  //     book_primary: [],
+  //     discount_rate: undefined,
+  //     discount_amount: undefined,
+  //   };
+  //   let total_discount_combo = 0;
+  //   const book = await this.prisma.books.findUnique({
+  //     where: { id: book_id },
+  //   });
 
-    const promotions = await this.prisma.promotion.findMany({
-      where: {
-        id: { in: promotion_ids },
-        status: PromotionStatus.ONGOING,
-      },
-      include: {
-        PromotionNormalDetail: true,
-        PromotionCombo: {
-          include: {
-            PromotionComboCondition: true,
-            PromotionComboProduct: true,
-          },
-        },
-        PromotionShockDeal: {
-          include: {
-            PromotionShockDealBook: true,
-            PromotionShockDealCondition: true,
-          },
-        },
-      },
-    });
+  //   const promotions = await this.prisma.promotion.findMany({
+  //     where: {
+  //       id: { in: promotion_ids },
+  //       status: PromotionStatus.ONGOING,
+  //     },
+  //     include: {
+  //       PromotionNormalDetail: true,
+  //       PromotionCombo: {
+  //         include: {
+  //           PromotionComboCondition: true,
+  //           PromotionComboProduct: true,
+  //         },
+  //       },
+  //       PromotionShockDeal: {
+  //         include: {
+  //           PromotionShockDealBook: true,
+  //           PromotionShockDealCondition: true,
+  //         },
+  //       },
+  //     },
+  //   });
 
-    if (promotions.length !== promotion_ids.length) {
-      throw new BadRequestException(
-        `Some promotions are not valid for product: ${book.title}`,
-      );
-    }
-    for (const promotion of promotions) {
-      if (promotion.PromotionNormalDetail.length !== 0) {
-        const isApplicableToBook = promotion.PromotionNormalDetail.some(
-          (condition) => condition.book_id === book_id,
-        );
+  //   if (promotions.length !== promotion_ids.length) {
+  //     throw new BadRequestException(
+  //       `Some promotions are not valid for product: ${book.title}`,
+  //     );
+  //   }
+  //   for (const promotion of promotions) {
+  //     if (promotion.PromotionNormalDetail.length !== 0) {
+  //       const isApplicableToBook = promotion.PromotionNormalDetail.some(
+  //         (condition) => condition.book_id === book_id,
+  //       );
 
-        if (!isApplicableToBook) {
-          throw new BadRequestException(
-            `Promotion "${promotion.name}" is not applicable to book: ${book.title}`,
-          );
-        }
-      }
-      if (promotion.PromotionCombo) {
-        const isApplicableToBook =
-          promotion.PromotionCombo.PromotionComboProduct.some(
-            (condition) => condition.book_id === book_id,
-          );
+  //       if (!isApplicableToBook) {
+  //         throw new BadRequestException(
+  //           `Promotion "${promotion.name}" is not applicable to book: ${book.title}`,
+  //         );
+  //       }
+  //     }
+  //     if (promotion.PromotionCombo) {
+  //       const isApplicableToBook =
+  //         promotion.PromotionCombo.PromotionComboProduct.some(
+  //           (condition) => condition.book_id === book_id,
+  //         );
 
-        if (!isApplicableToBook) {
-          throw new BadRequestException(
-            `Promotion "${promotion.name}" is not applicable to book: ${book.title}`,
-          );
-        }
-        const comboConditions =
-          promotion.PromotionCombo.PromotionComboCondition;
+  //       if (!isApplicableToBook) {
+  //         throw new BadRequestException(
+  //           `Promotion "${promotion.name}" is not applicable to book: ${book.title}`,
+  //         );
+  //       }
+  //       const comboConditions =
+  //         promotion.PromotionCombo.PromotionComboCondition;
 
-        const sortedConditions = comboConditions
-          .filter((c) => c.quantity && c.quantity <= quantity)
-          .sort((a, b) => b.quantity - a.quantity);
+  //       const sortedConditions = comboConditions
+  //         .filter((c) => c.quantity && c.quantity <= quantity)
+  //         .sort((a, b) => b.quantity - a.quantity);
 
-        if (sortedConditions.length > 0) {
-          const condition = sortedConditions[0];
+  //       if (sortedConditions.length > 0) {
+  //         const condition = sortedConditions[0];
 
-          if (
-            condition.discount_value &&
-            promotion.PromotionCombo.promotion_combo_type ===
-              PromotionComboType.FIXED_AMOUNT
-          ) {
-            total_discount_combo = condition.discount_value.toNumber();
-          } else if (
-            condition.discount_value &&
-            promotion.PromotionCombo.promotion_combo_type ===
-              PromotionComboType.PERCENTAGE
-          ) {
-            total_discount_combo =
-              (Number(book.current_price) ?? Number(book.final_price)) *
-              quantity *
-              (Number(condition.discount_value) / 100);
-          }
-        }
-      }
-      if (promotion.PromotionShockDeal) {
-        const isApplicableToBook =
-          promotion.PromotionShockDeal.PromotionShockDealBook.some(
-            (condition) => condition.book_id === book_id,
-          );
+  //         if (
+  //           condition.discount_value &&
+  //           promotion.PromotionCombo.promotion_combo_type ===
+  //             PromotionComboType.FIXED_AMOUNT
+  //         ) {
+  //           total_discount_combo = condition.discount_value.toNumber();
+  //         } else if (
+  //           condition.discount_value &&
+  //           promotion.PromotionCombo.promotion_combo_type ===
+  //             PromotionComboType.PERCENTAGE
+  //         ) {
+  //           total_discount_combo =
+  //             (Number(book.current_price) ?? Number(book.final_price)) *
+  //             quantity *
+  //             (Number(condition.discount_value) / 100);
+  //         }
+  //       }
+  //     }
+  //     if (promotion.PromotionShockDeal) {
+  //       const isApplicableToBook =
+  //         promotion.PromotionShockDeal.PromotionShockDealBook.some(
+  //           (condition) => condition.book_id === book_id,
+  //         );
 
-        if (!isApplicableToBook) {
-          throw new BadRequestException(
-            `Promotion "${promotion.name}" is not applicable to book: ${book.title}`,
-          );
-        }
-        promotion_shock_deal_map.book_primary.push(
-          ...promotion.PromotionShockDeal.PromotionShockDealBook.map(
-            (book) => book.book_id,
-          ),
-        );
-        for (const condition of promotion.PromotionShockDeal
-          .PromotionShockDealCondition) {
-          if (condition.book_id === book_id) {
-            promotion_shock_deal_map.discount_amount =
-              condition.discount_amount;
-            promotion_shock_deal_map.discount_rate = condition.discount_rate;
-          }
-        }
-      }
-      if (promotion.max_usage_per_user) {
-        const userUsageCount = await this.prisma.orderItems.count({
-          where: {
-            book_id: book.id,
-            order: {
-              user_id: user_id,
-              status: {
-                in: [
-                  OrderStatus.PROCESSING,
-                  OrderStatus.DELIVERED,
-                  OrderStatus.SUCCESS,
-                ],
-              },
-            },
-            promotion_ids: { has: promotion.id },
-          },
-        });
-        if (userUsageCount >= promotion.max_usage_per_user) {
-          throw new BadRequestException(
-            `You have reached the maximum usage limit (${promotion.max_usage_per_user}) for promotion: ${promotion.name}`,
-          );
-        }
-      }
-      if (promotion.order_limit) {
-        // Count total usage of this promotion
-        const totalUsageCount = await this.prisma.orderItems.count({
-          where: {
-            promotion_ids: {
-              has: promotion.id,
-            },
-          },
-        });
+  //       if (!isApplicableToBook) {
+  //         throw new BadRequestException(
+  //           `Promotion "${promotion.name}" is not applicable to book: ${book.title}`,
+  //         );
+  //       }
+  //       promotion_shock_deal_map.book_primary.push(
+  //         ...promotion.PromotionShockDeal.PromotionShockDealBook.map(
+  //           (book) => book.book_id,
+  //         ),
+  //       );
+  //       for (const condition of promotion.PromotionShockDeal
+  //         .PromotionShockDealCondition) {
+  //         if (condition.book_id === book_id) {
+  //           promotion_shock_deal_map.discount_amount =
+  //             condition.discount_amount;
+  //           promotion_shock_deal_map.discount_rate = condition.discount_rate;
+  //         }
+  //       }
+  //     }
+  //     if (promotion.max_usage_per_user) {
+  //       const userUsageCount = await this.prisma.orderItems.count({
+  //         where: {
+  //           book_id: book.id,
+  //           order: {
+  //             user_id: user_id,
+  //             status: {
+  //               in: [
+  //                 OrderStatus.PROCESSING,
+  //                 OrderStatus.DELIVERED,
+  //                 OrderStatus.SUCCESS,
+  //               ],
+  //             },
+  //           },
+  //           promotion_ids: { has: promotion.id },
+  //         },
+  //       });
+  //       if (userUsageCount >= promotion.max_usage_per_user) {
+  //         throw new BadRequestException(
+  //           `You have reached the maximum usage limit (${promotion.max_usage_per_user}) for promotion: ${promotion.name}`,
+  //         );
+  //       }
+  //     }
+  //     if (promotion.order_limit) {
+  //       // Count total usage of this promotion
+  //       const totalUsageCount = await this.prisma.orderItems.count({
+  //         where: {
+  //           promotion_ids: {
+  //             has: promotion.id,
+  //           },
+  //         },
+  //       });
 
-        // If total usage has exceeded the limit, throw an error
-        if (totalUsageCount >= promotion.order_limit) {
-          throw new BadRequestException(
-            `Promotion "${promotion.name}" has reached its maximum usage limit`,
-          );
-        }
-      }
-    }
-    return { book, total_discount_combo, promotion_shock_deal_map };
-  }
+  //       // If total usage has exceeded the limit, throw an error
+  //       if (totalUsageCount >= promotion.order_limit) {
+  //         throw new BadRequestException(
+  //           `Promotion "${promotion.name}" has reached its maximum usage limit`,
+  //         );
+  //       }
+  //     }
+  //   }
+  //   return { book, total_discount_combo, promotion_shock_deal_map };
+  // }
 }
