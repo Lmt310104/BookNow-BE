@@ -41,7 +41,7 @@ export class PromotionService {
           start_date: dto.start_date,
           end_date: dto.end_date,
           promotion_category: PromotionCategory.SHOP_DISCOUNT,
-          order_limit: dto.order_limit ?? 0,
+          order_limit: +dto.order_limit || 0,
           status: PromotionStatus.UPCOMING,
           PromotionNormalDetail: {
             create: dto.promotion_eligibility.map((detail) => ({
@@ -76,7 +76,7 @@ export class PromotionService {
             name: dto.name,
             start_date: dto.start_date,
             end_date: dto.end_date,
-            max_usage_per_user: dto.max_usage_per_user,
+            max_usage_per_user: +dto.max_usage_per_user,
             promotion_category: PromotionCategory.COMBO_DISCOUNT,
             status: PromotionStatus.UPCOMING,
           },
@@ -482,8 +482,8 @@ export class PromotionService {
           where: { id },
           data: {
             name: filteredDto.name,
-            max_usage_per_user: filteredDto.max_usage_per_user,
-            order_limit: filteredDto.order_limit,
+            max_usage_per_user: +filteredDto.max_usage_per_user,
+            order_limit: +filteredDto.order_limit,
           },
         });
         // For promotion category-specific updates

@@ -37,7 +37,37 @@ export class CartsService {
     }
     const cartItems = await this.prisma.cartItems.findMany({
       where: { cart_id: cart.id },
-      include: { book: true },
+      include: {
+        book: {
+          include: {
+            PromotionNormalDetail: {
+              include: {
+                Promotion: true,
+              },
+            },
+            PromotionComboProduct: {
+              include: {
+                PromotionCombo: {
+                  include: {
+                    Promotion: true,
+                    PromotionComboCondition: true,
+                  },
+                },
+              },
+            },
+            PromotionShockDealBook: {
+              include: {
+                PromotionShockDeal: {
+                  include: {
+                    Promotion: true,
+                    PromotionShockDealCondition: true,
+                  },
+                },
+              },
+            },
+          },
+        },
+      },
       skip: getCartDto.skip,
       take: getCartDto.take,
       orderBy: { [getCartDto.sortBy]: getCartDto.order },
@@ -45,7 +75,31 @@ export class CartsService {
     const itemCount = await this.prisma.cartItems.count({
       where: { cart_id: cart.id },
     });
-    return { cartItems, itemCount };
+    const filteredCartItems = cartItems.map((item) => {
+      const book = item.book;
+
+      return {
+        ...item,
+        book: {
+          ...book,
+          PromotionNormalDetail: book.PromotionNormalDetail
+            ? book.PromotionNormalDetail.filter((p) => p.Promotion?.is_active)
+            : [],
+          PromotionComboProduct: book.PromotionComboProduct
+            ? book.PromotionComboProduct.filter(
+                (pcp) => pcp.PromotionCombo?.Promotion?.is_active,
+              )
+            : [],
+          PromotionShockDealBook: book.PromotionShockDealBook
+            ? book.PromotionShockDealBook.filter(
+                (psd) => psd.PromotionShockDeal?.Promotion?.is_active,
+              )
+            : [],
+        },
+      };
+    });
+
+    return { cartItems: filteredCartItems, itemCount };
   }
   async addToCart(session: TUserSession, addToCartDto: AddToCartDto) {
     const { bookId, quantity } = addToCartDto;
