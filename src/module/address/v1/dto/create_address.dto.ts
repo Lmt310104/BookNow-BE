@@ -10,4 +10,10 @@ export class CreateAddressDto {
   @IsNotEmpty()
   @IsString()
   address: string;
+
+  @IsNotEmpty()
+  lat: number;
+
+  @IsNotEmpty()
+  lon: number;
 }

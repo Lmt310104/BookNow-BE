@@ -226,13 +226,15 @@ model ReplyReviews {
 }
 
 model Address {
-  id           Int     @id @default(autoincrement())
+  id           Int      @id @default(autoincrement())
   user_id      String
   full_name    String
   phone_number String
   address      String
-  unaccent     String? @db.Text
-  Users        Users?  @relation(fields: [user_id], references: [id])
+  lat          Decimal?
+  lon          Decimal?
+  unaccent     String?  @db.Text
+  Users        Users?   @relation(fields: [user_id], references: [id])
 
   @@index([full_name, address, phone_number], map: "address_fulltext_idx")
 }

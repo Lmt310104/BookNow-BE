@@ -70,6 +70,15 @@ export class PromotionController {
     return await this.promotionService.CreateNewPromotionShockDeal(dto);
   }
 
+  // @ApiOperation({
+  //   summary: 'Create new group promotion campaign',
+  //   description:
+  //     'Create new group promotion campaign with combo, normal or shock deal',
+  // })
+  // async createNewGroupPromotionCampaign(@Body() dto: CreateGroupPromotionDto) {
+  //   return await this.promotionService.createNewGroupPromotionCampaign(dto);
+  // }
+
   @ApiOperation({
     summary: 'Get all promotion campaigns in current system',
   })

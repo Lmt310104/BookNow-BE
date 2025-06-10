@@ -15,6 +15,8 @@ export class AddressService {
         address: dto.address,
         full_name: dto.fullName,
         phone_number: dto.phoneNumber,
+        lat: dto.lat,
+        lon: dto.lon,
       },
     });
   }
@@ -71,6 +73,8 @@ export class AddressService {
         address: dto.address ? dto.address : address.address,
         full_name: dto.fullName ? dto.fullName : address.full_name,
         phone_number: dto.phoneNumber ? dto.phoneNumber : address.phone_number,
+        lat: dto.lat,
+        lon: dto.lon,
       },
     });
   }

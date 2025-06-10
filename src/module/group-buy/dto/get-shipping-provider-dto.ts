@@ -1,3 +1,1 @@
-export class GetShippingProviderDto {
-    
-}
+export class GetShippingProviderDto {}
