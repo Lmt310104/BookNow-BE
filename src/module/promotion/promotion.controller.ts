@@ -30,6 +30,7 @@ const {
     CREATE_NORMAL,
     CREATE_COMBO,
     CREATE_SHOCK_DEAL,
+    CREATE_GROUP_BUY,
     ACTIVE,
     INACTIVE,
     UPDATE,
@@ -70,14 +71,15 @@ export class PromotionController {
     return await this.promotionService.CreateNewPromotionShockDeal(dto);
   }
 
-  // @ApiOperation({
-  //   summary: 'Create new group promotion campaign',
-  //   description:
-  //     'Create new group promotion campaign with combo, normal or shock deal',
-  // })
-  // async createNewGroupPromotionCampaign(@Body() dto: CreateGroupPromotionDto) {
-  //   return await this.promotionService.createNewGroupPromotionCampaign(dto);
-  // }
+  @ApiOperation({
+    summary: 'Create new group promotion campaign',
+    description:
+      'Create new group promotion campaign with combo, normal or shock deal',
+  })
+  @Post(CREATE_GROUP_BUY)
+  async createNewGroupPromotionCampaign(@Body() dto: CreatePromotionComboDto) {
+    return await this.promotionService.CreateNewPromotionGroupBuy(dto);
+  }
 
   @ApiOperation({
     summary: 'Get all promotion campaigns in current system',

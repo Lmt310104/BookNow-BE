@@ -319,6 +319,16 @@ model Promotion {
   PromotionNormalDetail PromotionNormalDetail[]
   PromotionCombo        PromotionCombo?
   PromotionShockDeal    PromotionShockDeal?
+  PromotionGroupBuy     PromotionGroupBuy?
+}
+
+model PromotionGroupBuy {
+  id                     String    @id @default(uuid())
+  promotion_id           String    @unique
+  Promotion              Promotion @relation(fields: [promotion_id], references: [id])
+  required_user_quantity Int
+  discount_amount        Decimal
+  discount_rate          Decimal
 }
 
 model PromotionNormalDetail {
@@ -553,6 +563,7 @@ enum PromotionCategory {
   SHOP_DISCOUNT
   COMBO_DISCOUNT
   DEAL_DISCOUNT
+  GROUP_DISCOUNT
 }
 
 enum DiscountType {

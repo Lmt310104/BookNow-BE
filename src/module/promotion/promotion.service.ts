@@ -24,6 +24,7 @@ import { PageResponseMetaDto } from 'src/utils/page-response-meta.dto';
 import { UpdatePromotionDto } from './dto/update-promotion.dto';
 import { EditTimePromotionDto } from './dto/edit-time-promotion.dto';
 import { GetAvailableBookForPromotionDto } from './dto/get-available-promotion.dto';
+import { CreatePromotionGroupBuyDto } from './dto/create-promotion-group-buy.dto';
 
 @Injectable()
 export class PromotionService {
@@ -289,6 +290,43 @@ export class PromotionService {
           'Combo promotion created successfully',
           201,
         );
+      });
+    } catch (error) {
+      if (
+        error instanceof BadRequestException ||
+        error instanceof NotFoundException
+      ) {
+        throw error;
+      }
+      throw new InternalServerErrorException('Server error');
+    }
+  }
+
+  async CreateNewPromotionGroupBuy(dto: CreatePromotionGroupBuyDto) {
+    try {
+      this.ValidateDate(dto.start_date, dto.end_date);
+      return await this.prisma.$transaction(async (tx) => {
+        const promotion = await tx.promotion.create({
+          data: {
+            name: dto.name,
+            start_date: dto.start_date,
+            end_date: dto.end_date,
+            max_usage_per_user: +dto.max_usage_per_user || 1,
+            order_limit: +dto.order_limit || 0,
+            promotion_category: PromotionCategory.GROUP_DISCOUNT,
+            status: PromotionStatus.UPCOMING,
+            is_active: dto.is_active !== undefined ? dto.is_active : true,
+          },
+        });
+
+        tx.promotionGroupBuy.create({
+          data: {
+            promotion_id: promotion.id,
+            required_user_quantity: +dto.group_buy.required_user_quantity,
+            discount_amount: +dto.group_buy.discount_amount,
+            discount_rate: +dto.group_buy.discount_rate,
+          },
+        });
       });
     } catch (error) {
       if (

@@ -211,7 +211,6 @@ export class GroupBuyService {
     return true;
   }
 
-
   async confirmOrder(user_id: string, group_id: string) {
     const { groupMember } = await this.checkValidGroupMember(user_id, group_id);
     if (groupMember.is_confirmed) {
@@ -281,6 +280,35 @@ export class GroupBuyService {
     this.groupBuyGateway.notifyGroupUpdate(group_id, 'MEMBER_KICKED', {
       removedMemberId: member_id,
       removedBy: user_id,
+    });
+    return true;
+  }
+
+  async deleteBookFromGroupBasket(
+    user_id: string,
+    group_id: string,
+    item_id: string,
+  ) {
+    const { groupMember } = await this.checkValidGroupMemberAndBookRequest(
+      user_id,
+      group_id,
+      item_id,
+    );
+    const groupItem = await this.prisma.groupItems.findUnique({
+      where: {
+        id: item_id,
+        group_member_id: groupMember.id,
+      },
+    });
+    if (!groupItem) {
+      throw new BadRequestException('Book has been deleted from cart');
+    }
+    await this.prisma.groupItems.delete({
+      where: { id: groupItem.id },
+    });
+    this.groupBuyGateway.notifyGroupUpdate(group_id, 'BOOK_DELETED', {
+      user_id,
+      book_id: groupItem.book_id,
     });
     return true;
   }
@@ -365,7 +393,7 @@ export class GroupBuyService {
       },
       include: {
         GroupMembers: true,
-      }
+      },
     });
     if (!group) {
       throw new BadRequestException('Group not found');
@@ -374,7 +402,7 @@ export class GroupBuyService {
       where: {
         group_id: group_id,
         user_id: user_id,
-      }
+      },
     });
     if (!groupMember) {
       throw new BadRequestException('You have not joined this group');
@@ -416,5 +444,13 @@ export class GroupBuyService {
         avatar_url: true,
       },
     });
+  }
+
+  async getGroupStatus(user_id: string, group_id: string) {
+    const { group } = await this.checkValidGroupMember(user_id, group_id);
+    if (!group) {
+      throw new BadRequestException('Group not found');
+    }
+    return group.group_status;
   }
 }

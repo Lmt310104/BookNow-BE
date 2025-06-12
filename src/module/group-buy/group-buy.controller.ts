@@ -29,7 +29,6 @@ const {
     ADD_BOOK_TO_GROUP,
     UPDATE_GROUP_STATUS,
     UPDATE_BOOK,
-    DELETE_BOOK,
     JOIN_GROUP,
     GET_GROUP_BASKET,
   },
@@ -168,21 +167,21 @@ export class GroupBuyController {
     );
   }
 
-  @Delete(':group_id/delete-book/:item_id')
-  async deleteBookFromCart(
+  @Delete(':group_id/delete-book/:book_id')
+  async deleteBookFromGroupBasket(
     @Param('group_id', ParseUUIDPipe) group_id: string,
-    @Param('item_id', ParseUUIDPipe) item_id: string,
+    @Param('book_id', ParseUUIDPipe) item_id: string,
     @UserSession() currentUser: TUserSession,
   ) {
-    // return new StandardResponse(
-    //   await this.groupBuyService.deleteBookFromGroupBasket(
-    //     currentUser.id,
-    //     group_id,
-    //     item_id,
-    //   ),
-    //   'Delete book from group basket successfully',
-    //   200,
-    // );
+    return new StandardResponse(
+      await this.groupBuyService.deleteBookFromGroupBasket(
+        currentUser.id,
+        group_id,
+        item_id,
+      ),
+      'Delete book from group basket successfully',
+      200,
+    );
   }
 
   @Get(':group_id/group-status')
@@ -190,10 +189,10 @@ export class GroupBuyController {
     @Param('group_id', ParseUUIDPipe) group_id: string,
     @UserSession() currentUser: TUserSession,
   ) {
-    // return new StandardResponse(
-    //   await this.groupBuyService.getGroupStatus(currentUser.id, group_id),
-    //   'Get group status successfully',
-    //   200,
-    // );
+    return new StandardResponse(
+      await this.groupBuyService.getGroupStatus(currentUser.id, group_id),
+      'Get group status successfully',
+      200,
+    );
   }
 }

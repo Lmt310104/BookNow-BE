@@ -219,6 +219,7 @@ export const END_POINTS = {
     ACTIVE: '/active/:id',
     INACTIVE: '/inactive/:id',
     EDIT_TIME: 'edit-time/:id',
+    CREATE_GROUP_BUY: '/create-group-buy',
   },
   RECOMMENDATION: {
     BASE: '/recommendation',
