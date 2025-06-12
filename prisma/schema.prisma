@@ -407,6 +407,7 @@ model PromotionShockDealFreeGiftBook {
 model Groups {
   id           String         @id @default(uuid())
   host_id      String
+  name         String
   User         Users          @relation(fields: [host_id], references: [id])
   group_status GroupStatus    @default(ACTIVE)
   created_at   DateTime       @default(now())

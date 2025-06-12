@@ -1,5 +1,9 @@
 import { PrismaService } from '@module/prisma/prisma.service';
-import { BadRequestException, Injectable } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  InternalServerErrorException,
+} from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { AddBookToGroupBasketDto } from './dto/add-book-to-group-basket.dto';
 import { GroupStatus } from '@prisma/client';
@@ -7,6 +11,7 @@ import { UpdateGroupItemBookDto } from './dto/update-group-item-book.dto';
 import { UpdateGroupStatusDto } from './dto/update-group-status.dto';
 import { CheckoutGroupOrderDto } from './dto/checkout-group-order.dto';
 import { GroupBuyGateway } from './group-buy.gateway';
+import { generateReadableGroupName } from 'src/utils/group-name-generator';
 
 @Injectable()
 export class GroupBuyService {
@@ -50,6 +55,7 @@ export class GroupBuyService {
     const result = await this.prisma.groups.create({
       data: {
         host_id: user_id,
+        name: generateReadableGroupName(),
       },
     });
     await this.prisma.groupMembers.create({
@@ -414,17 +420,54 @@ export class GroupBuyService {
   }
 
   async getUserGroups(userId: string) {
-    return this.prisma.groupMembers
-      .findMany({
-        where: { user_id: userId },
-        select: {
-          Group: true,
-        },
-      })
-      .then((results) => results.map((r) => r.Group));
+    {
+      try {
+        const groupBelongToUser = await this.prisma.groupMembers.findMany({
+          where: {
+            user_id: userId,
+          },
+          include: {
+            Group: {
+              select: {
+                id: true,
+                name: true,
+                host_id: true,
+                created_at: true,
+                group_status: true,
+                GroupMembers: {
+                  where: {
+                    user_id: userId,
+                  },
+                  select: {
+                    is_confirmed: true,
+                  },
+                },
+              },
+            },
+          },
+        });
+        if (groupBelongToUser.length === 0) {
+          return [];
+        }
+        return groupBelongToUser.map((membership) => {
+          return {
+            group_id: membership.Group.id,
+            name: membership.Group.name,
+            host_id: membership.Group.host_id,
+            group_status: membership.Group.group_status,
+            is_confirmed:
+              membership.Group.GroupMembers[0]?.is_confirmed || false,
+          };
+        });
+      } catch (error) {
+        console.error('Error fetching user groups with status:', error);
+        throw new InternalServerErrorException(
+          'Failed to retrieve user groups information',
+        );
+      }
+    }
   }
 
-  // Check if a user is a member of a specific group
   async isUserGroupMember(userId: string, groupId: string): Promise<boolean> {
     const member = await this.prisma.groupMembers.findFirst({
       where: {

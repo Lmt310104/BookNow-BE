@@ -195,4 +195,13 @@ export class GroupBuyController {
       200,
     );
   }
+
+  @Get(':group_id/my-groups')
+  async getMyGroups(@UserSession() currentUser: TUserSession) {
+    return new StandardResponse(
+      await this.groupBuyService.getUserGroups(currentUser.id),
+      'Get my groups successfully',
+      200,
+    );
+  }
 }
