@@ -32,6 +32,7 @@ class SignUpService {
     );
     await this.prisma.vertifications.create({
       data: {
+        is_active: false,
         verified_code: new_user.password,
         user: {
           connect: {
