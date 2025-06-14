@@ -1,4 +1,11 @@
-import { Controller, Get, Param, ParseUUIDPipe, Post, Query } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Param,
+  ParseUUIDPipe,
+  Post,
+  Query,
+} from '@nestjs/common';
 import { END_POINTS } from 'src/utils/constants';
 import { RecommendationService } from './recommendation.service';
 import { Public } from 'src/common/decorators/public.decorator';
@@ -59,5 +66,18 @@ export class RecommendationController {
     @UserSession() user: TUserSession,
   ) {
     return await this.recommendationService.getSimilarBooks(bookId, user.id);
+  }
+
+  @Post('interactions/:bookId/:recommId')
+  async addViewInteractionFromRecommendations(
+    @Param('bookId', ParseUUIDPipe) bookId: string,
+    @Param('recommId') recommId: string,
+    @UserSession() user: TUserSession,
+  ) {
+    return await this.recommendationService.addDetailView(
+      user.id,
+      bookId,
+      recommId,
+    );
   }
 }

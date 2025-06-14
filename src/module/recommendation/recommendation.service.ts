@@ -42,6 +42,55 @@ export class RecommendationService {
         );
         req.timeout = 10000;
         recommendations = await this.recombeeProvider.client.send(req);
+        recommendations.recomms = await Promise.all(
+          recommendations.recomms.map(async (item) => {
+            const book = await this.prisma.books.findUnique({
+              where: { id: item.id },
+              include: {
+                Category: true,
+                PromotionComboProduct: {
+                  include: {
+                    PromotionCombo: {
+                      include: {
+                        Promotion: true,
+                        PromotionComboCondition: true,
+                      },
+                    },
+                  },
+                },
+                PromotionNormalDetail: {
+                  include: {
+                    Promotion: true,
+                  },
+                },
+                PromotionShockDealBook: {
+                  include: {
+                    PromotionShockDeal: {
+                      include: {
+                        Promotion: true,
+                        PromotionShockDealCondition: true,
+                      },
+                    },
+                  },
+                },
+              },
+            });
+            return {
+              ...book,
+              PromotionComboProduct: book.PromotionComboProduct?.filter(
+                (pcp) => pcp.PromotionCombo?.Promotion?.is_active,
+              ),
+              PromotionNormalDetail: book.PromotionNormalDetail?.filter(
+                (pnd) => pnd.Promotion?.is_active,
+              ),
+              PromotionShockDealBook: book.PromotionShockDealBook?.filter(
+                (psd) => psd.PromotionShockDeal?.Promotion?.is_active,
+              ),
+            };
+          }),
+        );
+
+        return recommendations;
       }
       return recommendations;
     } catch (error) {
@@ -401,6 +450,43 @@ export class RecommendationService {
       return true;
     } catch (error) {
       console.error('Error tracking bulk purchases:', error);
+      return false;
+    }
+  }
+  async addDetailView(
+    userId: string,
+    bookId: string,
+    recommendationId?: string,
+  ) {
+    try {
+      const options: any = {
+        timestamp: new Date().toISOString(),
+        cascadeCreate: true,
+        duration: 30, // Assumed 30 seconds view time
+      };
+
+      // Add recommendation ID if it's from a recommendation click
+      if (recommendationId) {
+        options.recommId = recommendationId;
+      }
+
+      const req = new this.recombeeProvider.rqs.AddDetailView(
+        userId.toString(),
+        bookId.toString(),
+        options,
+      );
+
+      req.timeout = 10000;
+      await this.recombeeProvider.client.send(req);
+
+      console.log(
+        `Tracked detail view: User ${userId} viewed book ${bookId}${
+          recommendationId ? ` from recommendation ${recommendationId}` : ''
+        }`,
+      );
+      return true;
+    } catch (error) {
+      console.error('Error tracking detail view:', error);
       return false;
     }
   }
