@@ -190,7 +190,7 @@ export class GroupBuyController {
     @UserSession() currentUser: TUserSession,
   ) {
     return new StandardResponse(
-      await this.groupBuyService.getGroupStatus(currentUser.id, group_id),
+      await this.groupBuyService.getGroup(currentUser.id, group_id),
       'Get group status successfully',
       200,
     );

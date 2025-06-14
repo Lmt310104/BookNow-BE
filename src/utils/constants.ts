@@ -236,7 +236,7 @@ export const END_POINTS = {
     DELETE_BOOK: '/delete-book',
     UPDATE_BOOK: '/update-book-quantity/:group_id',
     UPDATE_GROUP_STATUS: '/update-group-status/:group_id',
-    CREATE_GROUP_ORDER: '/create-group-order',
+    CREATE_GROUP_ORDER: '/cratee-group-order',
     JOIN_GROUP: '/join-group/:group_id',
   },
 };

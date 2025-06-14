@@ -418,7 +418,7 @@ model Groups {
 model GroupMembers {
   id           String       @id @default(uuid())
   group_id     String
-  Group        Groups       @relation(fields: [group_id], references: [id])
+  Group        Groups       @relation(fields: [group_id], references: [id], onDelete: Cascade)
   user_id      String
   User         Users        @relation(fields: [user_id], references: [id])
   is_confirmed Boolean      @default(false)
@@ -428,7 +428,7 @@ model GroupMembers {
 model GroupItems {
   id              String       @id @default(uuid())
   group_member_id String
-  GroupMember     GroupMembers @relation(fields: [group_member_id], references: [id])
+  GroupMember     GroupMembers @relation(fields: [group_member_id], references: [id], onDelete: Cascade)
   book_id         String
   Book            Books        @relation(fields: [book_id], references: [id])
   quantity        Int
