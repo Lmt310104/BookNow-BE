@@ -1,8 +1,10 @@
 import { PrismaService } from '@module/prisma/prisma.service';
 import {
   BadRequestException,
+  HttpException,
   Injectable,
   InternalServerErrorException,
+  NotFoundException,
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { AddBookToGroupBasketDto } from './dto/add-book-to-group-basket.dto';
@@ -465,6 +467,52 @@ export class GroupBuyService {
           'Failed to retrieve user groups information',
         );
       }
+    }
+  }
+
+  async groupBuyCheckOut(user_id: string, dto: CheckoutGroupOrderDto) {
+    try {
+      const user = await this.prisma.users.findUnique({
+        where: { id: user_id },
+      });
+      if (!user) {
+        throw new NotFoundException('User not found');
+      }
+      const group = await this.prisma.groups.findUnique({
+        where: { id: dto.group_id },
+      });
+      if (user_id != group.host_id) {
+        throw new BadRequestException('Only host can checkout group order');
+      }
+      if (group.group_status !== GroupStatus.CHECK_OUT) {
+        throw new BadRequestException(
+          'Group must be in CHECK_OUT status to proceed with checkout',
+        );
+      }
+      const bookGroups = new Map();
+      dto.items.forEach((memberItem) => {
+        memberItem.items.forEach((item) => {
+          const bookId = item.bookId;
+          const quantity = item.quantity;
+
+          if (!bookGroups.has(bookId)) {
+            bookGroups.set(bookId, {
+              quantity: 0,
+              promotion_ids: new Set(),
+            });
+          }
+
+          const bookGroup = bookGroups.get(bookId);
+          bookGroup.quantity += quantity;
+
+          if (item.promotion_ids && item.promotion_ids.length > 0) {
+            item.promotion_ids.forEach((id) => bookGroup.promotion_ids.add(id));
+          }
+        });
+      });
+    } catch (error) {
+      console.log('Error:', error);
+      throw new HttpException(error.message, 500);
     }
   }
 

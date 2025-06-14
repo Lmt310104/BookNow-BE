@@ -2,6 +2,7 @@ import {
   BadRequestException,
   HttpException,
   Injectable,
+  InternalServerErrorException,
   NotFoundException,
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
@@ -33,6 +34,7 @@ import sendSMS from 'src/services/sms-gateway';
 import { GeminiService } from '../gemini/gemini.service';
 import HttpStatusCode from 'src/utils/HttpStatusCode';
 import { Decimal } from '@prisma/client/runtime/library';
+import { RecommendationService } from '@module/recommendation/recommendation.service';
 interface PromotionShockDeal {
   book_primary: string[];
   discount_rate?: number;
@@ -46,6 +48,7 @@ export class OrderService {
     private readonly config: ConfigService,
     private readonly emailService: EmailService,
     private readonly geminiService: GeminiService,
+    private readonly recommendationService: RecommendationService,
   ) {}
   async createOrder(session: TUserSession, dto: CreateOrderDto) {
     const user = await this.prisma.users.findUnique({
@@ -54,6 +57,14 @@ export class OrderService {
     const bookIds = dto.items.map((item) => item.bookId);
     const books = await this.prisma.books.findMany({
       where: { id: { in: bookIds } },
+      include: {
+        Category: true,
+        BookAuthor: {
+          include: {
+            author: true,
+          },
+        },
+      },
     });
 
     const cart = await this.prisma.carts.findFirstOrThrow({
@@ -96,6 +107,15 @@ export class OrderService {
           current_price: book.current_price,
         },
       ]),
+    );
+    await this.updateUserToRecombee(books, session.id);
+    this.recommendationService.trackBulkPurchases(
+      session.id,
+      cartItems.map((item) => ({
+        bookId: item.book_id,
+        price: Number(bookPriceMap.get(item.book_id)?.finalPrice ?? 0),
+        quantity: item.quantity,
+      })),
     );
     try {
       return await this.prisma.$transaction(
@@ -565,6 +585,7 @@ export class OrderService {
     if (!book) {
       throw new NotFoundException('Book not found');
     }
+    this.recommendationService.trackRating(session.id, bookId, dto.star);
     try {
       return await this.prisma.$transaction(
         async (tx) => {
@@ -1572,5 +1593,87 @@ export class OrderService {
       }
     }
     return { book, total_discount_combo, promotion_shock_deal_map };
+  }
+
+  private async updateUserToRecombee(books: any[], userId: string) {
+    try {
+      const user = await this.prisma.users.findUnique({
+        where: { id: userId },
+        select: {
+          id: true,
+          full_name: true,
+          email: true,
+          phone: true,
+          gender: true,
+          birthday: true,
+        },
+      });
+
+      if (!user) {
+        throw new NotFoundException('User not found');
+      }
+      const categories = new Set<string>();
+      const authors = new Set<string>();
+
+      books.forEach((book) => {
+        if (book.Category && book.Category.name) {
+          categories.add(book.Category.name);
+        }
+        if (book.BookAuthor) {
+          authors.add(book.BookAuthor.author.name);
+        }
+      });
+
+      const previousPurchases = await this.prisma.orderItems.findMany({
+        where: {
+          order: {
+            user_id: userId,
+            status: {
+              in: ['PROCESSING', 'DELIVERED', 'SUCCESS'],
+            },
+          },
+        },
+        select: {
+          book_id: true,
+        },
+        distinct: ['book_id'],
+      });
+
+      const purchaseHistory = previousPurchases.map((item) => item.book_id);
+
+      const currentBookIds = books.map((book) => book.id).filter(Boolean);
+      const allPurchaseHistory = [
+        ...new Set([...purchaseHistory, ...currentBookIds]),
+      ];
+
+      let age = null;
+      if (user.birthday) {
+        age = new Date().getFullYear() - new Date(user.birthday).getFullYear();
+      }
+
+      const userProperties = {
+        fullName: user.full_name,
+        email: user.email,
+        phone: user.phone,
+        gender: user.gender,
+        age: age,
+        preferred_categories: Array.from(categories),
+        preferred_authors: Array.from(authors),
+        purchase_history: allPurchaseHistory,
+        last_purchase_date: new Date().toISOString(),
+      };
+
+      await this.recommendationService.updateUserToRecombee(userProperties);
+
+      console.log(`Successfully updated Recombee profile for user ${userId}`);
+    } catch (error) {
+      console.error('Error updating user in Recombee:', error);
+      if (error instanceof NotFoundException) {
+        throw error;
+      }
+      throw new InternalServerErrorException(
+        'System error when updating recommendation profile',
+      );
+    }
   }
 }

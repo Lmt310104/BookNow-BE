@@ -16,6 +16,10 @@ import {
 import { PAYMENT_METHOD } from 'src/utils/constants';
 
 export class CheckoutGroupOrderDto {
+  @IsString()
+  @IsNotEmpty()
+  group_id: string;
+
   @IsArray()
   @IsNotEmpty({ message: 'items must not be empty' })
   @ValidateNested({ each: true })

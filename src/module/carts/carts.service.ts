@@ -6,12 +6,14 @@ import { AddToCartDto } from './dto/add-to-cart.dto';
 import { UpdateCartDto } from './dto/update-cart.dto';
 import { CheckOutDto } from './dto/check-out.dto';
 import { OrderService } from '../orders/orders.service';
+import { RecommendationService } from '@module/recommendation/recommendation.service';
 
 @Injectable()
 export class CartsService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly orderService: OrderService,
+    private readonly recommendationService: RecommendationService, // Assuming you have a RecommendationService for tracking
   ) {}
   async createCart(session: TUserSession) {
     const existingCart = await this.prisma.carts.findUnique({
@@ -141,6 +143,7 @@ export class CartsService {
         },
       });
     }
+    this.recommendationService.trackAddToCart(session.id, bookId);
     return this.prisma.carts.findFirst({
       where: { user_id: session.id },
       include: { CartItems: { include: { book: true } } },

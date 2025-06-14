@@ -13,7 +13,6 @@ import * as ExcelJS from 'exceljs';
 import { Buffer } from 'buffer';
 import { TUserSession } from 'src/common/decorators/user-session.decorator';
 import { RecommendationService } from '@module/recommendation/recommendation.service';
-import { PromotionStatus } from '@prisma/client';
 
 @Injectable()
 export class BooksService {
