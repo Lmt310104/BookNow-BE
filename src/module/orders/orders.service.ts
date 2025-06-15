@@ -1614,13 +1614,16 @@ export class OrderService {
       }
       const categories = new Set<string>();
       const authors = new Set<string>();
-
       books.forEach((book) => {
         if (book.Category && book.Category.name) {
           categories.add(book.Category.name);
         }
         if (book.BookAuthor) {
-          authors.add(book.BookAuthor.author.name);
+          book.BookAuthor.forEach((author) => {
+            if (author.author && author.author.name) {
+              authors.add(author.author.name);
+            }
+          });
         }
       });
 
@@ -1648,10 +1651,10 @@ export class OrderService {
 
       let age = null;
       if (user.birthday) {
-        age = new Date().getFullYear() - new Date(user.birthday).getFullYear();
+        age = new Date().getFullYear() - user.birthday.getFullYear();
       }
-
       const userProperties = {
+        id: user.id,
         fullName: user.full_name,
         email: user.email,
         phone: user.phone,
@@ -1662,6 +1665,7 @@ export class OrderService {
         purchase_history: allPurchaseHistory,
         last_purchase_date: new Date().toISOString(),
       };
+      console.log('User properties to update:', userProperties);
 
       await this.recommendationService.updateUserToRecombee(userProperties);
 

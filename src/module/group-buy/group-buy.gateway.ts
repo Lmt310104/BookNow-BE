@@ -140,7 +140,6 @@ export class GroupBuyGateway
       const groupData =
         await this.groupBuyGateWayService.getGroupBasket(groupId);
 
-
       return { success: true, group: groupData };
     } catch (error) {
       this.logger.error(`Error joining group: ${error.message}`);

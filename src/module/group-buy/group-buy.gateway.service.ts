@@ -45,10 +45,12 @@ export class GroupBuyGateWayService {
       where: { id: group_id },
       select: {
         id: true,
+        group_status: true,
         GroupMembers: {
           select: {
             id: true,
             user_id: true,
+            is_confirmed: true,
             User: {
               select: {
                 id: true,

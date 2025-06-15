@@ -14,7 +14,7 @@ export class RecommendationService {
     private readonly prisma: PrismaService,
     private readonly config: ConfigService,
   ) {}
-  async recommendBooks(userId, searchQuery, limit = 10, page = 1) {
+  async recommendBooks(userId, searchQuery, limit = 20, page = 1) {
     try {
       let recommendations = null;
       if (searchQuery) {
@@ -42,54 +42,57 @@ export class RecommendationService {
         );
         req.timeout = 10000;
         recommendations = await this.recombeeProvider.client.send(req);
-        recommendations.recomms = await Promise.all(
-          recommendations.recomms.map(async (item) => {
-            const book = await this.prisma.books.findUnique({
-              where: { id: item.id },
-              include: {
-                Category: true,
-                PromotionComboProduct: {
-                  include: {
-                    PromotionCombo: {
-                      include: {
-                        Promotion: true,
-                        PromotionComboCondition: true,
+        recommendations.recomms = (
+          await Promise.all(
+            recommendations.recomms.map(async (item) => {
+              const book = await this.prisma.books.findUnique({
+                where: { id: item.id },
+                include: {
+                  PromotionComboProduct: {
+                    include: {
+                      PromotionCombo: {
+                        include: {
+                          Promotion: true,
+                          PromotionComboCondition: true,
+                        },
+                      },
+                    },
+                  },
+                  PromotionNormalDetail: {
+                    include: {
+                      Promotion: true,
+                    },
+                  },
+                  PromotionShockDealBook: {
+                    include: {
+                      PromotionShockDeal: {
+                        include: {
+                          Promotion: true,
+                          PromotionShockDealCondition: true,
+                        },
                       },
                     },
                   },
                 },
-                PromotionNormalDetail: {
-                  include: {
-                    Promotion: true,
-                  },
-                },
-                PromotionShockDealBook: {
-                  include: {
-                    PromotionShockDeal: {
-                      include: {
-                        Promotion: true,
-                        PromotionShockDealCondition: true,
-                      },
-                    },
-                  },
-                },
-              },
-            });
-            return {
-              ...book,
-              PromotionComboProduct: book.PromotionComboProduct?.filter(
-                (pcp) => pcp.PromotionCombo?.Promotion?.is_active,
-              ),
-              PromotionNormalDetail: book.PromotionNormalDetail?.filter(
-                (pnd) => pnd.Promotion?.is_active,
-              ),
-              PromotionShockDealBook: book.PromotionShockDealBook?.filter(
-                (psd) => psd.PromotionShockDeal?.Promotion?.is_active,
-              ),
-            };
-          }),
-        );
+              });
 
+              if (!book) return null;
+
+              return {
+                ...book,
+                PromotionComboProduct: book.PromotionComboProduct?.filter(
+                  (pcp) => pcp?.PromotionCombo?.Promotion?.is_active,
+                ),
+                PromotionNormalDetail: book.PromotionNormalDetail?.filter(
+                  (pnd) => pnd?.Promotion?.is_active,
+                ),
+                PromotionShockDealBook: book.PromotionShockDealBook?.filter(
+                  (psd) => psd?.PromotionShockDeal?.Promotion?.is_active,
+                ),
+              };
+            }),
+          )
+        ).filter(Boolean);
         return recommendations;
       }
       return recommendations;
@@ -202,13 +205,14 @@ export class RecommendationService {
         {
           gender: user.gender,
           hobbies: user.hobbies,
-          age: new Date().getFullYear() - user.birthday.getFullYear(),
+          age: user.age,
           purchase_history: user.purchase_history,
         },
         {
           cascadeCreate: true,
         },
       );
+      req.timeout = 20000;
       await this.recombeeProvider.client.send(req);
     } catch (error) {
       console.log(error);

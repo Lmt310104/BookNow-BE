@@ -34,8 +34,6 @@ import { Public } from 'src/common/decorators/public.decorator';
 import { Request, Response } from 'express';
 import { OrderImportExportService } from './orders-import-export.service';
 import { FileInterceptor } from '@nestjs/platform-express';
-// import { OrderImportExportService } from './orders-import-export.service';
-// import { FileInterceptor } from '@nestjs/platform-express';
 
 const {
   ORDER: {
@@ -231,80 +229,17 @@ export class OrdersController {
     const message = 'Order created successfully';
     return new StandardResponse(order, message, HttpStatusCode.CREATED);
   }
+
+  @Public()
   @Get('export-processing-orders')
   async exportProcessingOrders(@Res() res: Response) {
     try {
-      // Get processing orders for export
       const processingOrders =
         await this.orderImportExportService.getProcessingOrdersForExport();
-
-      // Generate Excel buffer
-      const excelBuffer =
-        await this.orderImportExportService.generateExcel(processingOrders);
-
-      // Set headers for file download
-      const now = new Date();
-      const fileName = `Orders_for_shipping_${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, '0')}${String(now.getDate()).padStart(2, '0')}.xlsx`;
-
-      res.setHeader(
-        'Content-Disposition',
-        `attachment; filename*=UTF-8''${encodeURIComponent(fileName)}`,
-      );
-      res.setHeader(
-        'Content-Type',
-        'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-      );
-
-      // Send the file
-      res.send(excelBuffer);
+      await this.orderImportExportService.generateExcel(processingOrders, res);
     } catch (error) {
       console.error(`Error exporting orders: ${error.message}`);
       res.status(500).send('Error generating Excel file');
-    }
-  }
-
-  @Post('update-orders-from-excel')
-  @Roles(ROLE.ADMIN)
-  @UseInterceptors(FileInterceptor('file'))
-  async updateOrdersFromExcel(@UploadedFile() file: Express.Multer.File) {
-    if (!file) {
-      throw new BadRequestException('No file uploaded');
-    }
-
-    try {
-      const results = await this.orderImportExportService.updateOrdersFromExcel(
-        file.buffer,
-      );
-      const message = 'Orders updated successfully';
-      return new StandardResponse(results, message, HttpStatusCode.OK);
-    } catch (error) {
-      console.error(`Error updating orders: ${error.message}`);
-      throw new BadRequestException(
-        'Failed to process the Excel file: ' + error.message,
-      );
-    }
-  }
-
-  @Post('import-shipping-information')
-  @Roles(ROLE.ADMIN)
-  @UseInterceptors(FileInterceptor('file'))
-  async importShippingInformation(@UploadedFile() file: Express.Multer.File) {
-    if (!file) {
-      throw new BadRequestException('No file uploaded');
-    }
-
-    try {
-      const results =
-        await this.orderImportExportService.importShippingInformation(
-          file.buffer,
-        );
-      const message = 'Shipping information updated successfully';
-      return new StandardResponse(results, message, HttpStatusCode.OK);
-    } catch (error) {
-      console.error(`Error importing shipping information: ${error.message}`);
-      throw new BadRequestException(
-        'Failed to process the Excel file: ' + error.message,
-      );
     }
   }
 }
