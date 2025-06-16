@@ -1,7 +1,6 @@
 import { PrismaService } from '@module/prisma/prisma.service';
 import {
   BadRequestException,
-  HttpException,
   Injectable,
   InternalServerErrorException,
   NotFoundException,
@@ -11,7 +10,6 @@ import { AddBookToGroupBasketDto } from './dto/add-book-to-group-basket.dto';
 import {
   GroupStatus,
   PromotionComboType,
-  PromotionShockDeal,
   PromotionStatus,
 } from '@prisma/client';
 import { UpdateGroupItemBookDto } from './dto/update-group-item-book.dto';
@@ -20,7 +18,6 @@ import { CheckoutGroupOrderDto } from './dto/checkout-group-order.dto';
 import { GroupBuyGateway } from './group-buy.gateway';
 import { generateReadableGroupName } from 'src/utils/group-name-generator';
 import { Decimal } from '@prisma/client/runtime/library';
-import { group } from 'console';
 
 @Injectable()
 export class GroupBuyService {
@@ -30,7 +27,7 @@ export class GroupBuyService {
     private readonly groupBuyGateway: GroupBuyGateway,
   ) {}
   async getGroupBasket(group_id: string) {
-    return await this.prisma.groups.findUnique({
+    const groupData = await this.prisma.groups.findUnique({
       where: { id: group_id },
       select: {
         id: true,
@@ -48,13 +45,76 @@ export class GroupBuyService {
             GroupItems: {
               select: {
                 quantity: true,
-                Book: true,
+                Book: {
+                  include: {
+                    PromotionNormalDetail: {
+                      include: {
+                        Promotion: true,
+                      },
+                    },
+                    PromotionComboProduct: {
+                      include: {
+                        PromotionCombo: {
+                          include: {
+                            Promotion: true,
+                            PromotionComboCondition: true,
+                          },
+                        },
+                      },
+                    },
+                    PromotionShockDealBook: {
+                      include: {
+                        PromotionShockDeal: {
+                          include: {
+                            Promotion: true,
+                            PromotionShockDealCondition: true,
+                          },
+                        },
+                      },
+                    },
+                  },
+                },
               },
             },
           },
         },
       },
     });
+
+    if (groupData && groupData.GroupMembers) {
+      groupData.GroupMembers.forEach((member) => {
+        if (member.GroupItems) {
+          member.GroupItems.forEach((item) => {
+            if (item.Book) {
+              if (item.Book.PromotionNormalDetail) {
+                item.Book.PromotionNormalDetail =
+                  item.Book.PromotionNormalDetail.filter(
+                    (pnd) => pnd.Promotion.is_active,
+                  );
+              }
+
+              if (item.Book.PromotionComboProduct) {
+                item.Book.PromotionComboProduct =
+                  item.Book.PromotionComboProduct.filter(
+                    (pcp) => pcp.PromotionCombo?.Promotion?.is_active,
+                  );
+              }
+
+              if (item.Book.PromotionShockDealBook) {
+                item.Book.PromotionShockDealBook =
+                  item.Book.PromotionShockDealBook.filter(
+                    (psd) =>
+                      psd.PromotionShockDeal &&
+                      psd.PromotionShockDeal.Promotion.is_active,
+                  );
+              }
+            }
+          });
+        }
+      });
+    }
+
+    return groupData;
   }
 
   async createNewGroup(user_id: string) {
