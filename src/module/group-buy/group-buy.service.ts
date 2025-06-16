@@ -20,6 +20,7 @@ import { CheckoutGroupOrderDto } from './dto/checkout-group-order.dto';
 import { GroupBuyGateway } from './group-buy.gateway';
 import { generateReadableGroupName } from 'src/utils/group-name-generator';
 import { Decimal } from '@prisma/client/runtime/library';
+import { group } from 'console';
 
 @Injectable()
 export class GroupBuyService {
@@ -255,7 +256,9 @@ export class GroupBuyService {
         group_id: group.id,
       },
     });
-    const isAllConfirmed = groupMembers.every((member) => member.is_confirmed);
+    const isAllConfirmed = groupMembers
+      .filter((member) => member.user_id !== user_id)
+      .every((member) => member.is_confirmed);
     if (!isAllConfirmed) {
       throw new BadRequestException(
         'All group members must confirm the order before checkout',
@@ -427,6 +430,12 @@ export class GroupBuyService {
           (acc, item) => acc + item.total_price,
           0,
         );
+        await tx.groups.update({
+          where: { id: group.id },
+          data: {
+            group_status: GroupStatus.DELETED,
+          },
+        });
         const updatedOrder = await tx.orders.update({
           where: { id: order.id },
           data: {
@@ -622,7 +631,7 @@ export class GroupBuyService {
       group_id,
       item_id,
     );
-    const groupItem = await this.prisma.groupItems.findUnique({
+    const groupItem = await this.prisma.groupItems.findFirst({
       where: {
         id: item_id,
         group_member_id: groupMember.id,
@@ -771,16 +780,18 @@ export class GroupBuyService {
         if (groupBelongToUser.length === 0) {
           return [];
         }
-        return groupBelongToUser.map((membership) => {
-          return {
-            group_id: membership.Group.id,
-            name: membership.Group.name,
-            host_id: membership.Group.host_id,
-            group_status: membership.Group.group_status,
-            is_confirmed:
-              membership.Group.GroupMembers[0]?.is_confirmed || false,
-          };
-        });
+        return groupBelongToUser
+          .filter((group) => group.Group.group_status !== GroupStatus.DELETED)
+          .map((membership) => {
+            return {
+              group_id: membership.Group.id,
+              name: membership.Group.name,
+              host_id: membership.Group.host_id,
+              group_status: membership.Group.group_status,
+              is_confirmed:
+                membership.Group.GroupMembers[0]?.is_confirmed || false,
+            };
+          });
       } catch (error) {
         console.error('Error fetching user groups with status:', error);
         throw new InternalServerErrorException(
@@ -844,9 +855,6 @@ export class GroupBuyService {
     });
     if (!groupMember) {
       throw new BadRequestException('You have not joined this group');
-    }
-    if (group.host_id != user_id) {
-      throw new BadRequestException('You are not the host of this group');
     }
     return {
       group_id: group.id,

@@ -16,15 +16,11 @@ import {
 import { PAYMENT_METHOD } from 'src/utils/constants';
 
 export class CheckoutGroupOrderDto {
-  @IsString()
-  @IsNotEmpty()
-  group_id: string;
-
   @IsArray()
   @IsNotEmpty({ message: 'items must not be empty' })
   @ValidateNested({ each: true })
   @ArrayMinSize(1)
-  @Type(() => CheckoutGroupItemDto)
+  @Type(() => CheckoutGroupMemberItem)
   items: CheckoutGroupMemberItem[];
 
   @IsString({ message: 'full name is not valid' })
