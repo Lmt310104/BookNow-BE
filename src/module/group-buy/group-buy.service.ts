@@ -35,6 +35,7 @@ export class GroupBuyService {
           select: {
             id: true,
             user_id: true,
+            is_confirmed: true,
             User: {
               select: {
                 id: true,
@@ -288,18 +289,15 @@ export class GroupBuyService {
 
   async confirmOrder(user_id: string, group_id: string) {
     const { groupMember } = await this.checkValidGroupMember(user_id, group_id);
-    if (groupMember.is_confirmed) {
-      throw new BadRequestException('You have already confirmed the order ');
-    }
     await this.prisma.groupMembers.update({
       where: {
         id: groupMember.id,
       },
       data: {
-        is_confirmed: true,
+        is_confirmed: !groupMember.is_confirmed,
       },
     });
-    return true;
+    return !groupMember.is_confirmed;
   }
 
   async checkOutGroupOrder(
