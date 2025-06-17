@@ -135,7 +135,7 @@ export class PromotionSchedulerService {
 
       case PromotionCategory.DEAL_DISCOUNT:
         if (promotion.PromotionShockDeal) {
-          await this.updateShockDealPrices(promotion, isActivating);
+          // await this.updateShockDealPrices(promotion, isActivating);
         }
         break;
 
