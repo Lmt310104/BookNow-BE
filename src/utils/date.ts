@@ -27,3 +27,9 @@ export function toDateTime(date: Date): string {
     targetFormat: DateFormat.DATE_TIME,
   });
 }
+
+export function formatDateOnly(date: Date): string {
+  const convertDate = new Date(date);
+  const pad = (n: number) => n.toString().padStart(2, '0');
+  return `${convertDate.getFullYear()}-${pad(convertDate.getMonth() + 1)}-${pad(convertDate.getDate())}`;
+}

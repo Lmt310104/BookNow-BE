@@ -52,4 +52,10 @@ export class CreateOrderDto {
   @IsNotEmpty({ message: 'Address must not be empty ' })
   @IsString()
   address: string;
+
+  @IsNotEmpty()
+  latitude: number;
+
+  @IsNotEmpty()
+  longitude: number;
 }

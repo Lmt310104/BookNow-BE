@@ -359,30 +359,8 @@ export class PromotionSchedulerService {
     });
 
     // Find active shock deal promotions for this book
-    const shockDealPromotions =
-      await this.prisma.promotionShockDealCondition.findMany({
-        where: {
-          book_id: bookId,
-          PromotionShockDeal: {
-            Promotion: {
-              id: { not: currentPromotionId },
-              status: PromotionStatus.ONGOING,
-              is_active: true,
-              start_date: { lte: now },
-              end_date: { gt: now },
-            },
-          },
-        },
-        include: {
-          PromotionShockDeal: {
-            include: {
-              Promotion: true,
-            },
-          },
-        },
-      });
 
-    return [...normalPromotions, ...shockDealPromotions];
+    return [...normalPromotions];
   }
 
   private async calculateBestPrice(bookId: string, activePromotions: any[]) {

@@ -133,6 +133,8 @@ export class OrderService {
                 full_name: dto.fullName,
                 phone_number: dto.phoneNumber,
                 payment_method: dto.paymentMethod,
+                latitude: dto.latitude,
+                longitude: dto.longitude,
                 address: dto.address,
                 pending_at: new Date(),
                 status: ORDER_STATUS.PROCESSING as OrderStatus,

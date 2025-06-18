@@ -264,6 +264,8 @@ export class CartsService {
         phoneNumber: dto.phone,
         address: dto.shippingAddress,
         paymentMethod: dto.paymentMethod,
+        latitude: dto.latitude,
+        longitude: dto.longitude,
       });
       await this.clearCart(session);
       return order;
