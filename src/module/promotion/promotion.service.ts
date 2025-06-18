@@ -450,7 +450,11 @@ export class PromotionService {
                   Book: true,
                 },
               },
-              PromotionShockDealCondition: true,
+              PromotionShockDealCondition: {
+                include: {
+                  Book: true,
+                },
+              },
               PromotionShockDealFreeGiftBook: true,
             },
           },
