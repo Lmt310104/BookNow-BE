@@ -148,22 +148,25 @@ export class RecommendationService {
               },
             },
           });
+          if (!book) return {};
           return {
             ...book,
-            PromotionComboProduct: book.PromotionComboProduct?.filter(
-              (pcp) => pcp.PromotionCombo?.Promotion?.is_active,
+            PromotionComboProduct: book?.PromotionComboProduct?.filter(
+              (pcp) => pcp.PromotionCombo?.Promotion?.is_active ?? [],
             ),
-            PromotionNormalDetail: book.PromotionNormalDetail?.filter(
-              (pnd) => pnd.Promotion?.is_active,
+            PromotionNormalDetail: book?.PromotionNormalDetail?.filter(
+              (pnd) => pnd.Promotion?.is_active ?? [],
             ),
-            PromotionShockDealBook: book.PromotionShockDealBook?.filter(
-              (psd) => psd.PromotionShockDeal?.Promotion?.is_active,
+            PromotionShockDealBook: book?.PromotionShockDealBook?.filter(
+              (psd) => psd.PromotionShockDeal?.Promotion?.is_active ?? [],
             ),
           };
         }),
       );
-
-      return recommendations;
+      const cleaned = recommendations.filter(
+        (item) => item && Object.keys(item).length > 0,
+      );
+      return cleaned;
     } catch (error) {
       console.log(error);
       throw new InternalServerErrorException('Có lỗi xảy ra trong hệ thống');

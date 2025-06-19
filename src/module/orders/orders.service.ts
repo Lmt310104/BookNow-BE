@@ -16,6 +16,7 @@ import {
   OrderStatus,
   Prisma,
   PromotionComboType,
+  PromotionShockDealType,
   PromotionStatus,
   ReviewType,
   Role,
@@ -98,13 +99,23 @@ export class OrderService {
       discountMap.set(book.id, total_discount_combo);
       promotions_shock_deal_map.set(book.id, promotion_shock_deal_map);
     }
+    console.log(
+      'Discount Map:',
+      Array.from(promotions_shock_deal_map.entries()).map(
+        ([book_primary, promotion_shock_deal]) => ({
+          book_primary,
+          discount_rate: promotion_shock_deal.discount_rate,
+          discount_amount: promotion_shock_deal.discount_amount,
+        }),
+      ),
+    );
     const bookPriceMap = new Map(
       books.map((book) => [
         book.id,
         {
           price: book.price,
           finalPrice: book.final_price ?? book.price,
-          current_price: book.current_price,
+          current_price: book.current_price ?? book.price,
         },
       ]),
     );
@@ -174,17 +185,26 @@ export class OrderService {
               promotion_shock_deal_map.book_primary.includes(item.bookId),
             );
             if (has_primary_book) {
+              console.log('Current Price before shock deal: ', current_price);
+              console.log(
+                'Promotion Shock Deal Map:',
+                promotion_shock_deal_map,
+              );
               current_price = new Decimal(
                 Number(current_price) -
-                  (promotion_shock_deal_map.discount_amount
-                    ? Number(promotion_shock_deal_map.discount_amount)
+                  (promotion_shock_deal_map.discount_amount &&
+                  Number(promotion_shock_deal_map.discount_amount) > 0
+                    ? promotion_shock_deal_map.discount_amount
+                      ? Number(promotion_shock_deal_map.discount_amount)
+                      : 0
                     : (Number(promotion_shock_deal_map.discount_rate) *
                         Number(current_price)) /
                       100),
               );
+              console.log('Current Price after shock deal: ', current_price);
             }
             const totalPrice =
-              (current_price
+              (!isNaN(Number(current_price))
                 ? Number(current_price) * item.quantity
                 : Number(finalPrice) * item.quantity) -
               discountMap.get(item.bookId);
@@ -1385,7 +1405,9 @@ export class OrderService {
           }
           const orderItems = dto.items.map((item) => {
             const { price, finalPrice } = bookPriceMap.get(item.bookId);
-            const totalPrice = Number(finalPrice) * item.quantity;
+            const totalPrice = finalPrice
+              ? Number(finalPrice) * item.quantity
+              : Number(price) * item.quantity;
             return {
               order_id: order.id,
               book_id: item.bookId,
@@ -1530,7 +1552,7 @@ export class OrderService {
       }
       if (promotion.PromotionShockDeal) {
         const isApplicableToBook =
-          promotion.PromotionShockDeal.PromotionShockDealBook.some(
+          promotion.PromotionShockDeal.PromotionShockDealCondition.some(
             (condition) => condition.book_id === book_id,
           );
 
@@ -1667,7 +1689,6 @@ export class OrderService {
         purchase_history: allPurchaseHistory,
         last_purchase_date: new Date().toISOString(),
       };
-      console.log('User properties to update:', userProperties);
 
       await this.recommendationService.updateUserToRecombee(userProperties);
 
