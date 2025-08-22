@@ -134,7 +134,10 @@ export class GroupBuyService {
         group_id: result.id,
       },
     });
-    return `${this.configService.get<string>('url_web')}/join-group-buy?group_id=${result.id}`;
+    return {
+      group_id: result.id,
+      group_url: `${this.configService.get<string>('url_web')}/join-group-buy?group_id=${result.id}`,
+    };
   }
 
   async addBookToGroupBasket(

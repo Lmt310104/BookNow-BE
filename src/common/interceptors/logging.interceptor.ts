@@ -23,12 +23,12 @@ export class LoggingInterceptor implements NestInterceptor {
       tap(() => {
         const response = context.switchToHttp().getResponse();
         const { statusCode } = response;
-        // console.log(`Outgoing Response:`);
-        // console.log(`Status Code: ${statusCode}`);
-        // console.log(`Response Time: ${Date.now() - now}ms`);
+        console.log(`Outgoing Response:`);
+        console.log(`Status Code: ${statusCode}`);
+        console.log(`Response Time: ${Date.now() - now}ms`);
       }),
       map((data) => {
-        // console.log('Response Body:', data);
+        console.log('Response Body:', data);
         return data;
       }),
     );

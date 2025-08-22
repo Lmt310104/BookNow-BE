@@ -28,10 +28,10 @@ export class PageQueryDto {
     return (this.page - 1) * this.take;
   }
 
-  @ApiProperty({ enum: ORDER, default: ORDER.ASC })
+  @ApiProperty({ enum: ORDER, default: ORDER.DESC })
   @IsEnum(ORDER)
   @IsOptional()
-  readonly order?: ORDER = ORDER.ASC;
+  readonly order?: ORDER = ORDER.DESC;
 
   @ApiProperty({
     default: 'created_at',

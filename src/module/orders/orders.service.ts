@@ -149,6 +149,7 @@ export class OrderService {
                 address: dto.address,
                 pending_at: new Date(),
                 status: ORDER_STATUS.PROCESSING as OrderStatus,
+                created_at: new Date(),
                 processing_at: new Date(),
               },
             });
@@ -170,6 +171,9 @@ export class OrderService {
                 phone_number: dto.phoneNumber,
                 payment_method: dto.paymentMethod,
                 address: dto.address,
+                latitude: dto.latitude,
+                longitude: dto.longitude,
+                created_at: new Date(),
                 pending_at: new Date(),
               },
             });
