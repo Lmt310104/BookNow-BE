@@ -1,0 +1,117 @@
+name: CICDToEC2
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  build-and-push:
+    runs-on: ubuntu-latest
+    outputs:
+      image: ${{ steps.set-image.outputs.image }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Install deps & build
+        run: |
+          npm ci
+          npm run build
+
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v2
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Build Docker image
+        run: |
+          IMAGE=${{ secrets.DOCKER_IMAGE }}:${{ github.sha }}
+          docker build -t $IMAGE .
+          echo "IMAGE=$IMAGE" >> $GITHUB_OUTPUT
+        id: set-image
+
+      - name: Push image
+        run: |
+          docker push ${{ steps.set-image.outputs.IMAGE }}
+
+  deploy-to-ec2:
+    needs: build-and-push
+    runs-on: ubuntu-latest
+    steps:
+      - name: Copy monitoring files to EC2
+        uses: appleboy/scp-action@v0.1.5
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ${{ secrets.EC2_USER }}
+          key: ${{ secrets.EC2_SSH_KEY }}
+          port: 22
+          # adjust these source paths to the files/folders in your repo
+          source: |
+            docker-compose.monitoring.yml
+            prometheus/prometheus.yml
+            grafana/provisioning/**
+          target: ~/monitoring
+
+      - name: Deploy app + monitoring on EC2 via SSH
+        uses: appleboy/ssh-action@v0.1.8
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ${{ secrets.EC2_USER }}
+          key: ${{ secrets.EC2_SSH_KEY }}
+          port: 22
+          script: |
+            set -e
+            IMAGE=${{ secrets.DOCKER_IMAGE }}:${{ github.sha }}
+
+            # Ensure docker & docker compose plugin installed
+            if ! command -v docker >/dev/null 2>&1; then
+              sudo apt-get update
+              sudo apt-get install -y docker.io
+              sudo systemctl enable --now docker
+            fi
+
+            # Install docker compose plugin (Debian/Ubuntu)
+            if ! docker compose version >/dev/null 2>&1; then
+              sudo apt-get install -y docker-compose-plugin || true
+            fi
+
+            # Create monitoring network used by monitoring stack and app
+            docker network create monitoring-net || true
+
+            # Pull and run app container (attach to monitoring network)
+            docker pull $IMAGE
+
+            # Stop previous container if exists
+            docker stop booknow || true
+            docker rm booknow || true
+
+            # Run app (adjust ports/env-file as needed)
+            docker run -d \
+              --name booknow \
+              --restart unless-stopped \
+              --network monitoring-net \
+              -p 8080:8080 \
+              --env-file ~/booknow.env \
+              $IMAGE
+
+            # Deploy monitoring stack (files copied to ~/monitoring)
+            cd ~/monitoring || exit 0
+
+            # Ensure files present
+            if [ -f docker-compose.monitoring.yml ]; then
+              # Pull monitoring images and start stack
+              docker compose pull || docker compose -f docker-compose.monitoring.yml pull
+              docker compose up -d || docker compose -f docker-compose.monitoring.yml up -d
+            else
+              echo "docker-compose.monitoring.yml not found in ~/monitoring - skip monitoring deployment"
+            fi
+
+            # show status
+            docker ps --filter "name=booknow" --filter "name=prometheus" --filter "name=grafana" --format "table {{.Names}}\t{{.Status}}\t{{.Ports}}"
