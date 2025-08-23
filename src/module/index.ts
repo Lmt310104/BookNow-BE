@@ -12,6 +12,7 @@ import { EventsModule } from './events_gateway/event_gateway.module';
 import { GeminiModule } from './gemini/gemini.module';
 import { GoogleOauthModule } from './google-oauth/google-oauth.module';
 import { GroupBuyModule } from './group-buy/group-buy.module';
+import { HealthCheckModule } from './health_check/health_check.module';
 import { DeliveryModule } from './intelligence_delivery/delivery.module';
 import { InventoryModule } from './inventory/inventory.module';
 import { OpenAIModule } from './openai/openai.module';
@@ -51,6 +52,7 @@ const Modules = [
   GroupBuyModule,
   AddressModuleV2,
   DeliveryModule,
+  HealthCheckModule,
 ];
 
 export default Modules;
