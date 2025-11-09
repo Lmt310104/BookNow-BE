@@ -10,9 +10,9 @@ generator client {
 }
 
 datasource db {
-  provider = "postgresql"
-  url      = env("DATABASE_URL")
-  // directUrl = env("DIRECT_URL")
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
 }
 
 model Users {
@@ -38,6 +38,11 @@ model Users {
   Orders              Orders[]
   Carts               Carts?
   Reviews             Reviews[]
+  Groups              Groups[]
+  OrderItems          OrderItems[]
+  GroupMembers        GroupMembers[]
+  Payments            Payments[]
+  NewAddress          NewAddress[]
 
   @@unique([email, type_email])
   @@index([full_name, email, phone, type_email], map: "users_fulltext_idx")
@@ -52,35 +57,42 @@ model Vertifications {
 }
 
 model Books {
-  id                  String                @id @default(uuid())
-  title               String                @db.VarChar(255)
-  author              String?
-  category_id         String
-  price               Decimal
-  stock_quantity      Int
-  description         String                @db.Text
-  entry_price         Decimal
-  final_price         Decimal?
-  discountPercentage  Int?
-  discountDate        DateTime?
-  avg_stars           Decimal               @default(0)
-  total_reviews       Int                   @default(0)
-  sold_quantity       Int                   @default(0)
-  image_url           String[]              @default([])
-  status              BookStatus            @default(ACTIVE)
-  created_at          DateTime              @default(now())
-  updated_at          DateTime              @updatedAt
-  unaccent            String?               @db.Text
-  supplier_id         String?
-  sku                 String?               @unique
-  Supplier            Supplier?             @relation(fields: [supplier_id], references: [id], onDelete: Cascade)
-  Category            Category              @relation(fields: [category_id], references: [id], onDelete: Cascade)
-  OrderItems          OrderItems[]
-  CartItems           CartItems[]
-  Reviews             Reviews[]
-  BookAuthor          BookAuthor[]
-  InventoryFormItem   InventoryFormItem[]
-  AdjustStockFormItem AdjustStockFormItem[]
+  id                             String                           @id @default(uuid())
+  title                          String                           @db.VarChar(255)
+  author                         String?
+  category_id                    String
+  price                          Decimal
+  stock_quantity                 Int
+  description                    String                           @db.Text
+  entry_price                    Decimal
+  final_price                    Decimal?
+  current_price                  Decimal?
+  discountPercentage             Int?
+  discountDate                   DateTime?
+  avg_stars                      Decimal                          @default(0)
+  total_reviews                  Int                              @default(0)
+  sold_quantity                  Int                              @default(0)
+  image_url                      String[]                         @default([])
+  status                         BookStatus                       @default(ACTIVE)
+  created_at                     DateTime                         @default(now())
+  updated_at                     DateTime                         @updatedAt
+  unaccent                       String?                          @db.Text
+  supplier_id                    String?
+  sku                            String?                          @unique
+  Supplier                       Supplier?                        @relation(fields: [supplier_id], references: [id], onDelete: Cascade)
+  Category                       Category                         @relation(fields: [category_id], references: [id], onDelete: Cascade)
+  OrderItems                     OrderItems[]
+  CartItems                      CartItems[]
+  Reviews                        Reviews[]
+  BookAuthor                     BookAuthor[]
+  InventoryFormItem              InventoryFormItem[]
+  AdjustStockFormItem            AdjustStockFormItem[]
+  PromotionShockDealCondition    PromotionShockDealCondition[]
+  PromotionNormalDetail          PromotionNormalDetail[]
+  PromotionComboProduct          PromotionComboProduct[]
+  PromotionShockDealBook         PromotionShockDealBook[]
+  PromotionShockDealFreeGiftBook PromotionShockDealFreeGiftBook[]
+  GroupItems                     GroupItems[]
 
   @@index([title, author], map: "books_fulltext_idx")
 }
@@ -125,6 +137,8 @@ model Orders {
   status         OrderStatus   @default(PENDING)
   review_state   ReviewState   @default(UNREVIEW)
   total_price    Decimal       @default(0)
+  latitude       Decimal?
+  longitude      Decimal?
   full_name      String
   phone_number   String
   address        String
@@ -142,6 +156,7 @@ model Orders {
   payment_method PaymentMethod @default(COD)
   is_deleted     Boolean       @default(false)
   OrderItems     OrderItems[]
+  Payments       Payments[]
 
   @@index([full_name, phone_number, address], map: "orders_fulltext_idx")
 }
@@ -155,6 +170,9 @@ model OrderItems {
   review_status ReviewState @default(UNREVIEW)
   review_id     Int?
   review        Reviews?
+  promotion_ids String[]    @default([])
+  group_user_id String?
+  GroupUser     Users?      @relation(fields: [group_user_id], references: [id], onDelete: Cascade)
   quantity      Int
   price         Decimal
   total_price   Decimal
@@ -208,13 +226,15 @@ model ReplyReviews {
 }
 
 model Address {
-  id           Int     @id @default(autoincrement())
+  id           Int      @id @default(autoincrement())
   user_id      String
   full_name    String
   phone_number String
   address      String
-  unaccent     String? @db.Text
-  Users        Users?  @relation(fields: [user_id], references: [id])
+  lat          Decimal?
+  lon          Decimal?
+  unaccent     String?  @db.Text
+  Users        Users?   @relation(fields: [user_id], references: [id])
 
   @@index([full_name, address, phone_number], map: "address_fulltext_idx")
 }
@@ -282,6 +302,191 @@ model InventoryAddress {
   address String
   note    String?
   type    InventoryType
+}
+
+model Promotion {
+  id                    String                  @id @default(uuid())
+  name                  String
+  start_date            DateTime
+  end_date              DateTime
+  order_limit           Int?
+  max_usage_per_user    Int?
+  status                PromotionStatus
+  promotion_category    PromotionCategory
+  is_active             Boolean                 @default(true)
+  created_at            DateTime                @default(now())
+  updated_at            DateTime?               @updatedAt
+  PromotionNormalDetail PromotionNormalDetail[]
+  PromotionCombo        PromotionCombo?
+  PromotionShockDeal    PromotionShockDeal?
+  PromotionGroupBuy     PromotionGroupBuy?
+}
+
+model PromotionGroupBuy {
+  id                     String    @id @default(uuid())
+  promotion_id           String    @unique
+  Promotion              Promotion @relation(fields: [promotion_id], references: [id])
+  required_user_quantity Int
+  discount_amount        Decimal
+  discount_rate          Decimal
+}
+
+model PromotionNormalDetail {
+  id              String    @id @default(uuid())
+  promotion_id    String
+  Promotion       Promotion @relation(fields: [promotion_id], references: [id])
+  book_id         String
+  Book            Books     @relation(fields: [book_id], references: [id])
+  discount_amount Decimal
+  discount_rate   Decimal
+}
+
+model PromotionCombo {
+  id                      String                    @id @default(uuid())
+  promotion_id            String                    @unique
+  Promotion               Promotion                 @relation(fields: [promotion_id], references: [id])
+  promotion_combo_type    PromotionComboType
+  PromotionComboCondition PromotionComboCondition[]
+  PromotionComboProduct   PromotionComboProduct[]
+}
+
+model PromotionComboProduct {
+  id                 String          @id @default(uuid())
+  promotion_combo_id String
+  PromotionCombo     PromotionCombo? @relation(fields: [promotion_combo_id], references: [id])
+  book_id            String
+  Book               Books           @relation(fields: [book_id], references: [id])
+}
+
+model PromotionComboCondition {
+  id                 String         @id @default(uuid())
+  promotion_combo_id String
+  PromotionCombo     PromotionCombo @relation(fields: [promotion_combo_id], references: [id])
+  quantity           Int
+  discount_value     Decimal
+}
+
+model PromotionShockDeal {
+  id                             String                           @id @default(uuid())
+  promotion_id                   String                           @unique
+  Promotion                      Promotion                        @relation(fields: [promotion_id], references: [id])
+  promotion_shock_deal_type      PromotionShockDealType
+  required_purchase_quantity     Int?
+  gift_quantity                  Int?
+  PromotionShockDealBook         PromotionShockDealBook[]
+  PromotionShockDealFreeGiftBook PromotionShockDealFreeGiftBook[]
+  PromotionShockDealCondition    PromotionShockDealCondition[]
+}
+
+model PromotionShockDealBook {
+  id                      String             @id @default(uuid())
+  PromotionShockDeal      PromotionShockDeal @relation(fields: [promotion_shock_deal_id], references: [id])
+  promotion_shock_deal_id String
+  book_id                 String
+  Book                    Books              @relation(fields: [book_id], references: [id])
+}
+
+model PromotionShockDealCondition {
+  id                      String             @id @default(uuid())
+  promotion_shock_deal_id String
+  PromotionShockDeal      PromotionShockDeal @relation(fields: [promotion_shock_deal_id], references: [id])
+  discount_rate           Int
+  discount_amount         Decimal
+  book_id                 String
+  Book                    Books              @relation(fields: [book_id], references: [id])
+}
+
+model PromotionShockDealFreeGiftBook {
+  id                      String             @id @default(uuid())
+  promotion_shock_deal_id String
+  PromotionShockDeal      PromotionShockDeal @relation(fields: [promotion_shock_deal_id], references: [id])
+  book_id                 String
+  Book                    Books              @relation(fields: [book_id], references: [id])
+}
+
+model Groups {
+  id           String         @id @default(uuid())
+  host_id      String
+  name         String
+  User         Users          @relation(fields: [host_id], references: [id])
+  group_status GroupStatus    @default(ACTIVE)
+  created_at   DateTime       @default(now())
+  updated_at   DateTime       @updatedAt
+  GroupMembers GroupMembers[]
+}
+
+model GroupMembers {
+  id           String       @id @default(uuid())
+  group_id     String
+  Group        Groups       @relation(fields: [group_id], references: [id], onDelete: Cascade)
+  user_id      String
+  User         Users        @relation(fields: [user_id], references: [id])
+  is_confirmed Boolean      @default(false)
+  GroupItems   GroupItems[]
+}
+
+model GroupItems {
+  id              String       @id @default(uuid())
+  group_member_id String
+  GroupMember     GroupMembers @relation(fields: [group_member_id], references: [id], onDelete: Cascade)
+  book_id         String
+  Book            Books        @relation(fields: [book_id], references: [id])
+  quantity        Int
+  created_at      DateTime     @default(now())
+  updated_at      DateTime     @updatedAt
+
+  @@unique([group_member_id, book_id])
+}
+
+model NewAddress {
+  id           String    @id @default(uuid())
+  user_id      String
+  User         Users     @relation(fields: [user_id], references: [id])
+  full_name    String
+  phone_number String
+  street       String
+  ward_name    String?
+  district_id  String
+  District     Districts @relation(fields: [district_id], references: [id])
+  lat          Decimal
+  lon          Decimal
+  created_at   DateTime  @default(now())
+  updated_at   DateTime  @updatedAt
+}
+
+model Payments {
+  id         String        @id @default(uuid())
+  order_id   String
+  Order      Orders        @relation(fields: [order_id], references: [id])
+  user_id    String
+  User       Users         @relation(fields: [user_id], references: [id])
+  amount     Float
+  method     PaymentMethod
+  status     PaymentStatus
+  created_at DateTime      @default(now())
+  updated_at DateTime      @updatedAt
+}
+
+model Districts {
+  id            String       @id @default(uuid())
+  name          String
+  city_id       String
+  City          Cities       @relation(fields: [city_id], references: [id])
+  district_code String
+  NewAddress    NewAddress[]
+}
+
+model Vouchers {
+  id   String @id @default(uuid())
+  code String @unique
+  name String
+}
+
+model Cities {
+  id          String      @id @default(uuid())
+  name        String
+  Districts   Districts[]
+  postal_code String
 }
 
 enum Role {
@@ -353,4 +558,46 @@ enum InventoryFormState {
   PENDING
   DONE
   CANCELLED
+}
+
+enum PromotionCategory {
+  SHOP_DISCOUNT
+  COMBO_DISCOUNT
+  DEAL_DISCOUNT
+  GROUP_DISCOUNT
+}
+
+enum DiscountType {
+  PERCENTAGE
+  FIXED
+  SPECIAL
+}
+
+enum PromotionStatus {
+  UPCOMING
+  ONGOING
+  COMPLETED
+}
+
+enum PromotionComboType {
+  PERCENTAGE
+  FIXED_AMOUNT
+  SPECIAL_DISCOUNT
+}
+
+enum PromotionShockDealType {
+  BUY_WITH_SHOCK_DEAL
+  BUY_TO_GET_GIFT
+}
+
+enum GroupStatus {
+  ACTIVE
+  CHECK_OUT
+  DELETED
+}
+
+enum PaymentStatus {
+  PENDING
+  SUCCESS
+  FAILED
 }

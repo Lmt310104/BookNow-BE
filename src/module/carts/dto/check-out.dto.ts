@@ -14,4 +14,8 @@ export class CheckOutDto {
   @IsEnum(PAYMENT_METHOD)
   @IsNotEmpty()
   paymentMethod: PAYMENT_METHOD;
+  @IsNotEmpty()
+  latitude: number;
+  @IsNotEmpty()
+  longitude: number;
 }

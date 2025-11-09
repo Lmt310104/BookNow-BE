@@ -6,12 +6,14 @@ import { AddToCartDto } from './dto/add-to-cart.dto';
 import { UpdateCartDto } from './dto/update-cart.dto';
 import { CheckOutDto } from './dto/check-out.dto';
 import { OrderService } from '../orders/orders.service';
+import { RecommendationService } from '@module/recommendation/recommendation.service';
 
 @Injectable()
 export class CartsService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly orderService: OrderService,
+    private readonly recommendationService: RecommendationService,
   ) {}
   async createCart(session: TUserSession) {
     const existingCart = await this.prisma.carts.findUnique({
@@ -37,7 +39,37 @@ export class CartsService {
     }
     const cartItems = await this.prisma.cartItems.findMany({
       where: { cart_id: cart.id },
-      include: { book: true },
+      include: {
+        book: {
+          include: {
+            PromotionNormalDetail: {
+              include: {
+                Promotion: true,
+              },
+            },
+            PromotionComboProduct: {
+              include: {
+                PromotionCombo: {
+                  include: {
+                    Promotion: true,
+                    PromotionComboCondition: true,
+                  },
+                },
+              },
+            },
+            PromotionShockDealBook: {
+              include: {
+                PromotionShockDeal: {
+                  include: {
+                    Promotion: true,
+                    PromotionShockDealCondition: true,
+                  },
+                },
+              },
+            },
+          },
+        },
+      },
       skip: getCartDto.skip,
       take: getCartDto.take,
       orderBy: { [getCartDto.sortBy]: getCartDto.order },
@@ -45,7 +77,31 @@ export class CartsService {
     const itemCount = await this.prisma.cartItems.count({
       where: { cart_id: cart.id },
     });
-    return { cartItems, itemCount };
+    const filteredCartItems = cartItems.map((item) => {
+      const book = item.book;
+
+      return {
+        ...item,
+        book: {
+          ...book,
+          PromotionNormalDetail: book.PromotionNormalDetail
+            ? book.PromotionNormalDetail.filter((p) => p.Promotion?.is_active)
+            : [],
+          PromotionComboProduct: book.PromotionComboProduct
+            ? book.PromotionComboProduct.filter(
+                (pcp) => pcp.PromotionCombo?.Promotion?.is_active,
+              )
+            : [],
+          PromotionShockDealBook: book.PromotionShockDealBook
+            ? book.PromotionShockDealBook.filter(
+                (psd) => psd.PromotionShockDeal?.Promotion?.is_active,
+              )
+            : [],
+        },
+      };
+    });
+
+    return { cartItems: filteredCartItems, itemCount };
   }
   async addToCart(session: TUserSession, addToCartDto: AddToCartDto) {
     const { bookId, quantity } = addToCartDto;
@@ -87,6 +143,7 @@ export class CartsService {
         },
       });
     }
+    this.recommendationService.trackAddToCart(session.id, bookId);
     return this.prisma.carts.findFirst({
       where: { user_id: session.id },
       include: { CartItems: { include: { book: true } } },
@@ -201,11 +258,14 @@ export class CartsService {
         items: cartItems.map((item) => ({
           bookId: item.book.id,
           quantity: item.quantity,
+          promotion_ids: [],
         })),
         fullName: dto.fullName,
         phoneNumber: dto.phone,
         address: dto.shippingAddress,
         paymentMethod: dto.paymentMethod,
+        latitude: dto.latitude,
+        longitude: dto.longitude,
       });
       await this.clearCart(session);
       return order;

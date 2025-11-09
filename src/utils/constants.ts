@@ -12,6 +12,7 @@ export const DOCUMENTATION = {
     CARTS: 'CART',
     CART_ITEMS: 'CART_ITEMS',
     COMMENT: 'COMMENT',
+    PROMOTION: 'PROMOTION',
   },
 };
 
@@ -207,6 +208,37 @@ export const END_POINTS = {
     CREATE_INVENTORY_ADDRESS: '/create-inventory-address',
     GET_ALL_INVENTORY_ADDRESS: '/get-all-inventory-address',
   },
+  PROMOTION: {
+    BASE: '/promotion',
+    GET_ALL: '/get-all',
+    CREATE_NORMAL: '/create-normal',
+    CREATE_COMBO: '/create-combo',
+    CREATE_SHOCK_DEAL: '/create-shock-deal',
+    UPDATE: '/update/:id',
+    GET_ONE: '/get-one/:id',
+    ACTIVE: '/active/:id',
+    INACTIVE: '/inactive/:id',
+    EDIT_TIME: 'edit-time/:id',
+    CREATE_GROUP_BUY: '/create-group-buy',
+  },
+  RECOMMENDATION: {
+    BASE: '/recommendation',
+    RECOMMEND_FOR_YOU: '',
+    GET_SIMILAR_BOOK: '/similar-books/:bookId',
+    ADD_USER_PROPERTIES: '/add-user-properties',
+    ADD_ITEMS_PROPERTIES: '/add-items-properties',
+  },
+  GROUP_BUY: {
+    BASE: '/group-buy',
+    CREATE_GROUP: '/create-new-group/',
+    GET_GROUP_BASKET: '/get-group-basket/:group_id',
+    ADD_BOOK_TO_GROUP: '/add-book-to-group/:group_id',
+    DELETE_BOOK: '/delete-book',
+    UPDATE_BOOK: '/update-book-quantity/:group_id',
+    UPDATE_GROUP_STATUS: '/update-group-status/:group_id',
+    CREATE_GROUP_ORDER: '/create-group-order/:group_id',
+    JOIN_GROUP: '/join-group/:group_id',
+  },
 };
 
 export enum ROLE {
@@ -272,6 +304,12 @@ export enum PAYMENT_METHOD {
   MOMO = 'MOMO',
   ZALOPAY = 'ZALOPAY',
   VNPAY = 'VNPAY',
+}
+
+export enum PROMOTION_TYPE {
+  NORMAL_DISCOUNT = 'NORMAL_DISCOUNT',
+  COMBO_DISCOUNT = 'COMBO_DISCOUNT',
+  SHOCK_DEAL = 'SHOCK_DEAL',
 }
 
 export const CURRENCY = 'VND';
