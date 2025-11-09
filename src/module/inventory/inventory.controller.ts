@@ -14,10 +14,6 @@ const {
     BASE,
     GET_ALL,
     CREATE,
-    UPDATE,
-    GET_ONE,
-    ACTIVE,
-    INACTIVE,
     CREATE_INVENTORY_ADDRESS,
     GET_ALL_INVENTORY_ADDRESS,
   },
@@ -66,5 +62,10 @@ export class InventoryController {
   // async adjustStockInInventory(@Body() data: CreateInventoryFormDto) {
   //   const result = await this.inventoryService.adjustStockInInventory(data);
   //   return new StandardResponse(result, 'Inventory updated successfully');
+  // }
+  // @Post(PLANING_ROUTE)
+  // async planRoute(@Body() data: CreateInventoryFormDto) {
+  //   const result = await this.inventoryService.planRoute(data);
+  //   return new StandardResponse(result, 'Route planned successfully', 201);
   // }
 }

@@ -1,4 +1,5 @@
 import {
+  BadRequestException,
   Body,
   Controller,
   Get,
@@ -9,6 +10,8 @@ import {
   Query,
   Req,
   Res,
+  UploadedFile,
+  UseInterceptors,
 } from '@nestjs/common';
 import { END_POINTS, ROLE } from 'src/utils/constants';
 import { OrderService } from './orders.service';
@@ -29,6 +32,8 @@ import { UpdateOrderStatusDto } from './dto/update-order-status.dto';
 import { CreatePaymentUrlDto } from './dto/create-payment-url.dto';
 import { Public } from 'src/common/decorators/public.decorator';
 import { Request, Response } from 'express';
+import { OrderImportExportService } from './orders-import-export.service';
+import { FileInterceptor } from '@nestjs/platform-express';
 
 const {
   ORDER: {
@@ -55,7 +60,10 @@ const {
 
 @Controller(BASE)
 export class OrdersController {
-  constructor(private readonly orderService: OrderService) {}
+  constructor(
+    private readonly orderService: OrderService,
+    private readonly orderImportExportService: OrderImportExportService,
+  ) {}
   @Get(GET_FULL_LIST)
   @Roles(ROLE.ADMIN)
   async getListOrders(
@@ -220,5 +228,18 @@ export class OrdersController {
     const order = await this.orderService.anonymousCheckout(dto);
     const message = 'Order created successfully';
     return new StandardResponse(order, message, HttpStatusCode.CREATED);
+  }
+
+  @Public()
+  @Get('export-processing-orders')
+  async exportProcessingOrders(@Res() res: Response) {
+    try {
+      const processingOrders =
+        await this.orderImportExportService.getProcessingOrdersForExport();
+      await this.orderImportExportService.generateExcel(processingOrders, res);
+    } catch (error) {
+      console.error(`Error exporting orders: ${error.message}`);
+      res.status(500).send('Error generating Excel file');
+    }
   }
 }

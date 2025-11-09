@@ -4,11 +4,11 @@ import { ConfigService } from '@nestjs/config';
 import { PrismaService } from 'src/module/prisma/prisma.service';
 import { SignUpByEmailDto, SignUpByPhoneDto } from '../../dto';
 import { checkIsExistEmail } from './check-is-exist-user';
-import { hashPassword } from 'prisma/seed';
 import { createUserWithEmail } from './create-user';
 import { EmailService } from 'src/module/email/email.service';
 import { Role } from '@prisma/client';
 import sendSMS from 'src/services/sms-gateway';
+import * as bcrypt from 'bcrypt';
 
 @Injectable()
 class SignUpService {
@@ -25,13 +25,14 @@ class SignUpService {
         cause: new Error('User already exists'),
       });
     }
-    const hashedPassword = await hashPassword(password);
+    const hashedPassword = await this.hashPassword(password);
     const new_user = await createUserWithEmail(
       { ...body, hashedPassword },
       this.prisma,
     );
     await this.prisma.vertifications.create({
       data: {
+        is_active: false,
         verified_code: new_user.password,
         user: {
           connect: {
@@ -65,7 +66,7 @@ class SignUpService {
           cause: new Error('Phone number already exists'),
         });
       }
-      const hashedPassword = await hashPassword(password);
+      const hashedPassword = await this.hashPassword(password);
       const newUser = await this.prisma.users.create({
         data: {
           phone,
@@ -96,6 +97,11 @@ class SignUpService {
     } catch (error) {
       throw new BadRequestException(error.message);
     }
+  }
+  private async hashPassword(password: string) {
+    const salt = await bcrypt.genSalt(10);
+    const hashed = await bcrypt.hash(password, salt);
+    return hashed;
   }
 }
 

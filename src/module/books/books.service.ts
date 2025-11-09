@@ -12,10 +12,11 @@ import { RatingFilterDto } from './dto/filter-by-rating.dto';
 import * as ExcelJS from 'exceljs';
 import { Buffer } from 'buffer';
 import { TUserSession } from 'src/common/decorators/user-session.decorator';
+import { RecommendationService } from '@module/recommendation/recommendation.service';
 
 @Injectable()
 export class BooksService {
-  constructor(private readonly prismaService: PrismaService) {}
+  constructor(private readonly prismaService: PrismaService, private readonly recommendationService: RecommendationService) { }
 
   async getAllBooks(bookQuery: BookQuery) {
     const AND = [
@@ -33,10 +34,10 @@ export class BooksService {
       },
       ...(bookQuery.categoryId
         ? [
-            {
-              Category: { id: bookQuery.categoryId },
-            },
-          ]
+          {
+            Category: { id: bookQuery.categoryId },
+          },
+        ]
         : []),
     ].filter(
       (condition) =>
@@ -122,18 +123,43 @@ export class BooksService {
       },
       include: {
         Category: true,
+        PromotionComboProduct: {
+          include: {
+            PromotionCombo: {
+              include: {
+                Promotion: true,
+                PromotionComboCondition: true, 
+              },
+            },
+          },
+        },
+        PromotionNormalDetail: {
+          include: {
+            Promotion: true,
+          }
+        },
+        PromotionShockDealBook: {
+          include: {
+            PromotionShockDeal: {
+              include: {
+                Promotion: true,
+                PromotionShockDealCondition: true,
+              }
+            }
+          },
+        }
       },
       orderBy: [
         condition1 !== undefined
-        ? {
+          ? {
             _relevance: {
               fields: ['title', 'description', 'author'],
               search: condition1,
               sort: 'desc',
             },
           }
-        : {}
-        ,{ [bookQuery.sortBy]: bookQuery.order }
+          : {}
+        , { [bookQuery.sortBy]: bookQuery.order }
 
       ],
       skip: bookQuery.skip,
@@ -213,7 +239,17 @@ export class BooksService {
         AND: AND,
       },
     });
-    return { books, itemCount };
+    const filteredBooks = books.map(book => ({
+    ...book,
+    PromotionComboProduct: book.PromotionComboProduct?.filter(pcp =>
+      pcp.PromotionCombo?.Promotion?.is_active),
+    PromotionNormalDetail: book.PromotionNormalDetail?.filter(pnd =>
+      pnd.Promotion?.is_active),
+    PromotionShockDealBook: book.PromotionShockDealBook?.filter(psd =>
+      psd.PromotionShockDeal?.Promotion?.is_active),
+  }));
+
+    return { books: filteredBooks, itemCount };
   }
   async createBook(body: CreateBookDto, images?: Array<Express.Multer.File>) {
     const {
@@ -261,7 +297,7 @@ export class BooksService {
         const author = await this.prismaService.authors.findFirst({
           where: { id: body.authors[i].toString() },
         });
-        authorName +=  author ? author.name + ' ': '';
+        authorName += author ? author.name + ' ' : '';
       }
       const newBook = await this.prismaService.books.create({
         data: {
@@ -344,13 +380,13 @@ export class BooksService {
           const author = await this.prismaService.authors.findUnique({
             where: { id: dto.authors[i].toString() },
           });
-          if(author){
+          if (author) {
             await this.prismaService.bookAuthor.create({
               data: {
                 book_id: id,
                 author_id: dto.authors[i],
-                },
-              });
+              },
+            });
           }
           authorName += author ? author.name + ' ' : '';
         }
@@ -371,6 +407,14 @@ export class BooksService {
             stock_quantity: Number(dto?.stockQuantity) ?? existingBook.stock_quantity,
           },
         });
+        const newBook = await tx.books.findUnique({
+          where: { id },
+          include: {
+            Category: true,
+            PromotionShockDealCondition: true,
+          }
+        })
+        await this.recommendationService.updateBookToRecombee(newBook);
         return updatedBook;
       });
     } catch (error) {
@@ -391,10 +435,44 @@ export class BooksService {
             author: true,
           },
         },
+        PromotionNormalDetail :{
+          include: {
+            Promotion: true,
+          }
+        },
+        PromotionComboProduct: {
+          include: {
+            PromotionCombo: {
+              include: {
+                Promotion: true,
+                PromotionComboCondition: true, 
+              },
+            },
+          },
+        },
+        PromotionShockDealBook: {
+          include: {
+            PromotionShockDeal: {
+              include: {
+                Promotion: true,
+                PromotionShockDealCondition: {
+                  include: {
+                    Book: true,
+                  }
+                },
+              }
+            }
+          },
+        },
       },
     });
     if (!book) {
       throw new BadRequestException('Book not found');
+    }
+    if (book) {
+      book.PromotionNormalDetail = book.PromotionNormalDetail.filter(pnd => pnd.Promotion.is_active);
+      book.PromotionComboProduct = book.PromotionComboProduct.filter(pcp => pcp.PromotionCombo.Promotion.is_active);
+      book.PromotionShockDealBook = book.PromotionShockDealBook.filter(psd => psd.PromotionShockDeal.Promotion.is_active);
     }
     return book;
   }
@@ -919,17 +997,17 @@ export class BooksService {
                 `Missing value in row ${rowNumber}, column ${i}`,
               );
             }
-            if(i === 5 && (isNaN(Number(row.getCell(i).value)) || Number(row.getCell(i).value)< 0)){
+            if (i === 5 && (isNaN(Number(row.getCell(i).value)) || Number(row.getCell(i).value) < 0)) {
               throw new BadRequestException(
                 `Invalid value in row ${rowNumber}, column ${i}`,
               );
             }
-            if(i === 6 && (isNaN(Number(row.getCell(i).value)) || Number(row.getCell(i).value)< 0)){
+            if (i === 6 && (isNaN(Number(row.getCell(i).value)) || Number(row.getCell(i).value) < 0)) {
               throw new BadRequestException(
                 `Invalid value in row ${rowNumber}, column ${i}`,
               );
             }
-            if (i === 7 && (isNaN(Number(row.getCell(i).value)) || Number(row.getCell(i).value)< 0)){
+            if (i === 7 && (isNaN(Number(row.getCell(i).value)) || Number(row.getCell(i).value) < 0)) {
               throw new BadRequestException(
                 `Invalid value in row ${rowNumber}, column ${i}`,
               );
@@ -970,7 +1048,7 @@ export class BooksService {
     }
   }
   async getRecommendBooksByCategory(query: BookQuery, bookId: string) {
-    try{
+    try {
       const book = await this.prismaService.books.findFirst({
         where: { id: bookId },
       });
@@ -997,9 +1075,9 @@ export class BooksService {
           },
         },
       });
-      return {books, itemCount};
-    } 
-    catch(error){
+      return { books, itemCount };
+    }
+    catch (error) {
       throw new BadRequestException(error.message);
     }
   }
@@ -1019,18 +1097,18 @@ export class BooksService {
         },
       });
       console.log(authors)
-      
+
 
       const searchCondition = authors
-      .map((author) => author.name.trim().split(/\s+/).filter(Boolean).join('&')) 
-      .join(' | ');
-    
-     console.log('searchCondition', searchCondition);  
+        .map((author) => author.name.trim().split(/\s+/).filter(Boolean).join('&'))
+        .join(' | ');
+
+      console.log('searchCondition', searchCondition);
       const books = await this.prismaService.books.findMany({
         where: {
           OR: [
             {
-              author : {
+              author: {
                 search: searchCondition,
                 mode: 'insensitive',
               }
@@ -1059,12 +1137,12 @@ export class BooksService {
           },
         },
       });
-      
+
       const itemCount = await this.prismaService.books.count({
         where: {
           OR: [
             {
-              author : {
+              author: {
                 search: searchCondition,
                 mode: 'insensitive',
               }
@@ -1086,7 +1164,7 @@ export class BooksService {
       });
       return { books, itemCount };
     }
-    catch(error){
+    catch (error) {
       console.log('Error:', error.message);
       throw new BadRequestException(error.message);
     }
@@ -1099,7 +1177,7 @@ export class BooksService {
         },
         include: {
           CartItems: {
-            select:  {
+            select: {
               book_id: true,
             }
           },
@@ -1121,13 +1199,13 @@ export class BooksService {
         },
       });
       const searchCondition = authors
-      .map((author) => author.name.trim().split(/\s+/).filter(Boolean).join('&')) 
-      .join(' | '); 
+        .map((author) => author.name.trim().split(/\s+/).filter(Boolean).join('&'))
+        .join(' | ');
       const books = await this.prismaService.books.findMany({
         where: {
           OR: [
             {
-              author : {
+              author: {
                 search: searchCondition,
                 mode: 'insensitive',
               }
@@ -1160,7 +1238,7 @@ export class BooksService {
         where: {
           OR: [
             {
-              author : {
+              author: {
                 search: searchCondition,
                 mode: 'insensitive',
               }
@@ -1180,9 +1258,9 @@ export class BooksService {
           ],
         },
       });
-      return {books, itemCount};
+      return { books, itemCount };
     }
-    catch(error){
+    catch (error) {
       throw new BadRequestException(error.message);
     }
   }
