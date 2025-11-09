@@ -2,6 +2,7 @@ import {
   BadRequestException,
   HttpException,
   Injectable,
+  InternalServerErrorException,
   NotFoundException,
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
@@ -14,6 +15,9 @@ import { UpdateOrderStatusDto } from './dto/update-order-status.dto';
 import {
   OrderStatus,
   Prisma,
+  PromotionComboType,
+  PromotionShockDealType,
+  PromotionStatus,
   ReviewType,
   Role,
   TypeUser,
@@ -30,6 +34,14 @@ import { sortObject } from 'src/utils/vnpay.utils';
 import sendSMS from 'src/services/sms-gateway';
 import { GeminiService } from '../gemini/gemini.service';
 import HttpStatusCode from 'src/utils/HttpStatusCode';
+import { Decimal } from '@prisma/client/runtime/library';
+import { RecommendationService } from '@module/recommendation/recommendation.service';
+interface PromotionShockDeal {
+  book_primary: string[];
+  discount_rate?: number;
+  discount_amount?: Decimal;
+}
+
 @Injectable()
 export class OrderService {
   constructor(
@@ -37,6 +49,7 @@ export class OrderService {
     private readonly config: ConfigService,
     private readonly emailService: EmailService,
     private readonly geminiService: GeminiService,
+    private readonly recommendationService: RecommendationService,
   ) {}
   async createOrder(session: TUserSession, dto: CreateOrderDto) {
     const user = await this.prisma.users.findUnique({
@@ -45,7 +58,16 @@ export class OrderService {
     const bookIds = dto.items.map((item) => item.bookId);
     const books = await this.prisma.books.findMany({
       where: { id: { in: bookIds } },
+      include: {
+        Category: true,
+        BookAuthor: {
+          include: {
+            author: true,
+          },
+        },
+      },
     });
+
     const cart = await this.prisma.carts.findFirstOrThrow({
       where: { user_id: session.id },
     });
@@ -56,11 +78,55 @@ export class OrderService {
     if (books.length !== bookIds.length) {
       throw new NotFoundException('Some books are not found');
     }
+    const discountMap = new Map<string, number>();
+    const promotions_shock_deal_map = new Map<
+      string,
+      {
+        book_primary: string[];
+        discount_rate?: number;
+        discount_amount?: Decimal;
+      }
+    >();
+
+    for (const item of dto.items) {
+      const { book, total_discount_combo, promotion_shock_deal_map } =
+        await this.validateBookPromotions(
+          session.id,
+          item.bookId,
+          item.promotion_ids,
+          item.quantity,
+        );
+      discountMap.set(book.id, total_discount_combo);
+      promotions_shock_deal_map.set(book.id, promotion_shock_deal_map);
+    }
+    console.log(
+      'Discount Map:',
+      Array.from(promotions_shock_deal_map.entries()).map(
+        ([book_primary, promotion_shock_deal]) => ({
+          book_primary,
+          discount_rate: promotion_shock_deal.discount_rate,
+          discount_amount: promotion_shock_deal.discount_amount,
+        }),
+      ),
+    );
     const bookPriceMap = new Map(
       books.map((book) => [
         book.id,
-        { price: book.price, finalPrice: book.final_price ?? book.price },
+        {
+          price: book.price,
+          finalPrice: book.final_price ?? book.price,
+          current_price: book.current_price ?? book.price,
+        },
       ]),
+    );
+    await this.updateUserToRecombee(books, session.id);
+    this.recommendationService.trackBulkPurchases(
+      session.id,
+      cartItems.map((item) => ({
+        bookId: item.book_id,
+        price: Number(bookPriceMap.get(item.book_id)?.finalPrice ?? 0),
+        quantity: item.quantity,
+      })),
     );
     try {
       return await this.prisma.$transaction(
@@ -78,9 +144,12 @@ export class OrderService {
                 full_name: dto.fullName,
                 phone_number: dto.phoneNumber,
                 payment_method: dto.paymentMethod,
+                latitude: dto.latitude,
+                longitude: dto.longitude,
                 address: dto.address,
                 pending_at: new Date(),
                 status: ORDER_STATUS.PROCESSING as OrderStatus,
+                created_at: new Date(),
                 processing_at: new Date(),
               },
             });
@@ -102,6 +171,9 @@ export class OrderService {
                 phone_number: dto.phoneNumber,
                 payment_method: dto.paymentMethod,
                 address: dto.address,
+                latitude: dto.latitude,
+                longitude: dto.longitude,
+                created_at: new Date(),
                 pending_at: new Date(),
               },
             });
@@ -109,13 +181,44 @@ export class OrderService {
           }
           const orderItems = dto.items.map((item) => {
             const { price, finalPrice } = bookPriceMap.get(item.bookId);
-            const totalPrice = Number(finalPrice) * item.quantity;
+            let { current_price } = bookPriceMap.get(item.bookId);
+            const promotion_shock_deal_map = promotions_shock_deal_map.get(
+              item.bookId,
+            );
+            const has_primary_book = dto.items.some((item) =>
+              promotion_shock_deal_map.book_primary.includes(item.bookId),
+            );
+            if (has_primary_book) {
+              console.log('Current Price before shock deal: ', current_price);
+              console.log(
+                'Promotion Shock Deal Map:',
+                promotion_shock_deal_map,
+              );
+              current_price = new Decimal(
+                Number(current_price) -
+                  (promotion_shock_deal_map.discount_amount &&
+                  Number(promotion_shock_deal_map.discount_amount) > 0
+                    ? promotion_shock_deal_map.discount_amount
+                      ? Number(promotion_shock_deal_map.discount_amount)
+                      : 0
+                    : (Number(promotion_shock_deal_map.discount_rate) *
+                        Number(current_price)) /
+                      100),
+              );
+              console.log('Current Price after shock deal: ', current_price);
+            }
+            const totalPrice =
+              (!isNaN(Number(current_price))
+                ? Number(current_price) * item.quantity
+                : Number(finalPrice) * item.quantity) -
+              discountMap.get(item.bookId);
             return {
               order_id: order.id,
               book_id: item.bookId,
               quantity: item.quantity,
               price,
               total_price: totalPrice,
+              promotion_ids: item.promotion_ids,
             };
           });
           await tx.orderItems.createMany({ data: orderItems });
@@ -508,6 +611,7 @@ export class OrderService {
     if (!book) {
       throw new NotFoundException('Book not found');
     }
+    this.recommendationService.trackRating(session.id, bookId, dto.star);
     try {
       return await this.prisma.$transaction(
         async (tx) => {
@@ -1305,7 +1409,9 @@ export class OrderService {
           }
           const orderItems = dto.items.map((item) => {
             const { price, finalPrice } = bookPriceMap.get(item.bookId);
-            const totalPrice = Number(finalPrice) * item.quantity;
+            const totalPrice = finalPrice
+              ? Number(finalPrice) * item.quantity
+              : Number(price) * item.quantity;
             return {
               order_id: order.id,
               book_id: item.bookId,
@@ -1351,6 +1457,254 @@ export class OrderService {
       }
     } catch (error) {
       throw new HttpException(error.message, 500);
+    }
+  }
+
+  private async validateBookPromotions(
+    user_id: string,
+    book_id: string,
+    promotion_ids: string[],
+    quantity: number,
+  ) {
+    const promotion_shock_deal_map: PromotionShockDeal = {
+      book_primary: [],
+      discount_rate: undefined,
+      discount_amount: undefined,
+    };
+    let total_discount_combo = 0;
+    const book = await this.prisma.books.findUnique({
+      where: { id: book_id },
+    });
+
+    const promotions = await this.prisma.promotion.findMany({
+      where: {
+        id: { in: promotion_ids },
+        status: PromotionStatus.ONGOING,
+      },
+      include: {
+        PromotionNormalDetail: true,
+        PromotionCombo: {
+          include: {
+            PromotionComboCondition: true,
+            PromotionComboProduct: true,
+          },
+        },
+        PromotionShockDeal: {
+          include: {
+            PromotionShockDealBook: true,
+            PromotionShockDealCondition: true,
+          },
+        },
+      },
+    });
+
+    if (promotions.length !== promotion_ids.length) {
+      throw new BadRequestException(
+        `Some promotions are not valid for product: ${book.title}`,
+      );
+    }
+    for (const promotion of promotions) {
+      if (promotion.PromotionNormalDetail.length !== 0) {
+        const isApplicableToBook = promotion.PromotionNormalDetail.some(
+          (condition) => condition.book_id === book_id,
+        );
+
+        if (!isApplicableToBook) {
+          throw new BadRequestException(
+            `Promotion "${promotion.name}" is not applicable to book: ${book.title}`,
+          );
+        }
+      }
+      if (promotion.PromotionCombo) {
+        const isApplicableToBook =
+          promotion.PromotionCombo.PromotionComboProduct.some(
+            (condition) => condition.book_id === book_id,
+          );
+
+        if (!isApplicableToBook) {
+          throw new BadRequestException(
+            `Promotion "${promotion.name}" is not applicable to book: ${book.title}`,
+          );
+        }
+        const comboConditions =
+          promotion.PromotionCombo.PromotionComboCondition;
+
+        const sortedConditions = comboConditions
+          .filter((c) => c.quantity && c.quantity <= quantity)
+          .sort((a, b) => b.quantity - a.quantity);
+
+        if (sortedConditions.length > 0) {
+          const condition = sortedConditions[0];
+
+          if (
+            condition.discount_value &&
+            promotion.PromotionCombo.promotion_combo_type ===
+              PromotionComboType.FIXED_AMOUNT
+          ) {
+            total_discount_combo = condition.discount_value.toNumber();
+          } else if (
+            condition.discount_value &&
+            promotion.PromotionCombo.promotion_combo_type ===
+              PromotionComboType.PERCENTAGE
+          ) {
+            total_discount_combo =
+              (Number(book.current_price) ?? Number(book.final_price)) *
+              quantity *
+              (Number(condition.discount_value) / 100);
+          }
+        }
+      }
+      if (promotion.PromotionShockDeal) {
+        const isApplicableToBook =
+          promotion.PromotionShockDeal.PromotionShockDealCondition.some(
+            (condition) => condition.book_id === book_id,
+          );
+
+        if (!isApplicableToBook) {
+          throw new BadRequestException(
+            `Promotion "${promotion.name}" is not applicable to book: ${book.title}`,
+          );
+        }
+        promotion_shock_deal_map.book_primary.push(
+          ...promotion.PromotionShockDeal.PromotionShockDealBook.map(
+            (book) => book.book_id,
+          ),
+        );
+        for (const condition of promotion.PromotionShockDeal
+          .PromotionShockDealCondition) {
+          if (condition.book_id === book_id) {
+            promotion_shock_deal_map.discount_amount =
+              condition.discount_amount;
+            promotion_shock_deal_map.discount_rate = condition.discount_rate;
+          }
+        }
+      }
+      if (promotion.max_usage_per_user) {
+        const userUsageCount = await this.prisma.orderItems.count({
+          where: {
+            book_id: book.id,
+            order: {
+              user_id: user_id,
+              status: {
+                in: [
+                  OrderStatus.PROCESSING,
+                  OrderStatus.DELIVERED,
+                  OrderStatus.SUCCESS,
+                ],
+              },
+            },
+            promotion_ids: { has: promotion.id },
+          },
+        });
+        if (userUsageCount >= promotion.max_usage_per_user) {
+          throw new BadRequestException(
+            `You have reached the maximum usage limit (${promotion.max_usage_per_user}) for promotion: ${promotion.name}`,
+          );
+        }
+      }
+      if (promotion.order_limit) {
+        // Count total usage of this promotion
+        const totalUsageCount = await this.prisma.orderItems.count({
+          where: {
+            promotion_ids: {
+              has: promotion.id,
+            },
+          },
+        });
+
+        // If total usage has exceeded the limit, throw an error
+        if (totalUsageCount >= promotion.order_limit) {
+          throw new BadRequestException(
+            `Promotion "${promotion.name}" has reached its maximum usage limit`,
+          );
+        }
+      }
+    }
+    return { book, total_discount_combo, promotion_shock_deal_map };
+  }
+
+  private async updateUserToRecombee(books: any[], userId: string) {
+    try {
+      const user = await this.prisma.users.findUnique({
+        where: { id: userId },
+        select: {
+          id: true,
+          full_name: true,
+          email: true,
+          phone: true,
+          gender: true,
+          birthday: true,
+        },
+      });
+
+      if (!user) {
+        throw new NotFoundException('User not found');
+      }
+      const categories = new Set<string>();
+      const authors = new Set<string>();
+      books.forEach((book) => {
+        if (book.Category && book.Category.name) {
+          categories.add(book.Category.name);
+        }
+        if (book.BookAuthor) {
+          book.BookAuthor.forEach((author) => {
+            if (author.author && author.author.name) {
+              authors.add(author.author.name);
+            }
+          });
+        }
+      });
+
+      const previousPurchases = await this.prisma.orderItems.findMany({
+        where: {
+          order: {
+            user_id: userId,
+            status: {
+              in: ['PROCESSING', 'DELIVERED', 'SUCCESS'],
+            },
+          },
+        },
+        select: {
+          book_id: true,
+        },
+        distinct: ['book_id'],
+      });
+
+      const purchaseHistory = previousPurchases.map((item) => item.book_id);
+
+      const currentBookIds = books.map((book) => book.id).filter(Boolean);
+      const allPurchaseHistory = [
+        ...new Set([...purchaseHistory, ...currentBookIds]),
+      ];
+
+      let age = null;
+      if (user.birthday) {
+        age = new Date().getFullYear() - user.birthday.getFullYear();
+      }
+      const userProperties = {
+        id: user.id,
+        fullName: user.full_name,
+        email: user.email,
+        phone: user.phone,
+        gender: user.gender,
+        age: age,
+        preferred_categories: Array.from(categories),
+        preferred_authors: Array.from(authors),
+        purchase_history: allPurchaseHistory,
+        last_purchase_date: new Date().toISOString(),
+      };
+
+      await this.recommendationService.updateUserToRecombee(userProperties);
+
+      console.log(`Successfully updated Recombee profile for user ${userId}`);
+    } catch (error) {
+      console.error('Error updating user in Recombee:', error);
+      if (error instanceof NotFoundException) {
+        throw error;
+      }
+      throw new InternalServerErrorException(
+        'System error when updating recommendation profile',
+      );
     }
   }
 }

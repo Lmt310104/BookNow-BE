@@ -40,6 +40,7 @@ import {
   TUserSession,
   UserSession,
 } from 'src/common/decorators/user-session.decorator';
+import { RecommendationService } from '@module/recommendation/recommendation.service';
 
 const {
   BOOKS: {
@@ -63,7 +64,10 @@ const {
 @ApiTags(DOCUMENTATION.TAGS.BOOKS)
 @Controller(BASE)
 export class BooksController {
-  constructor(private readonly bookService: BooksService) {}
+  constructor(
+    private readonly bookService: BooksService,
+    private readonly recommendationService: RecommendationService,
+  ) {}
   @ApiOperation({
     summary: 'Get all books',
     description: 'Allow admin/ customer',
@@ -344,5 +348,13 @@ export class BooksController {
       itemCount: itemCount,
     });
     return new PageResponseDto(books, meta);
+  }
+
+  @Post('recommend-view-detail-integration/:id')
+  async getBookDetails(
+    @Param('id') id: string,
+    @UserSession() session: TUserSession,
+  ) {
+    this.recommendationService.trackDetailView(session.id, id);
   }
 }

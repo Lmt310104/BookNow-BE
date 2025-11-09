@@ -1,0 +1,12 @@
+node_modules
+dist
+.git
+*.log
+.env
+.env.*
+coverage
+tmp
+.cache
+docker-compose*
+Dockerfile*
+README.md
