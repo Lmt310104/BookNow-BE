@@ -10,9 +10,12 @@ import { EmailModule } from './email/email.module';
 import { EventsModule } from './events_gateway/event_gateway.module';
 import { GeminiModule } from './gemini/gemini.module';
 import { GoogleOauthModule } from './google-oauth/google-oauth.module';
+import { GroupBuyModule } from './group-buy/group-buy.module';
 import { InventoryModule } from './inventory/inventory.module';
 import { OpenAIModule } from './openai/openai.module';
 import { OrdersModule } from './orders/orders.module';
+import { PromotionModule } from './promotion/promotion.module';
+import { RecommendationModule } from './recommendation/recommendation.module';
 import { ReviewsModule } from './reviews/reviews.module';
 import { StatisticModule } from './statistic/statistic.module';
 import { StreamChatModule } from './stream-chat/stream-chat.module';
@@ -41,6 +44,9 @@ const Modules = [
   OpenAIModule,
   SupplierModule,
   InventoryModule,
+  PromotionModule,
+  RecommendationModule,
+  GroupBuyModule,
 ];
 
 export default Modules;

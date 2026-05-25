@@ -12,10 +12,11 @@ import { RatingFilterDto } from './dto/filter-by-rating.dto';
 import * as ExcelJS from 'exceljs';
 import { Buffer } from 'buffer';
 import { TUserSession } from 'src/common/decorators/user-session.decorator';
+import { RecommendationService } from '@module/recommendation/recommendation.service';
 
 @Injectable()
 export class BooksService {
-  constructor(private readonly prismaService: PrismaService) {}
+  constructor(private readonly prismaService: PrismaService, private readonly recommendationService: RecommendationService) {}
 
   async getAllBooks(bookQuery: BookQuery) {
     const AND = [
@@ -122,6 +123,21 @@ export class BooksService {
       },
       include: {
         Category: true,
+        PromotionComboProduct: {
+          include: {
+            PromotionCombo: true,
+          }
+        },
+        PromotionNormalDetail: {
+          include: {
+            Promotion: true,
+          }
+        },
+        PromotionShockDealBook: {
+          include: {
+            PromotionShockDeal: true,
+          }
+        }
       },
       orderBy: [
         condition1 !== undefined
@@ -371,6 +387,14 @@ export class BooksService {
             stock_quantity: Number(dto?.stockQuantity) ?? existingBook.stock_quantity,
           },
         });
+        const newBook = await tx.books.findUnique({
+          where: {id},
+          include: {
+            Category: true,
+            PromotionShockDealCondition: true,
+          }
+        })
+        await this.recommendationService.updateBookToRecombee(newBook);
         return updatedBook;
       });
     } catch (error) {

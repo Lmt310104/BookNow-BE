@@ -10,7 +10,6 @@ import { AuthenticationGuard } from './common/guards/authentication.guard';
 import InitFirebase from './services/firebase';
 import { ValidationPipe } from '@nestjs/common';
 import { LoggingInterceptor } from './common/interceptors/logging.interceptor';
-import { setGlobalDispatcher, ProxyAgent } from 'undici';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
@@ -29,16 +28,8 @@ async function bootstrap() {
   app.useGlobalPipes(new ValidationPipe({ transform: true, whitelist: true }));
   app.use(cookieParser());
   app.useGlobalInterceptors(new LoggingInterceptor());
-  // app.useGlobalFilters(new HttpExceptionFilter());
   InitFirebase();
   SwaggerModule.setup('docs', app, document);
-  // if (process.env.HTTPS_PROXY) {
-  //   console.log('Using proxy agent');
-  //   const dispatcher = new ProxyAgent({
-  //     uri: new URL(process.env.HTTPS_PROXY).toString(),
-  //   });
-  //   setGlobalDispatcher(dispatcher);
-  // }
   await app.listen(port || 8080);
   console.log(`Server running on http://localhost:${port || 8080}/docs`);
 }
